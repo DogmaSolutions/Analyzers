@@ -1,0 +1,13 @@
+.vs/
+desktop.ini
+obj/
+bin/
+*.DotSettings
+*.user
+packages
+*.rej
+**/Logs
+.idea
+**/node_modules
+package-lock.json
+node_modules
