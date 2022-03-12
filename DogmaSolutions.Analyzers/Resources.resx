@@ -123,12 +123,10 @@ WebApi controllers should not contain data-manipulation business logics.
 Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.</value>
   </data>
   <data name="DSA001AnalyzerMessageFormat" xml:space="preserve">
-    <value>The WebApi method '{0}' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression.
-WebApi controllers should not contain data-manipulation business logics.
-Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.</value>
+    <value>The WebApi method '{0}' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.</value>
   </data>
   <data name="DSA001AnalyzerTitle" xml:space="preserve">
-    <value>WebApi controllers should not contain data-manipulation business logics through a LINQ query expression.</value>
+    <value>WebApi controllers should not contain data-manipulation business logics through a LINQ query expression</value>
   </data>
   <data name="DSA002AnalyzerDescription" xml:space="preserve">
     <value>A WebApi method is using Entity Framework DbSet to directly manipulate data through a LINQ fluent query.
@@ -136,11 +134,9 @@ WebApi controllers should not contain data-manipulation business logics.
 Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.</value>
   </data>
   <data name="DSA002AnalyzerMessageFormat" xml:space="preserve">
-    <value>The WebApi method '{0}' is invoking the method '{1}' of the DbSet '{2}' to directly manipulate data through a LINQ fluent query.
-WebApi controllers should not contain data-manipulation business logics.
-Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.</value>
+    <value>The WebApi method '{0}' is invoking the method '{1}' of the DbSet '{2}' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.</value>
   </data>
   <data name="DSA002AnalyzerTitle" xml:space="preserve">
-    <value>WebApi controllers should not contain data-manipulation business logics through a LINQ fluent query.</value>
+    <value>WebApi controllers should not contain data-manipulation business logics through a LINQ fluent query</value>
   </data>
 </root>

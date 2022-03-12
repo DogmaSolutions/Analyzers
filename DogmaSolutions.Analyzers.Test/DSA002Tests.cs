@@ -6,21 +6,21 @@ using VerifyCS = DogmaSolutions.Analyzers.Test.CSharpAnalyzerVerifier<DogmaSolut
 
 namespace DogmaSolutions.Analyzers.Test
 {
-    [TestClass]
-    public class DSA002Tests
-    {
-        [TestMethod]
-        public async Task Empty()
-        {
-            var test = @"";
+   [TestClass]
+   public class DSA002Tests
+   {
+      [TestMethod]
+      public async Task Empty()
+      {
+         var test = @"";
 
-            await VerifyCS.VerifyAnalyzerAsync(test);
-        }
+         await VerifyCS.VerifyAnalyzerAsync(test);
+      }
 
-        [TestMethod]
-        public async Task QueryExpressionSyntax_Ok()
-        {
-            var sourceCode = @"
+      [TestMethod]
+      public async Task QueryExpressionSyntax_Ok()
+      {
+         var sourceCode = @"
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -122,45 +122,43 @@ namespace WebApplication1.Controllers
     }
 }
 ";
-            var test = new VerifyCS.Test();
-            test.TestCode = sourceCode;
-            test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(ImmutableArray.Create(new PackageIdentity[]
-            {
-                new PackageIdentity("Microsoft.AspNetCore.Mvc", "2.2.0"),
-                new PackageIdentity("Microsoft.EntityFrameworkCore", "3.1.22")
-            }));
+         var test = new VerifyCS.Test();
+         test.TestCode = sourceCode;
+         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+            ImmutableArray.Create(
+               new PackageIdentity[]
+               {
+                  new PackageIdentity("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                  new PackageIdentity("Microsoft.EntityFrameworkCore", "3.1.22")
+               }));
 
 
-            test.ExpectedDiagnostics.Add(VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId)
-                .WithMessage(
-                    @"The WebApi method 'MyEntitiesController.GetAll1' is invoking the method 'Select' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query.
-WebApi controllers should not contain data-manipulation business logics.
-Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.")
-                .WithLocation(1));
+         test.ExpectedDiagnostics.Add(
+            VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId).
+               WithMessage(
+                  @"The WebApi method 'MyEntitiesController.GetAll1' is invoking the method 'Select' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").
+               WithLocation(1));
 
-            test.ExpectedDiagnostics.Add(VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId)
-                .WithMessage(
-                    @"The WebApi method 'MyEntitiesController.GetAll1' is invoking the method 'Where' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query.
-WebApi controllers should not contain data-manipulation business logics.
-Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.")
-                .WithLocation(1));
+         test.ExpectedDiagnostics.Add(
+            VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId).
+               WithMessage(
+                  @"The WebApi method 'MyEntitiesController.GetAll1' is invoking the method 'Where' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").
+               WithLocation(1));
 
-            test.ExpectedDiagnostics.Add(VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId)
-                .WithMessage(
-                    @"The WebApi method 'InheritedEntitiesController.GetAll2' is invoking the method 'Select' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query.
-WebApi controllers should not contain data-manipulation business logics.
-Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.")
-                .WithLocation(2));
+         test.ExpectedDiagnostics.Add(
+            VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId).
+               WithMessage(
+                  @"The WebApi method 'InheritedEntitiesController.GetAll2' is invoking the method 'Select' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").
+               WithLocation(2));
 
 
-            test.ExpectedDiagnostics.Add(VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId)
-                .WithMessage(
-                    @"The WebApi method 'InheritedEntitiesController.GetAll2' is invoking the method 'Where' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query.
-WebApi controllers should not contain data-manipulation business logics.
-Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.")
-                .WithLocation(2));
+         test.ExpectedDiagnostics.Add(
+            VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId).
+               WithMessage(
+                  @"The WebApi method 'InheritedEntitiesController.GetAll2' is invoking the method 'Where' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").
+               WithLocation(2));
 
-            await test.RunAsync();
-        }
-    }
+         await test.RunAsync();
+      }
+   }
 }

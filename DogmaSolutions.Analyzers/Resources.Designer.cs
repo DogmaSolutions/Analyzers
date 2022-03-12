@@ -72,9 +72,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is using Entity Framework DbContext to directly manipulate data through a LINQ query expression.
-        ///WebApi controllers should not contain data-manipulation business logics.
-        ///Move the data-manipulation business logics into a more appropriate class, or even better, an injected service..
+        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service..
         /// </summary>
         internal static string DSA001AnalyzerMessageFormat {
             get {
@@ -83,7 +81,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to WebApi controllers should not contain data-manipulation business logics through a LINQ query expression..
+        ///   Looks up a localized string similar to WebApi controllers should not contain data-manipulation business logics through a LINQ query expression.
         /// </summary>
         internal static string DSA001AnalyzerTitle {
             get {
@@ -103,9 +101,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is invoking the method &apos;{1}&apos; of the DbSet &apos;{2}&apos; to directly manipulate data through a LINQ fluent query.
-        ///WebApi controllers should not contain data-manipulation business logics.
-        ///Move the data-manipulation business logics into a more appropriate class, or even better, an injected service..
+        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is invoking the method &apos;{1}&apos; of the DbSet &apos;{2}&apos; to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service..
         /// </summary>
         internal static string DSA002AnalyzerMessageFormat {
             get {
@@ -114,7 +110,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to WebApi controllers should not contain data-manipulation business logics through a LINQ fluent query..
+        ///   Looks up a localized string similar to WebApi controllers should not contain data-manipulation business logics through a LINQ fluent query.
         /// </summary>
         internal static string DSA002AnalyzerTitle {
             get {

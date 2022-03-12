@@ -6,21 +6,21 @@ using VerifyCS = DogmaSolutions.Analyzers.Test.CSharpAnalyzerVerifier<DogmaSolut
 
 namespace DogmaSolutions.Analyzers.Test
 {
-    [TestClass]
-    public class DSA001Tests
-    {
-        [TestMethod]
-        public async Task Empty()
-        {
-            var test = @"";
+   [TestClass]
+   public class DSA001Tests
+   {
+      [TestMethod]
+      public async Task Empty()
+      {
+         var test = @"";
 
-            await VerifyCS.VerifyAnalyzerAsync(test);
-        }
+         await VerifyCS.VerifyAnalyzerAsync(test);
+      }
 
-        [TestMethod]
-        public async Task QueryExpressionSyntax_Ok()
-        {
-            var sourceCode = @"
+      [TestMethod]
+      public async Task QueryExpressionSyntax_Ok()
+      {
+         var sourceCode = @"
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -122,27 +122,30 @@ namespace WebApplication1.Controllers
     }
 }
 ";
-            var test = new VerifyCS.Test();
-            test.TestCode = sourceCode;
-            test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(ImmutableArray.Create(new PackageIdentity[]
-            {
-                new PackageIdentity("Microsoft.AspNetCore.Mvc", "2.2.0"),
-                new PackageIdentity("Microsoft.EntityFrameworkCore", "3.1.22")
-            }));
+         var test = new VerifyCS.Test();
+         test.TestCode = sourceCode;
+         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+            ImmutableArray.Create(
+               new PackageIdentity[]
+               {
+                  new PackageIdentity("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                  new PackageIdentity("Microsoft.EntityFrameworkCore", "3.1.22")
+               }));
 
 
-            test.ExpectedDiagnostics.Add(VerifyCS.Diagnostic(DSA001Analyzer.DiagnosticId)
-                .WithMessage(@"The WebApi method 'MyEntitiesController.GetAll0' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression.
-WebApi controllers should not contain data-manipulation business logics.
-Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").WithLocation(0));
+         test.ExpectedDiagnostics.Add(
+            VerifyCS.Diagnostic(DSA001Analyzer.DiagnosticId).
+               WithMessage(
+                  @"The WebApi method 'MyEntitiesController.GetAll0' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").
+               WithLocation(0));
 
-            test.ExpectedDiagnostics.Add(VerifyCS.Diagnostic(DSA001Analyzer.DiagnosticId)
-                .WithMessage(
-                    @"The WebApi method 'InheritedEntitiesController.GetAll3' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression.
-WebApi controllers should not contain data-manipulation business logics.
-Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").WithLocation(3));
+         test.ExpectedDiagnostics.Add(
+            VerifyCS.Diagnostic(DSA001Analyzer.DiagnosticId).
+               WithMessage(
+                  @"The WebApi method 'InheritedEntitiesController.GetAll3' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").
+               WithLocation(3));
 
-            await test.RunAsync();
-        }
-    }
+         await test.RunAsync();
+      }
+   }
 }

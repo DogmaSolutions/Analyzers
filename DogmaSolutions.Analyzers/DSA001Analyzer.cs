@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace DogmaSolutions.Analyzers
 {
     /// <summary>
-    /// HTTP REST API methods should not directly use Entity Framework DbContext.
+    /// HTTP REST API methods should not directly use Entity Framework DbContext through a LINQ query expression
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DSA001Analyzer : DiagnosticAnalyzer
