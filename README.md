@@ -16,15 +16,15 @@ Every rule is accompanied by the following information and clues:
 ## DSA001
 - **Category** → Design
 - **Severity** → Warning
-- **Description** → WebApi controllers should not contain data-manipulation business logics through a LINQ query expression.
-- **Motivation and fix** → A WebApi method is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
+- **Description** → [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a LINQ query expression.
+- **Motivation and fix** → A [WebApi controller method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) is using [Entity Framework DbContext](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext) to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
 - **See also** → DSA002
 
 ## DSA002
 - **Category** → Design
 - **Severity** → Warning
-- **Description** → WebApi controllers should not contain data-manipulation business logics through a LINQ fluent query.
-- **Motivation and fix** → A WebApi method is using Entity Framework DbSet to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
+- **Description** → [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a LINQ fluent query.
+- **Motivation and fix** → A [WebApi controller method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) is using [Entity Framework DbSet](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbset-1) to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
 - **See also** → DSA001
                                                
 
