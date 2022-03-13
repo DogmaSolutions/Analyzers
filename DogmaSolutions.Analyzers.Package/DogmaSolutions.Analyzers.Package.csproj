@@ -9,13 +9,18 @@
 
   <PropertyGroup>
     <PackageId>DogmaSolutions.Analyzers</PackageId>    
-    <Description>A set of Roslyn Analyzer to enforce some good practices and code quality in C#</Description>
+    <Description>A set of Roslyn Analyzer aimed to enforce some design good practices and code quality (QA) rules.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>Added rules: DSA001, DSA002</PackageReleaseNotes>    
     <PackageTags>DogmaSolutions.Analyzers, analyzers</PackageTags>
     <DevelopmentDependency>true</DevelopmentDependency>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToOutput</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="$(SolutionDir)README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 
   <ItemGroup>    
     <ProjectReference Include="..\DogmaSolutions.Analyzers\DogmaSolutions.Analyzers.csproj" />
