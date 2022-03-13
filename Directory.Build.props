@@ -11,9 +11,13 @@
         <DefineConstants>JETBRAINS_ANNOTATIONS</DefineConstants>
         <Authors>Dogma Solutions srl</Authors>
         <Owners>DogmaSolutions</Owners>
-        <PackageProjectUrl>http://dogmasolutions.com</PackageProjectUrl>
-        <RepositoryUrl>http://dogmasolutions.com</RepositoryUrl>
+        <PackageLicenseUrl>http://dogmasolutions.com</PackageLicenseUrl>
+        <PackageProjectUrl>https://dogmasolutions.com</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/DogmaSolutions/Analyzers.git</RepositoryUrl>
+        <PackageIconUrl>http://dogmasolutions.it/Logo_200x200.png</PackageIconUrl>
         <PackageIcon>Logo_128x128.png</PackageIcon>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <Copyright>Dogma Solutions srl</Copyright>
         <NoWarn>$(NoWarn);NU1605</NoWarn>
         <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
         <NeutralLanguage>en</NeutralLanguage>
