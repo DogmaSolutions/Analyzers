@@ -28,7 +28,7 @@ namespace DogmaSolutions.Analyzers
 
         private const string Category = RuleCategories.Design;
 
-        private static readonly DiagnosticDescriptor Rule = new(
+        private static readonly DiagnosticDescriptor _rule = new(
             DiagnosticId,
             _title,
             _messageFormat,
@@ -37,7 +37,7 @@ namespace DogmaSolutions.Analyzers
             isEnabledByDefault: true,
             description: _description);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(_rule);
 
         public override void Initialize([NotNull] AnalysisContext context)
         {
@@ -64,7 +64,7 @@ namespace DogmaSolutions.Analyzers
             if (!parentClass.IsWebApiControllerClass(ctx))
                 return;
 
-            var severity = Rule.DefaultSeverity;
+            var severity = _rule.DefaultSeverity;
             var config = ctx.Options.AnalyzerConfigOptionsProvider.GetOptions(ctx.Node.SyntaxTree);
             if (config.TryGetValue($"dotnet_diagnostic.{DiagnosticId}.severity", out var configValue) &&
                 !string.IsNullOrWhiteSpace(configValue) &&
@@ -87,7 +87,7 @@ namespace DogmaSolutions.Analyzers
                     if (anchestor != null)
                     {
                         var diagnostic = Diagnostic.Create(
-                            descriptor: Rule,
+                            descriptor: _rule,
                             location: maes.GetLocation(),
                             effectiveSeverity: severity,
                             additionalLocations: null,

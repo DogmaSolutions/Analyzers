@@ -13,29 +13,30 @@ namespace DogmaSolutions.Analyzers
     /// HTTP REST API methods should not directly use Entity Framework DbContext through a LINQ query expression
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
+    // ReSharper disable once InconsistentNaming
     public sealed class DSA001Analyzer : DiagnosticAnalyzer
     {
         public const string DiagnosticId = "DSA001";
-        private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.DSA001AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
+        private static readonly LocalizableString _title = new LocalizableResourceString(nameof(Resources.DSA001AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
 
-        private static readonly LocalizableString MessageFormat =
+        private static readonly LocalizableString _messageFormat =
             new LocalizableResourceString(nameof(Resources.DSA001AnalyzerMessageFormat), Resources.ResourceManager, typeof(Resources));
 
-        private static readonly LocalizableString Description =
+        private static readonly LocalizableString _description =
             new LocalizableResourceString(nameof(Resources.DSA001AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
 
         private const string Category = RuleCategories.Design;
 
-        private static readonly DiagnosticDescriptor Rule = new(
+        private static readonly DiagnosticDescriptor _rule = new(
             DiagnosticId,
-            Title,
-            MessageFormat,
+            _title,
+            _messageFormat,
             Category,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
-            description: Description);
+            description: _description);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(_rule);
 
         public override void Initialize([NotNull] AnalysisContext context)
         {
@@ -63,7 +64,7 @@ namespace DogmaSolutions.Analyzers
                 return;
 
             var config = ctx.Options.AnalyzerConfigOptionsProvider.GetOptions(ctx.Node.SyntaxTree);
-            var severity = Rule.DefaultSeverity;
+            var severity = _rule.DefaultSeverity;
             if (config.TryGetValue($"dotnet_diagnostic.{DiagnosticId}.severity", out var configValue) &&
                 !string.IsNullOrWhiteSpace(configValue) &&
                 Enum.TryParse<DiagnosticSeverity>(configValue, out var configuredSeverity))
@@ -83,7 +84,7 @@ namespace DogmaSolutions.Analyzers
                         if (identifier.IsEfDbContext(ctx))
                         {
                             var diagnostic = Diagnostic.Create(
-                                descriptor: Rule,
+                                descriptor: _rule,
                                 location: qes.GetLocation(),
                                 effectiveSeverity: severity,
                                 additionalLocations: null,

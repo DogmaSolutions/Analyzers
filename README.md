@@ -6,8 +6,8 @@ A set of Roslyn Analyzer aimed to enforce some design good practices and code qu
 This section describes the rules included into this package.
 
 Every rule is accompanied by the following information and clues:
-- **Category** → identify the area of interest of the rule, and can have one of the following values: Design / Naming / Style / Usage / Performance / Security 
-- **Severity** → state the default severity level of the rule. The severity level can be changed by editing the _.editorconfig_ file used by the project/solution.
+- **Category** → identify the area of interest of the rule, and can have one of the following values: _Design / Naming / Style / Usage / Performance / Security_ 
+- **Severity** → state the default severity level of the rule. The severity level can be changed by editing the _.editorconfig_ file used by the project/solution. Possible values are enumerated by the [DiagnosticSeverity enum](https://docs.microsoft.com/en-us/dotnet/api/microsoft.codeanalysis.diagnosticseverity)
 - **Description** → a short description about the rule aim.
 - **Motivation and fix** → a detailed explanation of the detected issue, and a brief description on how to change your code in order to solve it.
 - **See also** → a list of similar/related rules.
