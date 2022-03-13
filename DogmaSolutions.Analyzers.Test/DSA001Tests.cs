@@ -7,14 +7,15 @@ using VerifyCS = DogmaSolutions.Analyzers.Test.CSharpAnalyzerVerifier<DogmaSolut
 namespace DogmaSolutions.Analyzers.Test
 {
    [TestClass]
+   // ReSharper disable once InconsistentNaming
    public class DSA001Tests
    {
       [TestMethod]
       public async Task Empty()
       {
-         var test = @"";
+         var test = string.Empty;
 
-         await VerifyCS.VerifyAnalyzerAsync(test);
+         await VerifyCS.VerifyAnalyzerAsync(test).ConfigureAwait(false);
       }
 
       [TestMethod]
@@ -128,8 +129,8 @@ namespace WebApplication1.Controllers
             ImmutableArray.Create(
                new PackageIdentity[]
                {
-                  new PackageIdentity("Microsoft.AspNetCore.Mvc", "2.2.0"),
-                  new PackageIdentity("Microsoft.EntityFrameworkCore", "3.1.22")
+                  new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                  new("Microsoft.EntityFrameworkCore", "3.1.22")
                }));
 
 
@@ -145,7 +146,7 @@ namespace WebApplication1.Controllers
                   @"The WebApi method 'InheritedEntitiesController.GetAll3' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").
                WithLocation(3));
 
-         await test.RunAsync();
+         await test.RunAsync().ConfigureAwait(false);
       }
    }
 }

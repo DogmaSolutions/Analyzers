@@ -1,0 +1,92 @@
+<Project>
+
+    <PropertyGroup>
+        <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        <LangVersion>latest</LangVersion>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <SignAssembly>false</SignAssembly>
+        <!--
+        <AssemblyOriginatorKeyFile>$(SolutionDir)SharedResources\DogmaSolutions.pfx</AssemblyOriginatorKeyFile>
+        -->
+        <DefineConstants>JETBRAINS_ANNOTATIONS</DefineConstants>
+        <Authors>Dogma Solutions srl</Authors>
+        <Owners>DogmaSolutions</Owners>
+        <PackageProjectUrl>http://dogmasolutions.com</PackageProjectUrl>
+        <RepositoryUrl>http://dogmasolutions.com</RepositoryUrl>
+        <PackageIcon>Logo_128x128.png</PackageIcon>
+        <NoWarn>$(NoWarn);NU1605</NoWarn>
+        <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+        <NeutralLanguage>en</NeutralLanguage>
+        <CodeAnalysisRuleSet>$(SolutionDir)DogmaSolutions.ruleset</CodeAnalysisRuleSet>
+        <DelaySign>true</DelaySign>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>TRACE</DefineConstants>
+    </PropertyGroup>
+
+<!--
+<ItemGroup>
+<None Include="$(SolutionDir)SharedResources\DogmaSolutions.pfx">
+    <Link>DogmaSolutions.pfx</Link>
+</None>
+</ItemGroup>
+-->
+    
+    <ItemGroup>
+        <None Include="$(SolutionDir)SharedResources\Logo_128x128.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
+
+
+    <ItemGroup>
+
+        <PackageReference Include="JetBrains.Annotations" Version="*"/>
+
+        <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" Version="2.*" Condition="$(MSBuildProjectExtension) == '.csproj'"/>
+
+        <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.1" Condition="$(MSBuildProjectExtension) == '.csproj'">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.*" Condition="$(MSBuildProjectExtension) == '.csproj'">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+
+        <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.*" Condition="$(MSBuildProjectExtension) == '.csproj'">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+
+        <PackageReference
+            Include="StyleCop.Analyzers"
+            Version="1.2.0-beta.354"
+            PrivateAssets="all"
+            Condition="$(MSBuildProjectExtension) == '.csproj'"
+        />
+
+        <PackageReference Include="Philips.CodeAnalysis.DuplicateCodeAnalyzer" Version="1.*">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="$(SolutionDir).editorconfig" Link=".editorconfig"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="$(SolutionDir)BannedSymbols.txt"/>
+        <AdditionalFiles Include="$(SolutionDir)DuplicateCode.Allowed.txt"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <LibraryRestore>false</LibraryRestore>
+    </PropertyGroup>
+
+
+</Project>

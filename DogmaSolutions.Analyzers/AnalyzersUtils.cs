@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,7 +40,7 @@ namespace DogmaSolutions.Analyzers
 
             var ds = typeSymbol.ToDisplayString();
 
-            if (ds.StartsWith("Microsoft.EntityFrameworkCore.DbSet<") && ds.EndsWith(">"))
+            if (ds.StartsWith("Microsoft.EntityFrameworkCore.DbSet<",StringComparison.InvariantCulture) && ds.EndsWith(">",StringComparison.InvariantCulture))
                 return true;
 
             return false;
@@ -66,8 +68,9 @@ namespace DogmaSolutions.Analyzers
         }
 
 
-        public static bool IsWebApiControllerClass(this ClassDeclarationSyntax classDeclaration, SyntaxNodeAnalysisContext ctx)
+        public static bool IsWebApiControllerClass([NotNull] this ClassDeclarationSyntax classDeclaration, SyntaxNodeAnalysisContext ctx)
         {
+            if (classDeclaration == null) throw new ArgumentNullException(nameof(classDeclaration));
             if (classDeclaration.BaseList?.Types.Any(t =>
                 {
                     var baseType = ctx.SemanticModel.GetSymbolInfo(t.Type);

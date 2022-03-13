@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
+using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -23,18 +24,22 @@ namespace DogmaSolutions.Analyzers
         private static readonly LocalizableString Description =
             new LocalizableResourceString(nameof(Resources.DSA001AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
 
-        private const string Category = RuleCategories.Naming;
+        private const string Category = RuleCategories.Design;
 
-        private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning,
-            isEnabledByDefault: true, description: Description);
+        private static readonly DiagnosticDescriptor Rule = new(
+            DiagnosticId,
+            Title,
+            MessageFormat,
+            Category,
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
+            description: Description);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+
+        public override void Initialize([NotNull] AnalysisContext context)
         {
-            get { return ImmutableArray.Create(Rule); }
-        }
-
-        public override void Initialize(AnalysisContext context)
-        {
+            if (context == null) throw new ArgumentNullException(nameof(context));
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
             context.RegisterSyntaxNodeAction(OnMethod, SyntaxKind.ParenthesizedLambdaExpression);

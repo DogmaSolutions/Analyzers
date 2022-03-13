@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
 
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
@@ -22,8 +22,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.CodeRefactoring.Testing.MSTest" Version="1.1.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DogmaSolutions.Analyzers.CodeFixes\DogmaSolutions.Analyzers.CodeFixes.csproj" />
+  <ItemGroup>    
     <ProjectReference Include="..\DogmaSolutions.Analyzers\DogmaSolutions.Analyzers.csproj" />
   </ItemGroup>
 

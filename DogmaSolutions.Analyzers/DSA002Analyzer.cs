@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -13,29 +14,34 @@ namespace DogmaSolutions.Analyzers
     /// HTTP REST API methods should not directly use Entity Framework DbContext through a LINQ fluent query
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
+    // ReSharper disable once InconsistentNaming
     public sealed class DSA002Analyzer : DiagnosticAnalyzer
     {
         public const string DiagnosticId = "DSA002";
-        private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.DSA002AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
+        private static readonly LocalizableString _title = new LocalizableResourceString(nameof(Resources.DSA002AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
 
-        private static readonly LocalizableString MessageFormat =
+        private static readonly LocalizableString _messageFormat =
             new LocalizableResourceString(nameof(Resources.DSA002AnalyzerMessageFormat), Resources.ResourceManager, typeof(Resources));
 
-        private static readonly LocalizableString Description =
+        private static readonly LocalizableString _description =
             new LocalizableResourceString(nameof(Resources.DSA002AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
 
-        private const string Category = RuleCategories.Naming;
+        private const string Category = RuleCategories.Design;
 
-        private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning,
-            isEnabledByDefault: true, description: Description);
+        private static readonly DiagnosticDescriptor Rule = new(
+            DiagnosticId,
+            _title,
+            _messageFormat,
+            Category,
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
+            description: _description);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+
+        public override void Initialize([NotNull] AnalysisContext context)
         {
-            get { return ImmutableArray.Create(Rule); }
-        }
-
-        public override void Initialize(AnalysisContext context)
-        {
+            if (context == null) throw new ArgumentNullException(nameof(context));
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
             context.RegisterSyntaxNodeAction(OnMethod, SyntaxKind.ParenthesizedLambdaExpression);

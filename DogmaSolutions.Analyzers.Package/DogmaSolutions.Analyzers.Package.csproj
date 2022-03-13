@@ -26,8 +26,7 @@
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToOutput</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DogmaSolutions.Analyzers.CodeFixes\DogmaSolutions.Analyzers.CodeFixes.csproj" />
+  <ItemGroup>    
     <ProjectReference Include="..\DogmaSolutions.Analyzers\DogmaSolutions.Analyzers.csproj" />
   </ItemGroup>
 
@@ -37,8 +36,7 @@
 
   <Target Name="_AddAnalyzersToOutput">
     <ItemGroup>
-      <TfmSpecificPackageFile Include="$(OutputPath)\DogmaSolutions.Analyzers.dll" PackagePath="analyzers/dotnet/cs" />
-      <TfmSpecificPackageFile Include="$(OutputPath)\DogmaSolutions.Analyzers.CodeFixes.dll" PackagePath="analyzers/dotnet/cs" />
+      <TfmSpecificPackageFile Include="$(OutputPath)\DogmaSolutions.Analyzers.dll" PackagePath="analyzers/dotnet/cs" />      
     </ItemGroup>
   </Target>
 
