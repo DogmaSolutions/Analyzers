@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <RootNamespace>DogmaSolutions.Analyzers.MockLibrary</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DogmaSolutions.Analyzers" Version="1.0.*-*">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+
+        <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.*" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.*" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.*" />
+        <PackageReference Include="Microsoft.AspNetCore.OData" Version="7.5.*" />
+        <PackageReference Include="Microsoft.OData.Edm" Version="7.*" />
+        <PackageReference Include="Microsoft.OData.Core" Version="7.*" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="5.*" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.*" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="2.2.*" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="5.*" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Log4Net.AspNetCore" Version="5.*" />
+    </ItemGroup>
+
+</Project>
