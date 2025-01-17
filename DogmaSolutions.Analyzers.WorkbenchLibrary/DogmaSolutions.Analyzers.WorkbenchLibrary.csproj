@@ -17,11 +17,11 @@
         <PackageReference Include="Microsoft.AspNetCore.OData" Version="7.5.*" />
         <PackageReference Include="Microsoft.OData.Edm" Version="7.*" />
         <PackageReference Include="Microsoft.OData.Core" Version="7.*" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="5.*" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.*" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="9.*" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.*" />
         <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="2.2.*" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="5.*" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Log4Net.AspNetCore" Version="5.*" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="9.*" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Log4Net.AspNetCore" Version="8.*" />
     </ItemGroup>
 
 </Project>

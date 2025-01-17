@@ -51,12 +51,12 @@
 
         <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" Version="2.*" Condition="$(MSBuildProjectExtension) == '.csproj'"/>
 
-        <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.1" Condition="$(MSBuildProjectExtension) == '.csproj'">
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.*">
             <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
 
-        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.*" Condition="$(MSBuildProjectExtension) == '.csproj'">
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.*" Condition="$(MSBuildProjectExtension) == '.csproj'">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
@@ -73,10 +73,6 @@
             Condition="$(MSBuildProjectExtension) == '.csproj'"
         />
 
-        <PackageReference Include="Philips.CodeAnalysis.DuplicateCodeAnalyzer" Version="1.*">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

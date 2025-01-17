@@ -17,7 +17,7 @@ namespace DogmaSolutions.Analyzers.MockLibrary.DSA002.Entities
         [HttpGet]
         public IEnumerable<MyEntity> GetAll0()
         {
-            // this MUST NOT trigger an error
+            // this WILL NOT trigger an error
             var query = from entities in DbContext.MyEntities where entities.Id > 0 select entities;
             return query.ToList(); 
         }
@@ -25,7 +25,7 @@ namespace DogmaSolutions.Analyzers.MockLibrary.DSA002.Entities
         [HttpPost]
         public IEnumerable<long> GetAll1()
         {
-            // this MUST trigger an error
+            // this WILL trigger an error
             var query = DbContext.MyEntities.Where(entities => entities.Id > 0).Select(entities=>entities.Id);
             return query.ToList(); 
         }

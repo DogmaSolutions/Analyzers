@@ -124,7 +124,7 @@ dotnet_diagnostic.IDE0005.severity = error
 dotnet_diagnostic.CA2016.severity = error
 
 # CA1825: Avoid zero-length array allocations
-dotnet_diagnostic.CA1825.severity = error
+dotnet_diagnostic.CA1825.severity = none
 
 # CS1998: This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
 dotnet_diagnostic.CS1998.severity = error

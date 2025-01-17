@@ -13,19 +13,26 @@ Every rule is accompanied by the following information and clues:
 - **See also** → a list of similar/related rules.
 
        
-## DSA001
+## DSA001 -  Don't use Entity Framework to launch LINQ queries in a WebApi controller
 - **Category** → Design
 - **Severity** → Warning
 - **Description** → [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a LINQ query expression.
 - **Motivation and fix** → A [WebApi controller method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) is using [Entity Framework DbContext](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext) to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
 - **See also** → DSA002
 
-## DSA002
+## DSA002 - Don't use an Entity Framework `DbSet` to launch queries in a WebApi controller
 - **Category** → Design
 - **Severity** → Warning
 - **Description** → [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a LINQ fluent query.
 - **Motivation and fix** → A [WebApi controller method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) is using [Entity Framework DbSet](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbset-1) to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
 - **See also** → DSA001
+
+## DSA003 - Don't use `String.IsNullOrEmpty`. Use `IsNullOrWhiteSpace` instead
+- **Category** → Design
+- **Severity** → Warning
+- **Description** → Usually, business logics distinguish between "string with content", and "string NULL or without meaningfull content". Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content". In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available. Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
+- **Motivation and fix** → Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
+
                                                
 
 # Installation
