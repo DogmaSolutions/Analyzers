@@ -9,10 +9,10 @@
 
     <PropertyGroup>
         <PackageId>DogmaSolutions.Analyzers</PackageId>
-        <Description>An set of Roslyn Analyzer aimed to enforce some design good practices and code quality (QA) rules.</Description>
+        <Description>A set of Roslyn Analyzer aimed to enforce some design good practices and code quality (QA) rules.</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageReleaseNotes>Added rules: DSA003, DSA004</PackageReleaseNotes>
-        <PackageTags>DogmaSolutions.Analyzers, analyzers</PackageTags>
+        <PackageTags>DogmaSolutions.Analyzers, analyzers, QA, Quality Assurance</PackageTags>
         <DevelopmentDependency>true</DevelopmentDependency>
         <NoPackageAnalysis>true</NoPackageAnalysis>
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToOutput</TargetsForTfmSpecificContentInPackage>
