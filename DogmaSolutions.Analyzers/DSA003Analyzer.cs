@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Data;
 using System.Linq;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
@@ -16,7 +14,7 @@ namespace DogmaSolutions.Analyzers
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     // ReSharper disable once InconsistentNaming
-    public sealed class DSA003Analyzer : DiagnosticAnalyzer
+    public sealed class DSA003Analyzer : ProhibitInvocationExpressionDiagnosticAnalyzer<string>
     {
         public const string DiagnosticId = "DSA003";
         private static readonly LocalizableString _title = new LocalizableResourceString(nameof(Resources.DSA003AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
@@ -39,51 +37,30 @@ namespace DogmaSolutions.Analyzers
             description: _description);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
+        
+        protected override string MemberName => nameof(string.IsNullOrEmpty);
 
         public override void Initialize([NotNull] AnalysisContext context)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(OnMethod, SyntaxKind.InvocationExpression);
+            context.RegisterSyntaxNodeAction(ctx => OnInvocationExpression(ctx, _rule), SyntaxKind.InvocationExpression);
         }
 
-        /*
-                private static void AnalyzeNode(SyntaxNodeAnalysisContext context)
-                {
-                    var invocationExpression = (InvocationExpressionSyntax)context.Node;
-
-                    // Check if it's a call to String.IsNullOrEmpty
-                    if (invocationExpression.Expression is MemberAccessExpressionSyntax memberAccess)
-                        if(memberAccess.Expression is TypeOfExpressionSyntax typeOfExpression )
-                            if (((PredefinedTypeSyntax)typeOfExpression.Type).Keyword.Kind() == SyntaxKind.StringKeyword) || (((IdentifierNameSyntax)typeOfExpression.Type).Identifier.ValueText == "String")) &&
-                    memberAccess.Name.ToString() == "IsNullOrEmpty")
-                    {
-                        var diagnostic = Diagnostic.Create(Rule, invocationExpression.GetLocation());
-                        context.ReportDiagnostic(diagnostic);
-                    }
-                }
-                */
-
-
-        private static void OnMethod(SyntaxNodeAnalysisContext ctx)
+        protected override bool IsMatched([NotNull] InvocationExpressionSyntax invocationExpression, [NotNull] DiagnosticDescriptor rule)
         {
-            var invocationExpression = ctx.Node as InvocationExpressionSyntax;
-            if (invocationExpression == null)
-                return;
-
-            var matched = false;
             if (invocationExpression.Expression is MemberAccessExpressionSyntax memberAccess) // match "xxx.yyy"
             {
                 if (memberAccess.Name.Identifier.ValueText != nameof(string.IsNullOrEmpty)) // match "xxx.IsNullOrEmpty"
-                    return;
+                    return false;
 
                 if (memberAccess.Expression is IdentifierNameSyntax { Identifier.ValueText: "String" } || // String.IsNullOrEmpty()
                     memberAccess.Expression is PredefinedTypeSyntax { Keyword.ValueText: "string" } || // string.IsNullOrEmpty()
                     (memberAccess.Expression is MemberAccessExpressionSyntax && memberAccess.Expression.ToString() == "System.String") // string.IsNullOrEmpty()
                    )
                 {
-                    matched = true;
+                    return true;
                 }
             }
             else if (invocationExpression.Expression is IdentifierNameSyntax
@@ -91,41 +68,21 @@ namespace DogmaSolutions.Analyzers
                          Identifier.ValueText: "IsNullOrEmpty"
                      }) // Maybe "String" has been imported using a "using static"
             {
-                matched = invocationExpression.Ancestors().
-                              OfType<CompilationUnitSyntax>().
-                              FirstOrDefault()?. // navigate "up" and find the root
-                              DescendantNodes().
-                              OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
-                              Any(
-                                  u => u.StaticKeyword.IsKind(SyntaxKind.StaticKeyword) && // consider only "using static" directives
-                                       (u.NamespaceOrType.ToString() == "String" ||
-                                        u.NamespaceOrType.ToString() == "System.String") // consider only "using static System.String"  or "using static String"
-                              ) ==
-                          true;
+                return invocationExpression.Ancestors().
+                           OfType<CompilationUnitSyntax>().
+                           FirstOrDefault()?. // navigate "up" and find the root
+                           DescendantNodes().
+                           OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
+                           Any(
+                               u => u.StaticKeyword.IsKind(SyntaxKind.StaticKeyword) && // consider only "using static" directives
+                                    (u.NamespaceOrType.ToString() == "String" ||
+                                     u.NamespaceOrType.ToString() == "System.String" ||
+                                     u.NamespaceOrType.ToString() == "global::System.String") // consider only "using static xyz"
+                           ) ==
+                       true;
             }
 
-
-            if (!matched)
-                return;
-
-            var severity = _rule.DefaultSeverity;
-            var config = ctx.Options.AnalyzerConfigOptionsProvider.GetOptions(ctx.Node.SyntaxTree);
-            if (config.TryGetValue($"dotnet_diagnostic.{DiagnosticId}.severity", out var configValue) &&
-                !string.IsNullOrWhiteSpace(configValue) &&
-                Enum.TryParse<DiagnosticSeverity>(configValue, out var configuredSeverity))
-            {
-                severity = configuredSeverity;
-            }
-
-
-            var diagnostic = Diagnostic.Create(
-                descriptor: _rule,
-                location: invocationExpression.GetLocation(),
-                effectiveSeverity: severity,
-                additionalLocations: null,
-                properties: null);
-
-            ctx.ReportDiagnostic(diagnostic);
+            return false;
         }
     }
 }

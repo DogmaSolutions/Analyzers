@@ -19,8 +19,10 @@ Every rule is accompanied by the following information and clues:
 |-------------------|-------------|-----------|:------:|:--------:|:------:|
 | [DSA001](#dsa001) | Design      |[WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**.|⚠|✅|❌|
 | [DSA002](#dsa002) | Design      |[WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.|⚠|✅|❌|
-| [DSA003](#dsa003) | Code Smells |Usually, business logics distinguish between "string with content", and "string NULL or without meaningfull content". Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content". In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available. Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.|⚠|✅|❌|
+| [DSA003](#dsa003) | Code Smells |Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.<br/>Usually, business logics distinguish between "string with meaningful content", and "string NULL or without meaningfull content". Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content". In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available.|⚠|✅|❌|
+| [DSA004](#dsa004) | Code Smells |Don't use `DateTime.Now`. Use `DateTime.UtcNow` instead.<br/>Using `DateTime.Now` into business logics potentially leads to many different problems, like:<br/> - Incoherence between nodes or processes running in different timezones (even in the same country, i.e. USA, Soviet Union, China, etc)<br/> - Unexpected behaviours in-between legal time changes<br/> - Code conversion problems and loss of timezone info when saving/loading data to/from a datastore|⚠|✅|❌|
 
+---
        
 # DSA001 -  Don't use Entity Framework to launch LINQ queries in a WebApi controller
 - **Category**: Design
@@ -44,7 +46,7 @@ public class MyEntitiesController : ControllerBase
  [HttpGet]
  public IEnumerable<MyEntity> GetAll0()
  {
-     // this WILL trigger an error
+     // this WILL trigger the rule
      var query = from entities in DbContext.MyEntities where entities.Id > 0 select entities;
      return query.ToList(); 
  }
@@ -52,12 +54,14 @@ public class MyEntitiesController : ControllerBase
  [HttpPost]
  public IEnumerable<long> GetAll1()
  {
-     // this WILL NOT trigger an error
+     // this WILL NOT trigger the rule
      var query = DbContext.MyEntities.Where(entities => entities.Id > 0).Select(entities=>entities.Id);
      return query.ToList(); 
  }
 }
 ```
+
+---
 
 # DSA002 - Don't use an Entity Framework `DbSet` to launch queries in a WebApi controller
 - **Category**: Design
@@ -81,7 +85,7 @@ public class MyEntitiesController : Microsoft.AspNetCore.Mvc.ControllerBase
  [HttpGet]
  public IEnumerable<MyEntity> GetAll0()
  {
-     // this WILL NOT trigger an error
+     // this WILL NOT trigger the rule
      var query = from entities in DbContext.MyEntities where entities.Id > 0 select entities;
      return query.ToList(); 
  }
@@ -89,23 +93,79 @@ public class MyEntitiesController : Microsoft.AspNetCore.Mvc.ControllerBase
  [HttpPost]
  public IEnumerable<long> GetAll1()
  {
-     // this WILL trigger an error
+     // this WILL trigger the rule
      var query = DbContext.MyEntities.Where(entities => entities.Id > 0).Select(entities=>entities.Id);
      return query.ToList(); 
  }
 }
 ```
 
-
+---
 
 ## DSA003 - Don't use `String.IsNullOrEmpty`. Use `IsNullOrWhiteSpace` instead
 - **Category** → Code smells
 - **Severity** → Warning ⚠
 - **Description** → Usually, business logics distinguish between "string with content", and "string NULL or without meaningfull content". Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content". In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available. Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
-- **Motivation and fix** → Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
+- **Fix** → Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
+
+## Code sample
+```csharp
+public class MyClass
+{
+
+ public bool IsOk(string s)
+ {
+     // this WILL NOT trigger the rule
+     return string.IsNullOrWhiteSpace(s);
+ }
+
+ public bool IsNotOk(string s)
+ {
+     // this WILL trigger the rule
+     return string.IsNullOrEmpty(s);
+ }
+
+}
+```
+
+---
+
+- ## DSA004 - Don't use `DateTime.Now`. Use `DateTime.UtcNow` instead
+- **Category** → Code smells
+- **Severity** → Warning ⚠
+- **Description** → Using `DateTime.Now` into business logics potentially leads to many different problems:
+  - Incoherence between nodes or processes running in different timezones (even in the same country, i.e. USA, Soviet Union, China, etc)
+  - Unexpected behaviours in-between legal time changes
+  - Code conversion problems and loss of timezone info when saving/loading data to/from a datastore
+
+- **See also**  
+Security-wise, this is correlated to the CWE category “7PK” ([CWE-361](https://cwe.mitre.org/data/definitions/361.html))  
+Cit:
+*"This category represents one of the phyla in the Seven Pernicious Kingdoms vulnerability classification. It includes weaknesses related to the improper management of time and state in an environment that supports simultaneous or near-simultaneous computation by multiple systems, processes, or threads. According to the authors of the Seven Pernicious Kingdoms, "Distributed computation is about time and state. That is, in order for more than one component to communicate, state must be shared, and all that takes time. Most programmers anthropomorphize their work. They think about one thread of control carrying out the entire program in the same way they would if they had to do the job themselves. Modern computers, however, switch between tasks very quickly, and in multi-core, multi-CPU, or distributed systems, two events may take place at exactly the same time. Defects rush to fill the gap between the programmer's model of how a program executes and what happens in reality. These defects are related to unexpected interactions between threads, processes, time, and information. These interactions happen through shared state: semaphores, variables, the file system, and, basically, anything that can store information."*
+- **Fix** → Don't use `DateTime.Now`. Use `DateTime.UtcNow` instead
 
 
+## Code sample
+```csharp
+public class MyClass
+{
 
+ public bool IsOk(string s)
+ {
+     // this WILL NOT trigger the rule
+     return string.IsNullOrWhiteSpace(s);
+ }
+
+ public bool IsNotOk(string s)
+ {
+     // this WILL trigger the rule
+     return string.IsNullOrEmpty(s);
+ }
+
+}
+```
+
+---
 
 # Installation
 - NuGet package (recommended) → [https://www.nuget.org/packages/DogmaSolutions.Analyzers](https://www.nuget.org/packages/DogmaSolutions.Analyzers)

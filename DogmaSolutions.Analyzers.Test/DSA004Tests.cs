@@ -11,14 +11,14 @@ namespace DogmaSolutions.Analyzers.Test;
 
 [TestClass]
 // ReSharper disable once InconsistentNaming
-public class DSA003Tests
+public class DSA004Tests
 {
     [TestMethod]
     public async Task Empty()
     {
         var test = string.Empty;
 
-        await CSharpAnalyzerVerifier<DSA003Analyzer>.VerifyAnalyzerAsync(test).ConfigureAwait(false);
+        await CSharpAnalyzerVerifier<DSA004Analyzer>.VerifyAnalyzerAsync(test).ConfigureAwait(false);
     }
 
     [TestMethod]
@@ -36,24 +36,24 @@ namespace WebApplication1
     {
         public long Id { get; set; }
 
-        public bool IsNullOrWhiteSpace1(string s)
+        public DateTime UtcNow()
         {
-            return string.IsNullOrWhiteSpace(s);
+            return DateTime.UtcNow;
         }
 
-        public bool IsNullOrWhiteSpace2(string s)
+        public DateTime Now()
         {
-            return String.IsNullOrWhiteSpace(s);
+            return DateTime.UtcNow;
         }
 
-        public bool IsNullOrWhiteSpace3(string s)
+        public DateTime UtcNow3()
         {
-            return System.String.IsNullOrWhiteSpace(s);
+            return System.DateTime.UtcNow;
         }
     }
 }
 ";
-        var test = new CSharpAnalyzerVerifier<DSA003Analyzer>.Test();
+        var test = new CSharpAnalyzerVerifier<DSA004Analyzer>.Test();
         test.TestCode = sourceCode;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
             [
@@ -71,77 +71,62 @@ namespace WebApplication1
     private static IEnumerable<object[]> GetQueryExpressionSyntaxMatchedCases =>
     [
         [
-            "System.String.IsNullOrEmpty", @"
+            "System.DateTime.Now", @"
 using System;
 namespace WebApplication1
 {      
     public class MyEntity
     {
-        public bool IsNullOrEmpty3(string s)
+        public DateTime Now1()
         {
-            return {|#0:System.String.IsNullOrEmpty(s)|};
+            return {|#0:System.DateTime.Now|};
         }
     }
 }
 "
         ],
         [
-            "String.IsNullOrEmpty",     @"
+            "DateTime.Now",     @"
 using System;
 namespace WebApplication1
 {      
     public class MyEntity
     {
-        public bool IsNullOrEmpty3(string s)
+        public DateTime Now1()
         {
-            return {|#0:String.IsNullOrEmpty(s)|};
+            return {|#0:DateTime.Now|};
         }
     }
 }
 "
         ],
         [
-            "string.IsNullOrEmpty",     @"
+            "using static System.DateTime; Now",    @"
 using System;
+using static System.DateTime;
 namespace WebApplication1
 {      
     public class MyEntity
     {
-        public bool IsNullOrEmpty3(string s)
+        public DateTime Now1()
         {
-            return {|#0:string.IsNullOrEmpty(s)|};
+            return {|#0:Now|};
         }
     }
 }
 "
         ],
         [
-            "using static System.String; IsNullOrEmpty",    @"
+            "using static global::System.DateTime; Now",    @"
 using System;
-using static System.String;
+using static global::System.DateTime;
 namespace WebApplication1
 {      
     public class MyEntity
     {
-        public bool IsNullOrEmpty3(string s)
+        public DateTime Now1()
         {
-            return {|#0:IsNullOrEmpty(s)|};
-        }
-    }
-}
-"
-        ] ,
-        [
-            "using static global::System.String; IsNullOrEmpty",    @"
-using System;
-using static global::System.String;
-namespace WebApplication1
-{      
-    public class MyEntity
-    {
-        public bool IsNullOrEmpty3(string s)
-        {
-            return {|#0:IsNullOrEmpty(s)|};
+            return {|#0:Now|};
         }
     }
 }
@@ -160,7 +145,7 @@ namespace WebApplication1
     [DynamicData(nameof(GetQueryExpressionSyntaxMatchedCases), DynamicDataDisplayName = nameof(GetQueryExpressionSyntaxMatchedCasesDisplayName))]
     public async Task QueryExpressionSyntax_Matched(string title, string sourceCode)
     {
-        var test = new CSharpAnalyzerVerifier<DSA003Analyzer>.Test();
+        var test = new CSharpAnalyzerVerifier<DSA004Analyzer>.Test();
         test.TestCode = sourceCode;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
             [
@@ -171,7 +156,7 @@ namespace WebApplication1
                 }
             ]);
 
-        test.ExpectedDiagnostics.Add(CSharpAnalyzerVerifier<DSA003Analyzer>.Diagnostic(DSA003Analyzer.DiagnosticId).WithLocation(0));
+        test.ExpectedDiagnostics.Add(CSharpAnalyzerVerifier<DSA004Analyzer>.Diagnostic(DSA004Analyzer.DiagnosticId).WithLocation(0));
 
         await test.RunAsync().ConfigureAwait(false);
     }
