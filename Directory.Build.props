@@ -49,19 +49,19 @@
 
         <PackageReference Include="JetBrains.Annotations" Version="*"/>
 
-        <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" Version="2.*" Condition="$(MSBuildProjectExtension) == '.csproj'"/>
+        <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" Version="2.*"/>
 
         <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.*">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
 
-        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.*" Condition="$(MSBuildProjectExtension) == '.csproj'">
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.*">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
 
-        <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.*" Condition="$(MSBuildProjectExtension) == '.csproj'">
+        <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.*">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
@@ -70,7 +70,7 @@
             Include="StyleCop.Analyzers"
             Version="1.2.0-beta.354"
             PrivateAssets="all"
-            Condition="$(MSBuildProjectExtension) == '.csproj'"
+           
         />
 
     </ItemGroup>
