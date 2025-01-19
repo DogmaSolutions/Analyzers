@@ -161,7 +161,7 @@ Cit:
 </value>
   </data>
   <data name="DSA004AnalyzerMessageFormat" xml:space="preserve">
-    <value>In a i18n-compliant system, it's almost never a good idea to use System.DateTime.Now. Please use System.DateTime.UtcNow instead. If you are sure you want to use System.DateTime.Now, use a '#pragma warning disable RS0030 / #pragma warning restore RS0030' directives pair.</value>
+    <value>In a i18n-compliant system, it's almost never a good idea to use System.DateTime.Now. Please use System.DateTime.UtcNow instead. If you are sure you want to use System.DateTime.Now, use a '#pragma warning disable DSA004 / #pragma warning restore DSA004' directives pair.</value>
   </data>
   <data name="DSA004AnalyzerTitle" xml:space="preserve">
     <value>Don't use `DateTime.Now`. Use `DateTime.UtcNow` instead</value>
