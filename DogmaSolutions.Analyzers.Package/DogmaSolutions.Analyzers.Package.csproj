@@ -11,8 +11,8 @@
         <PackageId>DogmaSolutions.Analyzers</PackageId>
         <Description>A set of Roslyn Analyzer aimed to enforce some design good practices and code quality (QA) rules.</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageReleaseNotes>Added rules: DSA001, DSA002</PackageReleaseNotes>
-        <PackageTags>DogmaSolutions.Analyzers, analyzers</PackageTags>
+        <PackageReleaseNotes>Added rules: DSA003, DSA004</PackageReleaseNotes>
+        <PackageTags>DogmaSolutions.Analyzers, analyzers, QA, Quality Assurance</PackageTags>
         <DevelopmentDependency>true</DevelopmentDependency>
         <NoPackageAnalysis>true</NoPackageAnalysis>
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToOutput</TargetsForTfmSpecificContentInPackage>
@@ -27,11 +27,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3">
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.*">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.9.0"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.*"/>
     </ItemGroup>
 
     <ItemGroup>

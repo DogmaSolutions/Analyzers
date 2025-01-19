@@ -36,7 +36,7 @@ namespace DogmaSolutions.Analyzers
             isEnabledByDefault: true,
             description: _description);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(_rule);
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
 
         public override void Initialize([NotNull] AnalysisContext context)
         {

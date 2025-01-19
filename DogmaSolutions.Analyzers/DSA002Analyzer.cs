@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
@@ -11,7 +12,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace DogmaSolutions.Analyzers
 {
     /// <summary>
-    /// HTTP REST API methods should not directly use Entity Framework DbContext through a LINQ fluent query
+    /// HTTP REST API methods should not directly use Entity Framework DbContext DbSet through a LINQ fluent query
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     // ReSharper disable once InconsistentNaming
@@ -37,7 +38,7 @@ namespace DogmaSolutions.Analyzers
             isEnabledByDefault: true,
             description: _description);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(_rule);
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
 
         public override void Initialize([NotNull] AnalysisContext context)
         {
@@ -96,7 +97,7 @@ namespace DogmaSolutions.Analyzers
                             methodName,
                             identifier.Identifier.ValueText);
 
-                        if (reportedDiagnostics.All(ddd => ddd.GetMessage()?.ToString() != diagnostic.GetMessage()?.ToString()))
+                        if (reportedDiagnostics.All(ddd => ddd.GetMessage(CultureInfo.CurrentCulture) != diagnostic.GetMessage(CultureInfo.CurrentCulture)))
                         {
                             reportedDiagnostics.Add(diagnostic);
                             ctx.ReportDiagnostic(diagnostic);

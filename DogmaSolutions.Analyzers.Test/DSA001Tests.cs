@@ -19,7 +19,7 @@ namespace DogmaSolutions.Analyzers.Test
       }
 
       [TestMethod]
-      public async Task QueryExpressionSyntax_Ok()
+      public async Task QueryExpressionSyntax_Matched()
       {
          var sourceCode = @"
 using System;
@@ -126,12 +126,13 @@ namespace WebApplication1.Controllers
          var test = new VerifyCS.Test();
          test.TestCode = sourceCode;
          test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
-            ImmutableArray.Create(
-               new PackageIdentity[]
-               {
-                  new("Microsoft.AspNetCore.Mvc", "2.2.0"),
-                  new("Microsoft.EntityFrameworkCore", "3.1.22")
-               }));
+            [
+                ..new PackageIdentity[]
+                {
+                    new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                    new("Microsoft.EntityFrameworkCore", "3.1.22")
+                }
+            ]);
 
 
          test.ExpectedDiagnostics.Add(
