@@ -23,7 +23,8 @@ Every rule is accompanied by the following information and clues:
 
 ---
        
-# DSA001 -  Don't use Entity Framework to launch LINQ queries in a WebApi controller
+# DSA001
+Don't use Entity Framework to launch LINQ queries in a WebApi controller.
 - **Category**: Design
 - **Severity**: Warning ⚠
 - **Description**: [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**.
@@ -62,7 +63,8 @@ public class MyEntitiesController : ControllerBase
 
 ---
 
-# DSA002 - Don't use an Entity Framework `DbSet` to launch queries in a WebApi controller
+# DSA002
+Don't use an Entity Framework `DbSet` to launch queries in a WebApi controller.
 - **Category**: Design
 - **Severity**: Warning ⚠
 - **Description**: [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.
@@ -101,7 +103,8 @@ public class MyEntitiesController : Microsoft.AspNetCore.Mvc.ControllerBase
 
 ---
 
-# DSA003 - Use `IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`
+# DSA003
+Use `IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`.
 - **Category**: Code smells
 - **Severity**: Warning ⚠
 - **Description**: Usually, business logics distinguish between "string with content", and "string NULL or without meaningfull content". Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content". In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available. Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
@@ -129,7 +132,8 @@ public class MyClass
 
 ---
 
-# DSA004 - Use `DateTime.UtcNow` instead of `DateTime.UtcNow`
+# DSA004
+Use `DateTime.UtcNow` instead of `DateTime.UtcNow`.
 - **Category**: Code smells
 - **Severity**: Warning ⚠
 - **Description**: Using `DateTime.Now` into business logics potentially leads to many different problems:
