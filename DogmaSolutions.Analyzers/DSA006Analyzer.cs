@@ -42,12 +42,11 @@ namespace DogmaSolutions.Analyzers
         [
             typeof(Exception),
             typeof(SystemException),
+            typeof(ApplicationException),
             typeof(IndexOutOfRangeException),
             typeof(NullReferenceException),
             typeof(OutOfMemoryException),
-            typeof(ExecutionEngineException),
-            typeof(ApplicationException),
-            typeof(ArgumentNullException)
+            typeof(ExecutionEngineException)
         ];
 
         public override void Initialize(AnalysisContext context)
