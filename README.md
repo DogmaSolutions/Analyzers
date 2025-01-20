@@ -42,6 +42,13 @@ This is a typical violation of the ["Single Responsibility" rule](https://en.wik
 In order to fix the problem, the code could be modified in order to rely on the ["Indirection pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Indirection) and maximize the ["Low coupling evalutative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.
 Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
 
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA001: WebApi controller methods should not contain data-manipulation business logics through a LINQ query expression.
+dotnet_diagnostic.DSA001.severity = error
+```
+
 ## Code sample
 ```csharp
 public class MyEntitiesController : ControllerBase
@@ -92,6 +99,12 @@ This is a typical violation of the ["Single Responsibility" rule](https://en.wik
 In order to fix the problem, the code could be modified in order to rely on the ["Indirection pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Indirection) and maximize the ["Low coupling evalutative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.   
 Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
 
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA002: WebApi controller methods should not contain data-manipulation business logics through a LINQ fluent query.
+dotnet_diagnostic.DSA002.severity = error
+```
 
 ## Code sample
 ```csharp
@@ -137,6 +150,13 @@ In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written wh
 ## Fix / Mitigation
 Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
 
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA003: Use String.IsNullOrWhiteSpace instead of String.IsNullOrEmpty
+dotnet_diagnostic.DSA003.severity = error
+```
+
 ## Code sample
 ```csharp
 public class MyClass
@@ -178,6 +198,12 @@ Cit:
 ## Fix / Mitigation
 Don't use `DateTime.Now`. Use `DateTime.UtcNow` instead
 
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA004: Use DateTime.UtcNow instead of DateTime.Now
+dotnet_diagnostic.DSA004.severity = error
+```
 
 ## Code sample
 ```csharp
@@ -224,6 +250,12 @@ This is particularly impacting in:
 ## Fix/Mitigation
 In order to avoid problems, set a `var now = DateTime.UtcNow` variable at the top of the method, or at the beginning of an execution flow/algorithm, and reuse that variable in all places instead of `DateTime.***Now`
 
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA005: Potential non-deterministic point-in-time execution
+dotnet_diagnostic.DSA005.severity = error
+```
 
 ## Code sample
 ```csharp
