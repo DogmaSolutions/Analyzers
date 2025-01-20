@@ -193,7 +193,10 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Referencing multiple times `DateTime.Now` or `DateTime.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution.
+        ///   Looks up a localized string similar to Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution.  
+        ///        In order to avoid problems, apply one of these:  
+        ///        - When measuring elapsed time, use a `StopWatch.StartNew()` combined with `StopWatch.Elapsed`  
+        ///        - When NOT measuring elapsed time, set a `var now = DateTime.UtcNow` variable at the top of the method, or at the beginning of an execution flow/algorithm, and reuse that variable in all pl [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string DSA005AnalyzerMessageFormat {
             get {

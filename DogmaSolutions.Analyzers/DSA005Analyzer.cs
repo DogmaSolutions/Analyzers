@@ -51,10 +51,11 @@ namespace DogmaSolutions.Analyzers
             var methodDeclaration = (MethodDeclarationSyntax)context.Node;
 
             // Find all invocations of DateTime.Now within the method body
-            var dateTimeNowInvocations = methodDeclaration.DescendantNodes().OfType<MemberAccessExpressionSyntax>()
-                .Where(m => m.Expression is IdentifierNameSyntax identifier &&
-                            identifier.Identifier.ValueText == "DateTime" &&
-                            (m.Name?.Identifier.ValueText == "Now" || m.Name?.Identifier.ValueText == "UtcNow"));
+            var dateTimeNowInvocations = methodDeclaration.DescendantNodes().
+                OfType<MemberAccessExpressionSyntax>().
+                Where(
+                    m => m.Expression is IdentifierNameSyntax { Identifier.ValueText: "DateTime" or "DateTimeOffset" } &&
+                         m.Name?.Identifier.ValueText is "Now" or "UtcNow");
 
             // Check if there are multiple occurrences
             if (dateTimeNowInvocations.Count() > 1)

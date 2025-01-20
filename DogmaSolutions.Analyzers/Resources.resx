@@ -177,7 +177,11 @@ In order to avoid problems, set a `var now = DateTime.UtcNow` variable at the to
 </value>
   </data>
     <data name="DSA005AnalyzerMessageFormat" xml:space="preserve">
-    <value>Referencing multiple times `DateTime.Now` or `DateTime.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution</value>
+    <value>Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution.  
+        In order to avoid problems, apply one of these:  
+        - When measuring elapsed time, use a `StopWatch.StartNew()` combined with `StopWatch.Elapsed`  
+        - When NOT measuring elapsed time, set a `var now = DateTime.UtcNow` variable at the top of the method, or at the beginning of an execution flow/algorithm, and reuse that variable in all places instead of `DateTime.***Now`.        
+    </value>
   </data>
     <data name="DSA005AnalyzerTitle" xml:space="preserve">
     <value>Potential non-deterministic point-in-time execution</value>
