@@ -21,6 +21,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                          |⚠|✅|❌|
 | [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                            |⚠|✅|❌|
 | [DSA005](#dsa005) | Code Smells | Potential non-deterministic point-in-time execution                                                                                                                                                        |⛔|✅|❌|
+| [DSA006](#dsa006) | Code Smells | General exceptions should not be thrown by user code                                                                                                                                                       |⛔|✅|❌|~~~~
 
 ---
        
