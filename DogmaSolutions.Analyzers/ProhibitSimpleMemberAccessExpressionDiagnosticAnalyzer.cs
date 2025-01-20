@@ -9,7 +9,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace DogmaSolutions.Analyzers;
 
-[DiagnosticAnalyzer(LanguageNames.CSharp)]
 // ReSharper disable once InconsistentNaming
 public abstract class ProhibitSimpleMemberAccessExpressionDiagnosticAnalyzer<T> : DiagnosticAnalyzer
 {

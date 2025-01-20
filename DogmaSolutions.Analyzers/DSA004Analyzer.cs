@@ -7,8 +7,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace DogmaSolutions.Analyzers
 {
-    
-    
     /// <summary>
     /// Don't use <see cref="DateTime.Now"/>. Use <see cref="DateTime.UtcNow"/> instead
     /// </summary>

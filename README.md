@@ -14,12 +14,12 @@ Every rule is accompanied by the following information and clues:
 
 
 # Rules list
-| Id                | Category    | Description                                                                                                                                                                                                |Severity|Is enabled|Code fix|
-|-------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------:|:--------:|:------:|
+| Id                | Category    | Description                                                                                                                                                                                             |Severity|Is enabled|Code fix|
+|-------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------:|:--------:|:------:|
 | [DSA001](#dsa001) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. |⚠|✅|❌|
-| [DSA002](#dsa002) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.     |⚠|✅|❌|
-| [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                          |⚠|✅|❌|
-| [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.UtcNow`                                                                                                                                                         |⚠|✅|❌|
+| [DSA002](#dsa002) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.  |⚠|✅|❌|
+| [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                       |⚠|✅|❌|
+| [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                         |⚠|✅|❌|
 
 ---
        
@@ -133,7 +133,7 @@ public class MyClass
 ---
 
 # DSA004
-Use `DateTime.UtcNow` instead of `DateTime.UtcNow`.
+Use `DateTime.UtcNow` instead of `DateTime.Now`.
 - **Category**: Code smells
 - **Severity**: Warning ⚠
 - **Description**: Using `DateTime.Now` into business logics potentially leads to many different problems:
