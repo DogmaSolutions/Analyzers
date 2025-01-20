@@ -178,5 +178,36 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA004AnalyzerTitle", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An execution flow must always be as deterministic as possible.
+        ///This means that all decisions inside a scope or algorithm must be performed on a &quot;stable&quot; and immutable set of parameters/conditions.
+        ///When dealing with dates and times, always ensure that the point-in-time reference is fixed, otherwise the algorithm would work on a &quot;sliding window&quot;, leading to unpredictable results.
+        ///This is particularly impacting in datasource-dependent flows, slow algorithms, and in-between legal time changes.
+        ///Security-wise [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string DSA005AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA005AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Referencing multiple times `DateTime.Now` or `DateTime.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution.
+        /// </summary>
+        internal static string DSA005AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA005AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Potential non-deterministic point-in-time execution.
+        /// </summary>
+        internal static string DSA005AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA005AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

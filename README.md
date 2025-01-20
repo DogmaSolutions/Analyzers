@@ -14,12 +14,13 @@ Every rule is accompanied by the following information and clues:
 
 
 # Rules list
-| Id                | Category    | Description                                                                                                                                                                                             |Severity|Is enabled|Code fix|
-|-------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------:|:--------:|:------:|
+| Id                | Category    | Description                                                                                                                                                                                                |Severity|Is enabled|Code fix|
+|-------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------:|:--------:|:------:|
 | [DSA001](#dsa001) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. |⚠|✅|❌|
-| [DSA002](#dsa002) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.  |⚠|✅|❌|
-| [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                       |⚠|✅|❌|
-| [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                         |⚠|✅|❌|
+| [DSA002](#dsa002) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.     |⚠|✅|❌|
+| [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                          |⚠|✅|❌|
+| [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                            |⚠|✅|❌|
+| [DSA005](#dsa005) | Code Smells | Potential non-deterministic point-in-time execution                                                                                                                                                        |⛔|✅|❌|
 
 ---
        
@@ -27,10 +28,19 @@ Every rule is accompanied by the following information and clues:
 Don't use Entity Framework to launch LINQ queries in a WebApi controller.
 - **Category**: Design
 - **Severity**: Warning ⚠
-- **Description**: [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**.
-- **Motivation and fix**: A [WebApi controller method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) is using [Entity Framework DbContext](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext) to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
-- **Knowledge base**: this is a typical violation of the ["Single Responsibility" rule](https://en.wikipedia.org/wiki/Single-responsibility_principle) of the ["SOLID" principles](https://en.wikipedia.org/wiki/SOLID). In order to fix the problem, the code could be modified in order to rely on the ["Indirection pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Indirection) and maximize the ["Low coupling evalutative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.
-- **See also**: [DSA002](#dsa002)
+- **Related rules**: [DSA002](#dsa002)
+
+## Description
+[WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**.  
+In the analyzed code, a [WebApi controller method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) is using [Entity Framework DbContext](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext) to directly manipulate data through a LINQ query expression.  
+WebApi controllers should not contain data-manipulation business logics. 
+
+## See also
+This is a typical violation of the ["Single Responsibility" rule](https://en.wikipedia.org/wiki/Single-responsibility_principle) of the ["SOLID" principles](https://en.wikipedia.org/wiki/SOLID), because the controller is doing too many things outside its own purpose.  
+
+## Fix / Mitigation
+In order to fix the problem, the code could be modified in order to rely on the ["Indirection pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Indirection) and maximize the ["Low coupling evalutative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.
+Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
 
 ## Code sample
 ```csharp
@@ -44,7 +54,7 @@ public class MyEntitiesController : ControllerBase
  }
 
  [HttpGet]
- public IEnumerable<MyEntity> GetAll0()
+ public IEnumerable<MyEntity> GetAll_NotOk()
  {
      // this WILL trigger the rule
      var query = from entities in DbContext.MyEntities where entities.Id > 0 select entities;
@@ -52,7 +62,7 @@ public class MyEntitiesController : ControllerBase
  }
 
  [HttpPost]
- public IEnumerable<long> GetAll1()
+ public IEnumerable<long> GetAll_Ok()
  {
      // this WILL NOT trigger the rule
      var query = DbContext.MyEntities.Where(entities => entities.Id > 0).Select(entities=>entities.Id);
@@ -67,10 +77,21 @@ public class MyEntitiesController : ControllerBase
 Don't use an Entity Framework `DbSet` to launch queries in a WebApi controller.
 - **Category**: Design
 - **Severity**: Warning ⚠
-- **Description**: [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.
-- **Motivation and fix**: A [WebApi controller method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) is using [Entity Framework DbSet](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbset-1) to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
-- **Knowledge base**: this is a typical violation of the ["Single Responsibility" rule](https://en.wikipedia.org/wiki/Single-responsibility_principle) of the ["SOLID" principles](https://en.wikipedia.org/wiki/SOLID). In order to fix the problem, the code could be modified in order to rely on the ["Indirection pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Indirection) and maximize the ["Low coupling evalutative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.
-- **See also**: [DSA001](#dsa001)
+- **Related rules**: [DSA001](#dsa001)
+
+
+## Description
+[WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.  
+In the analyzed code, a [WebApi controller method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) is using [Entity Framework DbSet](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbset-1) to directly manipulate data through a LINQ fluent query.  
+WebApi controllers should not contain data-manipulation business logics.
+
+## See also
+This is a typical violation of the ["Single Responsibility" rule](https://en.wikipedia.org/wiki/Single-responsibility_principle) of the ["SOLID" principles](https://en.wikipedia.org/wiki/SOLID), because the controller is doing too many things outside its own purpose. 
+
+## Fix / Mitigation
+In order to fix the problem, the code could be modified in order to rely on the ["Indirection pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Indirection) and maximize the ["Low coupling evalutative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.   
+Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
+
 
 ## Code sample
 ```csharp
@@ -107,8 +128,14 @@ public class MyEntitiesController : Microsoft.AspNetCore.Mvc.ControllerBase
 Use `IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`.
 - **Category**: Code smells
 - **Severity**: Warning ⚠
-- **Description**: Usually, business logics distinguish between "string with content", and "string NULL or without meaningfull content". Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content". In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available. Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
-- **Fix**: Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
+
+## Description
+Usually, business logics distinguish between "string with content", and "string NULL or without meaningfull content".  
+Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content".  
+In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available. 
+
+## Fix / Mitigation
+Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.
 
 ## Code sample
 ```csharp
@@ -136,16 +163,20 @@ public class MyClass
 Use `DateTime.UtcNow` instead of `DateTime.Now`.
 - **Category**: Code smells
 - **Severity**: Warning ⚠
-- **Description**: Using `DateTime.Now` into business logics potentially leads to many different problems:
-  - Incoherence between nodes or processes running in different timezones (even in the same country, i.e. USA, Soviet Union, China, etc)
-  - Unexpected behaviours in-between legal time changes
-  - Code conversion problems and loss of timezone info when saving/loading data to/from a datastore
 
-- **See also**  
+## Description
+Using `DateTime.Now` into business logics potentially leads to many different problems:
+- Incoherence between nodes or processes running in different timezones (even in the same country, i.e. USA, Soviet Union, China, etc)
+- Unexpected behaviours in-between legal time changes
+- Code conversion problems and loss of timezone info when saving/loading data to/from a datastore
+
+## See also  
 Security-wise, this is correlated to the CWE category “7PK” ([CWE-361](https://cwe.mitre.org/data/definitions/361.html))  
 Cit:
 *"This category represents one of the phyla in the Seven Pernicious Kingdoms vulnerability classification. It includes weaknesses related to the improper management of time and state in an environment that supports simultaneous or near-simultaneous computation by multiple systems, processes, or threads. According to the authors of the Seven Pernicious Kingdoms, "Distributed computation is about time and state. That is, in order for more than one component to communicate, state must be shared, and all that takes time. Most programmers anthropomorphize their work. They think about one thread of control carrying out the entire program in the same way they would if they had to do the job themselves. Modern computers, however, switch between tasks very quickly, and in multi-core, multi-CPU, or distributed systems, two events may take place at exactly the same time. Defects rush to fill the gap between the programmer's model of how a program executes and what happens in reality. These defects are related to unexpected interactions between threads, processes, time, and information. These interactions happen through shared state: semaphores, variables, the file system, and, basically, anything that can store information."*
-- **Fix**: Don't use `DateTime.Now`. Use `DateTime.UtcNow` instead
+
+## Fix / Mitigation
+Don't use `DateTime.Now`. Use `DateTime.UtcNow` instead
 
 
 ## Code sample
@@ -163,6 +194,62 @@ public class MyClass
  {
      // this WILL trigger the rule
      return string.IsNullOrEmpty(s);
+ }
+
+}
+```
+
+---
+
+# DSA005
+Potential non-deterministic point-in-time execution due to multiple usages of `DateTime.UtcNow` or `DateTime.Now` in the same method.
+- **Category**: Code smells
+- **Severity**: Error ⛔
+
+ 
+## Description
+An execution flow must always be as deterministic as possible.
+This means that all decisions inside a scope or algorithm must be performed on a "stable" and immutable set of parameters/conditions.
+When dealing with dates and times, always ensure that the point-in-time reference is fixed, otherwise the algorithm would work on a "sliding window", leading to unpredictable results.
+This is particularly impacting in:
+- datasource-dependent flows
+- slow-running algorithms
+- and in-between legal time changes.  
+
+## See also  
+  Security-wise, this is correlated to the CWE category “7PK” ([CWE-361](https://cwe.mitre.org/data/definitions/361.html))  
+  Cit:
+  *"This category represents one of the phyla in the Seven Pernicious Kingdoms vulnerability classification. It includes weaknesses related to the improper management of time and state in an environment that supports simultaneous or near-simultaneous computation by multiple systems, processes, or threads. According to the authors of the Seven Pernicious Kingdoms, "Distributed computation is about time and state. That is, in order for more than one component to communicate, state must be shared, and all that takes time. Most programmers anthropomorphize their work. They think about one thread of control carrying out the entire program in the same way they would if they had to do the job themselves. Modern computers, however, switch between tasks very quickly, and in multi-core, multi-CPU, or distributed systems, two events may take place at exactly the same time. Defects rush to fill the gap between the programmer's model of how a program executes and what happens in reality. These defects are related to unexpected interactions between threads, processes, time, and information. These interactions happen through shared state: semaphores, variables, the file system, and, basically, anything that can store information."*
+
+## Fix/Mitigation
+In order to avoid problems, set a `var now = DateTime.UtcNow` variable at the top of the method, or at the beginning of an execution flow/algorithm, and reuse that variable in all places instead of `DateTime.***Now`
+
+
+## Code sample
+```csharp
+public class MyClass
+{
+
+ public bool IsOk(string s)
+ {     
+     var now = DateTime.UtcNow; // fixed point-in-time reference
+     
+     DoSomething(now); // this WILL NOT trigger the rule
+     
+     for(int i; i < 10; i++)
+     {
+       DoOtherThings(now);  // this WILL NOT trigger the rule
+     }
+ }
+
+ public bool IsNotOk(string s)
+ {   
+     DoSomething(DateTime.UtcNow); // this WILL trigger the rule
+     
+     for(int i; i < 10; i++)
+     {
+       DoOtherThings(DateTime.UtcNow);  // this WILL trigger the rule
+     }
  }
 
 }
