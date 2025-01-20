@@ -212,5 +212,36 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA005AnalyzerTitle", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.  
+        ///This is a bad smell, and could lead to stability and security concerns.  
+        ///General exceptions that triggers this rule are: Exception, SystemException, ApplicationException, IndexOutOfRangeException, NullReferenceException, OutOfMemoryException and ExecutionEngineException prevents calling methods from handling true, system-ge [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string DSA006AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA006AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.  
+        ///This is a bad smell, and could lead to stability and security concerns.  
+        ///General exceptions that triggers this rule are: Exception, SystemException, ApplicationException, IndexOutOfRangeException, NullReferenceException, OutOfMemoryException and ExecutionEngineException prevents calling methods from handling true, system-ge [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string DSA006AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA006AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to General exceptions should not be thrown by user code.
+        /// </summary>
+        internal static string DSA006AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA006AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

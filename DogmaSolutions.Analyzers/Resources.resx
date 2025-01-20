@@ -186,4 +186,22 @@ In order to avoid problems, set a `var now = DateTime.UtcNow` variable at the to
     <data name="DSA005AnalyzerTitle" xml:space="preserve">
     <value>Potential non-deterministic point-in-time execution</value>
   </data>
+
+
+    <data name="DSA006AnalyzerDescription" xml:space="preserve">
+    <value>General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.  
+This is a bad smell, and could lead to stability and security concerns.  
+General exceptions that triggers this rule are: Exception, SystemException, ApplicationException, IndexOutOfRangeException, NullReferenceException, OutOfMemoryException and ExecutionEngineException prevents calling methods from handling true, system-generated exceptions differently than application-generated errors.    
+See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://cwe.mitre.org/data/definitions/397)
+</value>
+  </data>
+    <data name="DSA006AnalyzerMessageFormat" xml:space="preserve">
+    <value>General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.  
+This is a bad smell, and could lead to stability and security concerns.  
+General exceptions that triggers this rule are: Exception, SystemException, ApplicationException, IndexOutOfRangeException, NullReferenceException, OutOfMemoryException and ExecutionEngineException prevents calling methods from handling true, system-generated exceptions differently than application-generated errors.        
+    </value>
+  </data>
+    <data name="DSA006AnalyzerTitle" xml:space="preserve">
+    <value>General exceptions should not be thrown by user code</value>
+  </data>
 </root>

@@ -1,0 +1,10 @@
+### New Rules
+
+| Rule ID | Category    | Severity | Notes          |
+|---------|-------------|----------|----------------|
+| DSA001  | Design      | Warning  | DSA001Analyzer |
+| DSA002  | Design      | Warning  | DSA002Analyzer |
+| DSA003  | Code Smells | Warning  | DSA003Analyzer |
+| DSA004  | Code Smells | Warning  | DSA004Analyzer |
+| DSA005  | Code Smells | Warning  | DSA005Analyzer |
+| DSA006  | Code Smells | Warning  | DSA006Analyzer |

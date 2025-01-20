@@ -291,6 +291,59 @@ public class MyClass
 
 ---
 
+# DSA006
+General exceptions should not be thrown by user code.
+- **Category**: Code smells
+- **Severity**: Error ⛔
+
+
+## Description
+General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.  
+This is a bad smell, and could lead to stability and security concerns.  
+General exceptions that triggers this rule are:
+- `Exception`
+- `SystemException`
+- `ApplicationException`
+- `IndexOutOfRangeException`
+- `NullReferenceException`
+- `OutOfMemoryException`
+- `ExecutionEngineException`
+
+## See also
+Security-wise, this is correlated to [MITRE, CWE-397 - Declaration of Throws for Generic Exception](https://cwe.mitre.org/data/definitions/397)
+
+## Fix/Mitigation
+Use scenario-specific exceptions, i.e. `ArgumentException`, `ArgumentNullException`, `InvalidOperationException`, etc.
+
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA006: General exceptions should never be thrown. 
+dotnet_diagnostic.DSA006.severity = error
+```
+
+## Code sample
+```csharp
+public class MyClass
+{
+    
+    public void IsOk(int id)
+    {     
+      if(id < 0) // this is OK, and will NOT be matched by the rule
+        throw new ArgumentException(nameof(id),"Invalid id");
+    }
+
+    public void IsNotOk(int id)
+    {     
+      if(id < 0) // this NOT OK, and will be matched by the rule
+        throw new SystemException("Invalid id");
+    }
+
+}
+```
+
+---
+
 # Installation
 Just download and install the NuGet package  
 [![DogmaSolutions.Analyzers on NuGet](https://img.shields.io/nuget/v/DogmaSolutions.Analyzers.svg)](https://www.nuget.org/packages/DogmaSolutions.Analyzers/) 
