@@ -138,13 +138,13 @@ namespace WebApplication1.Controllers
          test.ExpectedDiagnostics.Add(
             VerifyCS.Diagnostic(DSA001Analyzer.DiagnosticId).
                WithMessage(
-                  @"The WebApi method 'MyEntitiesController.GetAll0' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").
+                  @"The WebApi method 'MyEntitiesController.GetAll0' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001").
                WithLocation(0));
 
          test.ExpectedDiagnostics.Add(
             VerifyCS.Diagnostic(DSA001Analyzer.DiagnosticId).
                WithMessage(
-                  @"The WebApi method 'InheritedEntitiesController.GetAll3' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.").
+                  @"The WebApi method 'InheritedEntitiesController.GetAll3' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001").
                WithLocation(3));
 
          await test.RunAsync().ConfigureAwait(false);

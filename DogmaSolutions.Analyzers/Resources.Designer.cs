@@ -71,7 +71,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service..
+        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001.
         /// </summary>
         internal static string DSA001AnalyzerMessageFormat {
             get {
@@ -100,7 +100,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is invoking the method &apos;{1}&apos; of the DbSet &apos;{2}&apos; to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service..
+        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is invoking the method &apos;{1}&apos; of the DbSet &apos;{2}&apos; to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002.
         /// </summary>
         internal static string DSA002AnalyzerMessageFormat {
             get {
@@ -162,7 +162,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to In a i18n-compliant system, it&apos;s almost never a good idea to use System.DateTime.Now. Please use System.DateTime.UtcNow instead. If you are sure you want to use System.DateTime.Now, use a &apos;#pragma warning disable DSA004 / #pragma warning restore DSA004&apos; directives pair..
+        ///   Looks up a localized string similar to In a i18n-compliant system, it&apos;s almost never a good idea to use System.DateTime.Now. Please use System.DateTime.UtcNow instead. If you are sure you want to use System.DateTime.Now, use a &apos;#pragma warning disable DSA004 / #pragma warning restore DSA004&apos; directives pair. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa004.
         /// </summary>
         internal static string DSA004AnalyzerMessageFormat {
             get {
@@ -193,10 +193,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution.  
-        ///        In order to avoid problems, apply one of these:  
-        ///        - When measuring elapsed time, use a `StopWatch.StartNew()` combined with `StopWatch.Elapsed`  
-        ///        - When NOT measuring elapsed time, set a `var now = DateTime.UtcNow` variable at the top of the method, or at the beginning of an execution flow/algorithm, and reuse that variable in all pl [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution. In order to avoid problems, apply one of these solutions. When measuring elapsed time, use a `StopWatch.StartNew()` combined with `StopWatch.Elapsed`. When NOT measuring elapsed time, set a `var now = DateTime.UtcNow` variable at the top of the method, or at the beginning of an execution flow/algorithm, and reuse that variable in all places instead of `DateTime. [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string DSA005AnalyzerMessageFormat {
             get {
@@ -225,9 +222,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.  
-        ///This is a bad smell, and could lead to stability and security concerns.  
-        ///General exceptions that triggers this rule are: Exception, SystemException, ApplicationException, IndexOutOfRangeException, NullReferenceException, OutOfMemoryException and ExecutionEngineException prevents calling methods from handling true, system-ge [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors. This is a bad smell, and could lead to stability and security concerns. General exceptions that triggers this rule are: Exception, SystemException, ApplicationException, IndexOutOfRangeException, NullReferenceException, OutOfMemoryException and ExecutionEngineException prevents calling methods from handling true, system-generate [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string DSA006AnalyzerMessageFormat {
             get {
@@ -255,7 +250,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;) to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs.       
+        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;) to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007).       
         ///    .
         /// </summary>
         internal static string DSA007AnalyzerMessageFormat {
