@@ -6,5 +6,6 @@
 | DSA002  | Design      | Warning  | DSA002Analyzer |
 | DSA003  | Code Smells | Warning  | DSA003Analyzer |
 | DSA004  | Code Smells | Warning  | DSA004Analyzer |
-| DSA005  | Code Smells | Warning  | DSA005Analyzer |
-| DSA006  | Code Smells | Warning  | DSA006Analyzer |
+| DSA005  | Code Smells | Error  | DSA005Analyzer |
+| DSA006  | Code Smells | Error    | DSA006Analyzer |
+| DSA007  | Code Smells | Warning  | DSA007Analyzer |
