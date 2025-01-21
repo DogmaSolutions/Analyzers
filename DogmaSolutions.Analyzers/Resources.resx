@@ -204,4 +204,17 @@ General exceptions that triggers this rule are: Exception, SystemException, Appl
     <data name="DSA006AnalyzerTitle" xml:space="preserve">
     <value>General exceptions should not be thrown by user code</value>
   </data>
+
+
+    <data name="DSA007AnalyzerDescription" xml:space="preserve">
+    <value>When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking") to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs.
+</value>
+  </data>
+    <data name="DSA007AnalyzerMessageFormat" xml:space="preserve">
+    <value>When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking") to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs.       
+    </value>
+  </data>
+    <data name="DSA007AnalyzerTitle" xml:space="preserve">
+    <value>Use the "if-lock-if" (aka "double checked locking") initialization pattern instead of a simple lock</value>
+  </data>
 </root>

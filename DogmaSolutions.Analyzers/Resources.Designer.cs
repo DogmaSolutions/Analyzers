@@ -243,5 +243,34 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA006AnalyzerTitle", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;) to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs.
+        ///.
+        /// </summary>
+        internal static string DSA007AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA007AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;) to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs.       
+        ///    .
+        /// </summary>
+        internal static string DSA007AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA007AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;) initialization pattern instead of a simple lock.
+        /// </summary>
+        internal static string DSA007AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA007AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

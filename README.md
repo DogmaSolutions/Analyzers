@@ -21,7 +21,8 @@ Every rule is accompanied by the following information and clues:
 | [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                          |⚠|✅|❌|
 | [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                            |⚠|✅|❌|
 | [DSA005](#dsa005) | Code Smells | Potential non-deterministic point-in-time execution                                                                                                                                                        |⛔|✅|❌|
-| [DSA006](#dsa006) | Code Smells | General exceptions should not be thrown by user code                                                                                                                                                       |⛔|✅|❌|~~~~
+| [DSA006](#dsa006) | Code Smells | General exceptions should not be thrown by user code|⛔|✅|❌|
+| [DSA007](#dsa007) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")|⚠|✅|❌|
 
 ---
        
@@ -342,6 +343,97 @@ public class MyClass
 
 }
 ```
+
+---
+
+# DSA007
+When initializing a lazy field (and in particular fields contains the instance of a singleton object), use a robust locking pattern, i.e. the “if-lock-if” (aka “double checked locking”)
+- **Category**: Code smells
+- **Severity**: Warning ⚠
+
+
+## Description
+Cit. Wikipedia:  
+*The "double-checked locking" (also known as "double-checked locking optimization") is a software design pattern used to reduce the overhead of acquiring a lock by testing the locking criterion (the "lock hint") before acquiring the lock. 
+Locking occurs only if the locking criterion check indicates that locking is required.
+The pattern is typically used to reduce locking overhead when implementing "lazy initialization" in a multi-threaded environment, especially as part of the Singleton pattern. 
+Lazy initialization avoids initializing a value until the first time it is accessed.*
+
+## See also
+- [Wikipedia: Double-checked_locking](https://en.wikipedia.org/wiki/Double-checked_locking) 
+- [Microsoft Documentation: Managed Threading Best Practices](https://docs.microsoft.com/en-us/dotnet/standard/threading/managed-threading-best-practices)
+- [MITRE, CWE-667: Improper Locking (4.16)](https://cwe.mitre.org/data/definitions/667.html)
+- [MITRE, CWE-413: Improper Resource Locking (4.16)](https://cwe.mitre.org/data/definitions/413.html)
+
+## Fix/Mitigation
+Instead of just writing something like this....
+
+```cs
+public class MyClass 
+{    
+  private string _theField;
+  private readonly object _theLock = new object();
+
+  public void IsOk(int id)
+  {     
+    lock(_theLock){ // ❌ too early, very wastefull, poor performances
+        if(_theField == null) { 
+           _theField = "The Value";
+        }
+    }
+  }
+}
+```
+
+... or something like this....
+
+```cs
+public class MyClass 
+{    
+  private string _theField;
+  private readonly object _theLock = new object();
+
+  public void IsOk(int id)
+  {     
+    if(_theField == null) { 
+        lock(_theLock){ // ❌ too late, and thread-unsafe      
+           _theField = "The Value";
+        }
+    }
+  }
+}
+```
+
+... use the following *if-lock-if* pattern:
+
+```cs
+public class MyClass 
+{    
+  private string _theField;
+  private readonly object _theLock = new object();
+
+  public void IsOk(int id)
+  {     
+    if(_theField == null) { // ✅ efficient and fast pre-check
+        lock(_theLock){ // ✅ protects againts race conditions and multithreading
+            if(_theField == null) { // ✅ only if really needed, safely initialize
+               _theField = "The Value";
+            }
+        }
+    }
+  }
+}
+```
+
+
+
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA007: Use the double-checked lazy initialization pattern
+dotnet_diagnostic.DSA007.severity = warning
+```
+
 
 ---
 
