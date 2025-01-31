@@ -379,7 +379,7 @@ public class MyClass
   {     
     lock(_theLock){ // ❌ too early, very wastefull, poor performances
         if(_theField == null) { 
-           _theField = "The Value";
+           _theField = ComputeExpensiveValue(id);
         }
     }
   }
@@ -398,7 +398,7 @@ public class MyClass
   {     
     if(_theField == null) { 
         lock(_theLock){ // ❌ too late, and thread-unsafe      
-           _theField = "The Value";
+           _theField = ComputeExpensiveValue(id); // ⚠ this could be executed multiple times !
         }
     }
   }
@@ -415,10 +415,10 @@ public class MyClass
 
   public void IsOk(int id)
   {     
-    if(_theField == null) { // ✅ efficient and fast pre-check
+    if(_theField == null) { // ✅ efficient and fast pre-check (few nanoseconds)
         lock(_theLock){ // ✅ protects againts race conditions and multithreading
             if(_theField == null) { // ✅ only if really needed, safely initialize
-               _theField = "The Value";
+               _theField = ComputeExpensiveValue(id); // ✅ guaranteed to be executed only once
             }
         }
     }
