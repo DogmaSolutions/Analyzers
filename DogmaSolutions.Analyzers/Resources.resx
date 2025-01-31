@@ -212,4 +212,29 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA007AnalyzerTitle" xml:space="preserve">
     <value>Use the "if-lock-if" (aka "double checked locking") initialization pattern instead of a simple lock</value>
   </data>
+
+    <data name="DSA008AnalyzerDescription" xml:space="preserve">
+    <value>Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable DateTime property. In reality, not-nullable types are ignored by the RequiredAttribute, so it doesn't make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008).
+</value>
+  </data>
+    <data name="DSA008AnalyzerMessageFormat" xml:space="preserve">
+    <value>The RequiredAttribute has no impact on a not-nullable DateTime property. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008).       
+    </value>
+  </data>
+    <data name="DSA008AnalyzerTitle" xml:space="preserve">
+    <value>Do not use the RequiredAttribute for a non-nullable DateTime property</value>
+  </data>
+
+
+    <data name="DSA009AnalyzerDescription" xml:space="preserve">
+    <value>Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable DateTimeOffset property. In reality, not-nullable types are ignored by the RequiredAttribute, so it doesn't make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009).
+</value>
+  </data>
+    <data name="DSA009AnalyzerMessageFormat" xml:space="preserve">
+    <value>The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009).       
+    </value>
+  </data>
+    <data name="DSA009AnalyzerTitle" xml:space="preserve">
+    <value>Do not use the RequiredAttribute for a non-nullable DateTimeOffset property</value>
+  </data>
 </root>

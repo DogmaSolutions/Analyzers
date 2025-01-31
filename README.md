@@ -14,16 +14,17 @@ Every rule is accompanied by the following information and clues:
 
 
 # Rules list
-| Id                | Category    | Description                                                                                                                                                                                                |Severity|Is enabled|Code fix|
-|-------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------:|:--------:|:------:|
-| [DSA001](#dsa001) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. |⚠|✅|❌|
-| [DSA002](#dsa002) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.     |⚠|✅|❌|
-| [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                          |⚠|✅|❌|
-| [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                            |⚠|✅|❌|
-| [DSA005](#dsa005) | Code Smells | Potential non-deterministic point-in-time execution                                                                                                                                                        |⛔|✅|❌|
-| [DSA006](#dsa006) | Code Smells | General exceptions should not be thrown by user code|⛔|✅|❌|
-| [DSA007](#dsa007) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")|⚠|✅|❌|
-
+| Id                | Category    | Description                                                                                                                                                                                                | Default severity |Is enabled|Code fix|
+|-------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------:|:--------:|:------:|
+| [DSA001](#dsa001) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. |    ⚠ Warning     |✅|❌|
+| [DSA002](#dsa002) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.|    ⚠ Warning     |✅|❌|
+| [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty` |    ⚠ Warning     |✅|❌|
+| [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`|    ⚠ Warning     |✅|❌|
+| [DSA005](#dsa005) | Code Smells | Potential non-deterministic point-in-time execution|     ⛔ Error      |✅|❌|
+| [DSA006](#dsa006) | Code Smells | General exceptions should not be thrown by user code|        ⛔ Error         |✅|❌|
+| [DSA007](#dsa007) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")|    ⚠ Warning     |✅|❌|
+| [DSA008](#dsa008) | Bug         | The Required Attribute has no impact on a not-nullable DateTime|        ⛔ Error         |✅|❌|
+| [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset|        ⛔ Error         |✅|❌|
 ---
        
 # DSA001
@@ -432,6 +433,69 @@ In order to change the severity level of this rule, change/add this line in the 
 ```
 # DSA007: Use the double-checked lazy initialization pattern
 dotnet_diagnostic.DSA007.severity = warning
+```
+
+
+---
+
+
+# DSA008
+The [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) has no impact on a not-nullable [DateTime](https://learn.microsoft.com/it-it/dotnet/api/system.datetime) property. 
+
+- **Category**: Bug
+- **Severity**: ⛔ Error
+
+
+## Description
+Is a common misunderstanding that the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) is somehow able to validate a not-nullable [DateTime](https://learn.microsoft.com/it-it/dotnet/api/system.datetime) property.  
+In reality, not-nullable, not-string types are ignored by the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute), so it doesn't make any sense to use it in this context.  
+
+## Fix/Mitigation
+Remove the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute), or make the property nullable.
+If a "valid date"-like validation is needed, use [Range Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute).
+
+## See also
+- [DSA009](#dsa009) - The Required Attribute has no impact on a not-nullable DateTimeOffset
+- [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute)
+- [Range Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute)
+- [DateTime](https://learn.microsoft.com/it-it/dotnet/api/system.datetime)
+
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA008: The Required Attribute has no impact on a not-nullable DateTime
+dotnet_diagnostic.DSA008.severity = warning
+```
+
+---
+
+
+# DSA009
+The [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) has no impact on a not-nullable [DateTimeOffset](https://learn.microsoft.com/it-it/dotnet/api/system.DateTimeOffset) property.
+
+- **Category**: Bug
+- **Severity**: ⛔ Error
+
+
+## Description
+Is a common misunderstanding that the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) is somehow able to validate a not-nullable [DateTimeOffset](https://learn.microsoft.com/it-it/dotnet/api/system.DateTimeOffset) property.  
+In reality, not-nullable, not-string types are ignored by the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute), so it doesn't make any sense to use it in this context.
+
+## Fix/Mitigation
+Remove the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute), or make the property nullable.
+If a "valid date"-like validation is needed, use [Range Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute).
+
+## See also
+- [DSA008](#dsa008) - The Required Attribute has no impact on a not-nullable DateTime
+- [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute)
+- [Range Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute)
+- [DateTimeOffset](https://learn.microsoft.com/it-it/dotnet/api/system.DateTimeOffset)
+
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA009: The Required Attribute has no impact on a not-nullable DateTimeOffset
+dotnet_diagnostic.DSA009.severity = warning
 ```
 
 

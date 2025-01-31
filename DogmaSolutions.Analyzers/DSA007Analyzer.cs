@@ -25,7 +25,7 @@ namespace DogmaSolutions.Analyzers
         private static readonly LocalizableString _description =
             new LocalizableResourceString(nameof(Resources.DSA007AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
 
-        private const string Category = RuleCategories.Design;
+        private const string Category = RuleCategories.CodeSmell;
 
         private static readonly DiagnosticDescriptor _rule = new(
             DiagnosticId,

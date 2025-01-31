@@ -267,5 +267,63 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA007AnalyzerTitle", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable DateTime property. In reality, not-nullable types are ignored by the RequiredAttribute, so it doesn&apos;t make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008).
+        ///.
+        /// </summary>
+        internal static string DSA008AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA008AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTime property. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008).       
+        ///    .
+        /// </summary>
+        internal static string DSA008AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA008AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not use the RequiredAttribute for a non-nullable DateTime property.
+        /// </summary>
+        internal static string DSA008AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA008AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable DateTimeOffset property. In reality, not-nullable types are ignored by the RequiredAttribute, so it doesn&apos;t make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009).
+        ///.
+        /// </summary>
+        internal static string DSA009AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA009AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009).       
+        ///    .
+        /// </summary>
+        internal static string DSA009AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA009AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not use the RequiredAttribute for a non-nullable DateTimeOffset property.
+        /// </summary>
+        internal static string DSA009AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA009AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

@@ -9,3 +9,5 @@
 | DSA005  | Code Smells | Error  | DSA005Analyzer |
 | DSA006  | Code Smells | Error    | DSA006Analyzer |
 | DSA007  | Code Smells | Warning  | DSA007Analyzer |
+| DSA008  | Bug         | Error  | DSA008Analyzer |
+| DSA009  | Bug         | Error  | DSA009Analyzer |
