@@ -123,7 +123,7 @@ WebApi controllers should not contain data-manipulation business logics.
 Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.</value>
   </data>
     <data name="DSA001AnalyzerMessageFormat" xml:space="preserve">
-    <value>The WebApi method '{0}' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001</value>
+    <value>The WebApi method '{0}' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001</value>
   </data>
     <data name="DSA001AnalyzerTitle" xml:space="preserve">
     <value>WebApi controllers should not contain data-manipulation business logics through a LINQ query expression</value>
@@ -134,7 +134,7 @@ WebApi controllers should not contain data-manipulation business logics.
 Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.</value>
   </data>
     <data name="DSA002AnalyzerMessageFormat" xml:space="preserve">
-    <value>The WebApi method '{0}' is invoking the method '{1}' of the DbSet '{2}' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002</value>
+    <value>The WebApi method '{0}' is invoking the method '{1}' of the DbSet '{2}' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002</value>
   </data>
     <data name="DSA002AnalyzerTitle" xml:space="preserve">
     <value>WebApi controllers should not contain data-manipulation business logics through a LINQ fluent query</value>
@@ -143,7 +143,7 @@ Move the data-manipulation business logics into a more appropriate class, or eve
     <value>Usually, business logics distinguish between "string with content", and "string NULL or without meaningfull content". Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content". In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available. Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead.</value>
   </data>
     <data name="DSA003AnalyzerMessageFormat" xml:space="preserve">
-    <value>Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead. Usually, business logics distinguish between "string with content", and "string NULL or without meaningfull content". Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content". In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa003</value>
+    <value>Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa003</value>
   </data>
     <data name="DSA003AnalyzerTitle" xml:space="preserve">
     <value>Don't use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead</value>
@@ -161,7 +161,7 @@ Cit:
 </value>
   </data>
     <data name="DSA004AnalyzerMessageFormat" xml:space="preserve">
-    <value>In a i18n-compliant system, it's almost never a good idea to use System.DateTime.Now. Please use System.DateTime.UtcNow instead. If you are sure you want to use System.DateTime.Now, use a '#pragma warning disable DSA004 / #pragma warning restore DSA004' directives pair. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa004</value>
+    <value>In a i18n-compliant system, it's almost never a good idea to use System.DateTime.Now. Use System.DateTime.UtcNow instead. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa004</value>
   </data>
     <data name="DSA004AnalyzerTitle" xml:space="preserve">
     <value>Don't use `DateTime.Now`. Use `DateTime.UtcNow` instead</value>
@@ -177,7 +177,7 @@ In order to avoid problems, set a `var now = DateTime.UtcNow` variable at the to
 </value>
   </data>
     <data name="DSA005AnalyzerMessageFormat" xml:space="preserve">
-    <value>Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution. In order to avoid problems, apply one of these solutions. When measuring elapsed time, use a `StopWatch.StartNew()` combined with `StopWatch.Elapsed`. When NOT measuring elapsed time, set a `var now = DateTime.UtcNow` variable at the top of the method, or at the beginning of an execution flow/algorithm, and reuse that variable in all places instead of `DateTime.***Now`. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa005        
+    <value>Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa005        
     </value>
   </data>
     <data name="DSA005AnalyzerTitle" xml:space="preserve">
@@ -206,7 +206,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
 </value>
   </data>
     <data name="DSA007AnalyzerMessageFormat" xml:space="preserve">
-    <value>When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking") to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007).       
+    <value>When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking"). See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007.       
     </value>
   </data>
     <data name="DSA007AnalyzerTitle" xml:space="preserve">
@@ -218,7 +218,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
 </value>
   </data>
     <data name="DSA008AnalyzerMessageFormat" xml:space="preserve">
-    <value>The RequiredAttribute has no impact on a not-nullable DateTime property. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008).       
+    <value>The RequiredAttribute has no impact on a not-nullable DateTime property. Remove the RequiredAttribute, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008.       
     </value>
   </data>
     <data name="DSA008AnalyzerTitle" xml:space="preserve">
@@ -231,7 +231,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
 </value>
   </data>
     <data name="DSA009AnalyzerMessageFormat" xml:space="preserve">
-    <value>The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009).       
+    <value>The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove the RequiredAttribute, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009.       
     </value>
   </data>
     <data name="DSA009AnalyzerTitle" xml:space="preserve">

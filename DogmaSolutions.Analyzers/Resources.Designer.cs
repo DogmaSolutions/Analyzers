@@ -71,7 +71,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001.
+        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001.
         /// </summary>
         internal static string DSA001AnalyzerMessageFormat {
             get {
@@ -100,7 +100,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is invoking the method &apos;{1}&apos; of the DbSet &apos;{2}&apos; to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. Move the data-manipulation business logics into a more appropriate class, or even better, an injected service. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002.
+        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is invoking the method &apos;{1}&apos; of the DbSet &apos;{2}&apos; to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002.
         /// </summary>
         internal static string DSA002AnalyzerMessageFormat {
             get {
@@ -127,7 +127,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Don&apos;t use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead. Usually, business logics distinguish between &quot;string with content&quot;, and &quot;string NULL or without meaningfull content&quot;. Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn&apos;t have &quot;meaningfull content&quot;. In most [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to Don&apos;t use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa003.
         /// </summary>
         internal static string DSA003AnalyzerMessageFormat {
             get {
@@ -162,7 +162,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to In a i18n-compliant system, it&apos;s almost never a good idea to use System.DateTime.Now. Please use System.DateTime.UtcNow instead. If you are sure you want to use System.DateTime.Now, use a &apos;#pragma warning disable DSA004 / #pragma warning restore DSA004&apos; directives pair. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa004.
+        ///   Looks up a localized string similar to In a i18n-compliant system, it&apos;s almost never a good idea to use System.DateTime.Now. Use System.DateTime.UtcNow instead. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa004.
         /// </summary>
         internal static string DSA004AnalyzerMessageFormat {
             get {
@@ -193,7 +193,8 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution. In order to avoid problems, apply one of these solutions. When measuring elapsed time, use a `StopWatch.StartNew()` combined with `StopWatch.Elapsed`. When NOT measuring elapsed time, set a `var now = DateTime.UtcNow` variable at the top of the method, or at the beginning of an execution flow/algorithm, and reuse that variable in all places instead of `DateTime. [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa005        
+        ///    .
         /// </summary>
         internal static string DSA005AnalyzerMessageFormat {
             get {
@@ -250,7 +251,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;) to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007).       
+        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;). See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007.       
         ///    .
         /// </summary>
         internal static string DSA007AnalyzerMessageFormat {
@@ -279,7 +280,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTime property. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008).       
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTime property. Remove the RequiredAttribute, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008.       
         ///    .
         /// </summary>
         internal static string DSA008AnalyzerMessageFormat {
@@ -308,7 +309,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009).       
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove the RequiredAttribute, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009.       
         ///    .
         /// </summary>
         internal static string DSA009AnalyzerMessageFormat {
