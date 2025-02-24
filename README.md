@@ -10,21 +10,22 @@ Every rule is accompanied by the following information and clues:
 - **Category** → identify the area of interest of the rule, and can have one of the following values: _Design / Naming / Style / Usage / Performance / Security_ 
 - **Severity** → state the default severity level of the rule. The severity level can be changed by editing the _.editorconfig_ file used by the project/solution. Possible values are enumerated by the [DiagnosticSeverity enum](https://docs.microsoft.com/en-us/dotnet/api/microsoft.codeanalysis.diagnosticseverity)
 - **Description, motivations and fixes** → a detailed explanation of the detected issue, and a brief description on how to change your code in order to solve it.
-- **See also** → a list of similar/related rules, or related knownledge base
+- **See also** → a list of similar/related rules, or related knowledge base
 
 
 # Rules list
-| Id                | Category    | Description                                                                                                                                                                                                | Default severity |Is enabled|Code fix|
-|-------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------:|:--------:|:------:|
-| [DSA001](#dsa001) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. |    ⚠ Warning     |✅|❌|
-| [DSA002](#dsa002) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.|    ⚠ Warning     |✅|❌|
-| [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty` |    ⚠ Warning     |✅|❌|
-| [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`|    ⚠ Warning     |✅|❌|
-| [DSA005](#dsa005) | Code Smells | Potential non-deterministic point-in-time execution|     ⛔ Error      |✅|❌|
-| [DSA006](#dsa006) | Code Smells | General exceptions should not be thrown by user code|        ⛔ Error         |✅|❌|
-| [DSA007](#dsa007) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")|    ⚠ Warning     |✅|❌|
-| [DSA008](#dsa008) | Bug         | The Required Attribute has no impact on a not-nullable DateTime|        ⛔ Error         |✅|❌|
-| [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset|        ⛔ Error         |✅|❌|
+| Id                | Category    | Description                                                                                                                                                                                                | Default severity | Is enabled | Code fix |
+|-------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|------------|----------|
+| [DSA001](#dsa001) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. | ⚠ Warning        | ✅          | ❌        |
+| [DSA002](#dsa002) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.     | ⚠ Warning        | ✅          | ❌        |
+| [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                          | ⚠ Warning        | ✅          | ❌        |
+| [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                            | ⚠ Warning        | ✅          | ❌        |
+| [DSA005](#dsa005) | Code Smells | Potential non-deterministic point-in-time execution                                                                                                                                                        | ⛔ Error          | ✅          | ❌        |
+| [DSA006](#dsa006) | Code Smells | General exceptions should not be thrown by user code                                                                                                                                                       | ⛔ Error          | ✅          | ❌        |
+| [DSA007](#dsa007) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")                                                                                         | ⚠ Warning        | ✅          | ❌        |
+| [DSA008](#dsa008) | Bug         | The Required Attribute has no impact on a not-nullable DateTime                                                                                                                                            | ⛔ Error          | ✅          | ❌        |
+| [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset                                                                                                                                      | ⛔ Error          | ✅          | ❌        |
+
 ---
        
 # DSA001
@@ -146,8 +147,8 @@ Use `IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`.
 - **Severity**: Warning ⚠
 
 ## Description
-Usually, business logics distinguish between "string with content", and "string NULL or without meaningfull content".  
-Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningfull content".  
+Usually, business logics distinguish between "string with content", and "string NULL or without meaningful content".  
+Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningful content".  
 In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available. 
 
 ## Fix / Mitigation
