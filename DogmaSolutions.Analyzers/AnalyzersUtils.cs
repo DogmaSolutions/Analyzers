@@ -10,6 +10,28 @@ namespace DogmaSolutions.Analyzers
 {
     public static class AnalyzersUtils
     {
+        public static DiagnosticSeverity GetDiagnosticSeverity(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor rule)
+        {
+            if (rule == null) throw new ArgumentNullException(nameof(rule));
+            return GetDiagnosticSeverity(context, rule, rule.Id);
+        }
+
+        public static DiagnosticSeverity GetDiagnosticSeverity(this SyntaxNodeAnalysisContext context, DiagnosticDescriptor rule, string diagnosticId)
+        {
+            if (rule == null) throw new ArgumentNullException(nameof(rule));
+            var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
+            var severity = rule.DefaultSeverity;
+            if (config.TryGetValue($"dotnet_diagnostic.{diagnosticId}.severity", out var configValue) &&
+                !string.IsNullOrWhiteSpace(configValue) &&
+                Enum.TryParse<DiagnosticSeverity>(configValue, out var configuredSeverity))
+            {
+                severity = configuredSeverity;
+            }
+
+            return severity;
+        }
+
+
         public static bool IsEfDbContext(this IdentifierNameSyntax identifier, SyntaxNodeAnalysisContext ctx)
         {
             var fromSymbolInfo = ctx.SemanticModel.GetSymbolInfo(identifier);
@@ -40,7 +62,7 @@ namespace DogmaSolutions.Analyzers
 
             var ds = typeSymbol.ToDisplayString();
 
-            if (ds.StartsWith("Microsoft.EntityFrameworkCore.DbSet<",StringComparison.InvariantCulture) && ds.EndsWith(">",StringComparison.InvariantCulture))
+            if (ds.StartsWith("Microsoft.EntityFrameworkCore.DbSet<", StringComparison.InvariantCulture) && ds.EndsWith(">", StringComparison.InvariantCulture))
                 return true;
 
             return false;
@@ -71,15 +93,17 @@ namespace DogmaSolutions.Analyzers
         public static bool IsWebApiControllerClass([NotNull] this ClassDeclarationSyntax classDeclaration, SyntaxNodeAnalysisContext ctx)
         {
             if (classDeclaration == null) throw new ArgumentNullException(nameof(classDeclaration));
-            if (classDeclaration.BaseList?.Types.Any(t =>
-                {
-                    var baseType = ctx.SemanticModel.GetSymbolInfo(t.Type);
-                    var typeSymbol = GetTypeSymbol(baseType);
-                    if (typeSymbol != null)
-                        return IsWebApiControllerClass(typeSymbol);
+            if (classDeclaration.BaseList?.Types.Any(
+                    t =>
+                    {
+                        var baseType = ctx.SemanticModel.GetSymbolInfo(t.Type);
+                        var typeSymbol = GetTypeSymbol(baseType);
+                        if (typeSymbol != null)
+                            return IsWebApiControllerClass(typeSymbol);
 
-                    return false;
-                }) == true)
+                        return false;
+                    }) ==
+                true)
                 return true;
 
             return false;

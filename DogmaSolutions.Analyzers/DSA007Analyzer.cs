@@ -65,7 +65,13 @@ namespace DogmaSolutions.Analyzers
                             assignment,
                             context.SemanticModel)) // i.e. NOT   if(_theField == null) lock(_theLock) { if(_theField == null) { ... } }
                     {
-                        var diagnostic = Diagnostic.Create(_rule, assignment.GetLocation());
+                        var diagnostic = Diagnostic.Create(
+                            _rule,
+                            assignment.GetLocation(),
+                            effectiveSeverity:  context.GetDiagnosticSeverity(_rule),
+                            additionalLocations: null,
+                            properties: null);
+                        
                         context.ReportDiagnostic(diagnostic);
                     }
                 }

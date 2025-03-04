@@ -68,11 +68,18 @@ namespace DogmaSolutions.Analyzers
             // Check if the type being created is System.Exception or NullReferenceException
             if (IsProhibitedExceptionType(objectCreationExpression, context.SemanticModel))
             {
-                var diagnostic = Diagnostic.Create(_rule, throwStatement.GetLocation());
+                var diagnostic = Diagnostic.Create(
+                    _rule,
+                    throwStatement.GetLocation(),
+                    effectiveSeverity:  context.GetDiagnosticSeverity(_rule),
+                    additionalLocations: null,
+                    properties: null);
+
                 context.ReportDiagnostic(diagnostic);
             }
         }
 
+      
 
         private static bool IsProhibitedExceptionType(ObjectCreationExpressionSyntax objectCreationExpressionSyntax, SemanticModel semanticModel)
         {

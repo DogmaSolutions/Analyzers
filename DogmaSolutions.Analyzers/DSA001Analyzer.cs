@@ -63,16 +63,6 @@ namespace DogmaSolutions.Analyzers
             if (!parentClass.IsWebApiControllerClass(ctx))
                 return;
 
-            var config = ctx.Options.AnalyzerConfigOptionsProvider.GetOptions(ctx.Node.SyntaxTree);
-            var severity = _rule.DefaultSeverity;
-            if (config.TryGetValue($"dotnet_diagnostic.{DiagnosticId}.severity", out var configValue) &&
-                !string.IsNullOrWhiteSpace(configValue) &&
-                Enum.TryParse<DiagnosticSeverity>(configValue, out var configuredSeverity))
-            {
-                severity = configuredSeverity;
-            }
-
-
             foreach (var qes in method.DescendantNodes().OfType<QueryExpressionSyntax>())
             {
                 var fromClauses = qes.DescendantNodes().OfType<FromClauseSyntax>();
@@ -86,7 +76,7 @@ namespace DogmaSolutions.Analyzers
                             var diagnostic = Diagnostic.Create(
                                 descriptor: _rule,
                                 location: qes.GetLocation(),
-                                effectiveSeverity: severity,
+                                effectiveSeverity:  ctx.GetDiagnosticSeverity(_rule),
                                 additionalLocations: null,
                                 properties: null,
                                 messageArgs: parentClass.Identifier.Text + "." + method.Identifier.Text);

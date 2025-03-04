@@ -33,20 +33,10 @@ public abstract class ProhibitInvocationExpressionDiagnosticAnalyzer<T> : Diagno
         if (!IsMatched(invocationExpression, rule))
             return;
 
-        var severity = rule.DefaultSeverity;
-        var config = ctx.Options.AnalyzerConfigOptionsProvider.GetOptions(ctx.Node.SyntaxTree);
-        if (config.TryGetValue($"dotnet_diagnostic.{rule.Id}.severity", out var configValue) &&
-            !string.IsNullOrWhiteSpace(configValue) &&
-            Enum.TryParse<DiagnosticSeverity>(configValue, out var configuredSeverity))
-        {
-            severity = configuredSeverity;
-        }
-
-
         var diagnostic = Diagnostic.Create(
             descriptor: rule,
             location: invocationExpression.GetLocation(),
-            effectiveSeverity: severity,
+            effectiveSeverity:  ctx.GetDiagnosticSeverity(rule),
             additionalLocations: null,
             properties: null);
 

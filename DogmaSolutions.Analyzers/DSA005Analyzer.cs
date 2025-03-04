@@ -60,7 +60,13 @@ namespace DogmaSolutions.Analyzers
             // Check if there are multiple occurrences
             if (dateTimeNowInvocations.Count() > 1)
             {
-                var diagnostic = Diagnostic.Create(_rule, methodDeclaration.GetLocation());
+                var diagnostic = Diagnostic.Create(
+                    _rule,
+                    methodDeclaration.GetLocation(),
+                    effectiveSeverity: context.GetDiagnosticSeverity(_rule),
+                    additionalLocations: null,
+                    properties: null);
+                
                 context.ReportDiagnostic(diagnostic);
             }
         }

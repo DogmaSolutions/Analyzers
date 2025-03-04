@@ -64,16 +64,7 @@ namespace DogmaSolutions.Analyzers
 
             if (!parentClass.IsWebApiControllerClass(ctx))
                 return;
-
-            var severity = _rule.DefaultSeverity;
-            var config = ctx.Options.AnalyzerConfigOptionsProvider.GetOptions(ctx.Node.SyntaxTree);
-            if (config.TryGetValue($"dotnet_diagnostic.{DiagnosticId}.severity", out var configValue) &&
-                !string.IsNullOrWhiteSpace(configValue) &&
-                Enum.TryParse<DiagnosticSeverity>(configValue, out var configuredSeverity))
-            {
-                severity = configuredSeverity;
-            }
-
+        
             var reportedDiagnostics = new List<Diagnostic>();
 
             void ProcessIdentifier(
@@ -90,7 +81,7 @@ namespace DogmaSolutions.Analyzers
                         var diagnostic = Diagnostic.Create(
                             descriptor: _rule,
                             location: maes.GetLocation(),
-                            effectiveSeverity: severity,
+                            effectiveSeverity:  ctx.GetDiagnosticSeverity(_rule),
                             additionalLocations: null,
                             properties: null,
                             classDeclarationSyntax.Identifier.Text + "." + methodDeclarationSyntax.Identifier.Text,

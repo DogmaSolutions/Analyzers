@@ -59,7 +59,13 @@ namespace DogmaSolutions.Analyzers
                     // Check if the property is  decorated with RequiredAttribute
                     if (IsDecoratedWithRequiredAttribute(propertyDeclaration, context.SemanticModel))
                     {
-                        var diagnostic = Diagnostic.Create(_rule, propertyDeclaration.GetLocation());
+                        var diagnostic = Diagnostic.Create(
+                            _rule,
+                            propertyDeclaration.GetLocation(),
+                            effectiveSeverity:  context.GetDiagnosticSeverity(_rule),
+                            additionalLocations: null,
+                            properties: null);
+                        
                         context.ReportDiagnostic(diagnostic);
                     }
                 }
@@ -71,11 +77,11 @@ namespace DogmaSolutions.Analyzers
             var typeInfo = semanticModel.GetTypeInfo(propertyDeclaration.Type);
             if (typeInfo.Type == null)
                 return false;
-            
+
             var dtT = semanticModel.Compilation.GetTypeByMetadataName("System.DateTime");
             if (dtT == null)
                 return false;
-            
+
             return SymbolEqualityComparer.Default.Equals(typeInfo.Type, dtT);
         }
 

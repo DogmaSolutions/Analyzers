@@ -25,25 +25,15 @@ public abstract class ProhibitSimpleMemberAccessExpressionDiagnosticAnalyzer<T> 
         context.RegisterSyntaxNodeAction(ctx => OnIdentifierName(ctx, rule), SyntaxKind.IdentifierName);
     }
 
-#pragma warning disable CA1062
-  
+    #pragma warning disable CA1062
+
 
     protected virtual void HandleMatched(SyntaxNodeAnalysisContext ctx, DiagnosticDescriptor rule, CSharpSyntaxNode identifierNameSyntax)
     {
-        var severity = rule.DefaultSeverity;
-        var config = ctx.Options.AnalyzerConfigOptionsProvider.GetOptions(ctx.Node.SyntaxTree);
-        if (config.TryGetValue($"dotnet_diagnostic.{rule.Id}.severity", out var configValue) &&
-            !string.IsNullOrWhiteSpace(configValue) &&
-            Enum.TryParse<DiagnosticSeverity>(configValue, out var configuredSeverity))
-        {
-            severity = configuredSeverity;
-        }
-
-
         var diagnostic = Diagnostic.Create(
             descriptor: rule,
             location: identifierNameSyntax.GetLocation(),
-            effectiveSeverity: severity,
+            effectiveSeverity: ctx.GetDiagnosticSeverity(rule),
             additionalLocations: null,
             properties: null);
 
@@ -81,17 +71,17 @@ public abstract class ProhibitSimpleMemberAccessExpressionDiagnosticAnalyzer<T> 
 
         // Maybe "TypeName" has been imported using a "using static"
         var importedByStaticUsing = memberAccessExpression.Ancestors().
-                       OfType<CompilationUnitSyntax>().
-                       FirstOrDefault()?. // navigate "up" and find the root
-                       DescendantNodes().
-                       OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
-                       Any(
-                           u => u.StaticKeyword.IsKind(SyntaxKind.StaticKeyword) && // consider only "using static" directives
-                                (u.NamespaceOrType.ToString() == TypeFullName ||   // consider only "using static TypeFullName" ?
-                                 u.NamespaceOrType.ToString() == GlobalTypeFullName  // consider only "using static global::TypeFullName" ?
-                                 )
-                       ) ==
-                   true;
+                                        OfType<CompilationUnitSyntax>().
+                                        FirstOrDefault()?. // navigate "up" and find the root
+                                        DescendantNodes().
+                                        OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
+                                        Any(
+                                            u => u.StaticKeyword.IsKind(SyntaxKind.StaticKeyword) && // consider only "using static" directives
+                                                 (u.NamespaceOrType.ToString() == TypeFullName || // consider only "using static TypeFullName" ?
+                                                  u.NamespaceOrType.ToString() == GlobalTypeFullName // consider only "using static global::TypeFullName" ?
+                                                 )
+                                        ) ==
+                                    true;
 
         return importedByStaticUsing;
     }
@@ -125,8 +115,8 @@ public abstract class ProhibitSimpleMemberAccessExpressionDiagnosticAnalyzer<T> 
                                         OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
                                         Any(
                                             u => u.StaticKeyword.IsKind(SyntaxKind.StaticKeyword) && // consider only "using static" directives
-                                                 (u.NamespaceOrType.ToString() == TypeFullName ||   // consider only "using static TypeFullName" ?
-                                                  u.NamespaceOrType.ToString() == GlobalTypeFullName  // consider only "using static global::TypeFullName" ?
+                                                 (u.NamespaceOrType.ToString() == TypeFullName || // consider only "using static TypeFullName" ?
+                                                  u.NamespaceOrType.ToString() == GlobalTypeFullName // consider only "using static global::TypeFullName" ?
                                                  )
                                         ) ==
                                     true;
@@ -134,5 +124,5 @@ public abstract class ProhibitSimpleMemberAccessExpressionDiagnosticAnalyzer<T> 
         return importedByStaticUsing;
     }
 
-#pragma warning restore CA1062
+    #pragma warning restore CA1062
 }
