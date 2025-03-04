@@ -223,7 +223,8 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors. This is a bad smell, and could lead to stability and security concerns. General exceptions that triggers this rule are: Exception, SystemException, ApplicationException, IndexOutOfRangeException, NullReferenceException, OutOfMemoryException and ExecutionEngineException prevents calling methods from handling true, system-generate [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa006        
+        ///    .
         /// </summary>
         internal static string DSA006AnalyzerMessageFormat {
             get {
@@ -251,7 +252,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;). See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007.       
+        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;). See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007  
         ///    .
         /// </summary>
         internal static string DSA007AnalyzerMessageFormat {
@@ -280,7 +281,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTime property. Remove the RequiredAttribute, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008.       
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTime property. Remove it, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008.       
         ///    .
         /// </summary>
         internal static string DSA008AnalyzerMessageFormat {
@@ -309,7 +310,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove the RequiredAttribute, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009.       
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove it, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009.       
         ///    .
         /// </summary>
         internal static string DSA009AnalyzerMessageFormat {

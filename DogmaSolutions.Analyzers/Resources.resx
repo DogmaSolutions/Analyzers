@@ -193,7 +193,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
 </value>
   </data>
     <data name="DSA006AnalyzerMessageFormat" xml:space="preserve">
-    <value>General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors. This is a bad smell, and could lead to stability and security concerns. General exceptions that triggers this rule are: Exception, SystemException, ApplicationException, IndexOutOfRangeException, NullReferenceException, OutOfMemoryException and ExecutionEngineException prevents calling methods from handling true, system-generated exceptions differently than application-generated errors  (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa006).        
+    <value>General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa006        
     </value>
   </data>
     <data name="DSA006AnalyzerTitle" xml:space="preserve">
@@ -206,7 +206,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
 </value>
   </data>
     <data name="DSA007AnalyzerMessageFormat" xml:space="preserve">
-    <value>When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking"). See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007.       
+    <value>When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking"). See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007  
     </value>
   </data>
     <data name="DSA007AnalyzerTitle" xml:space="preserve">
@@ -218,7 +218,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
 </value>
   </data>
     <data name="DSA008AnalyzerMessageFormat" xml:space="preserve">
-    <value>The RequiredAttribute has no impact on a not-nullable DateTime property. Remove the RequiredAttribute, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008.       
+    <value>The RequiredAttribute has no impact on a not-nullable DateTime property. Remove it, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008.       
     </value>
   </data>
     <data name="DSA008AnalyzerTitle" xml:space="preserve">
@@ -231,7 +231,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
 </value>
   </data>
     <data name="DSA009AnalyzerMessageFormat" xml:space="preserve">
-    <value>The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove the RequiredAttribute, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009.       
+    <value>The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove it, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009.       
     </value>
   </data>
     <data name="DSA009AnalyzerTitle" xml:space="preserve">
