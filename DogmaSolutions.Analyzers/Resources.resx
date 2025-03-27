@@ -213,6 +213,18 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>Use the "if-lock-if" (aka "double checked locking") initialization pattern instead of a simple lock</value>
   </data>
 
+    <data name="DSA011AnalyzerDescription" xml:space="preserve">
+    <value>Self-contained static singleton properties, particularly when they involve lazy initialization within the property itself, can lead to several problems, especially in multithreaded environments. Use a IoC/DI framework instead, or at least use proper locking when initializing the instance (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa011).
+</value>
+  </data>
+    <data name="DSA011AnalyzerMessageFormat" xml:space="preserve">
+    <value>Avoid lazily initialized, self-contained, static singleton properties. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa011.       
+    </value>
+  </data>
+    <data name="DSA011AnalyzerTitle" xml:space="preserve">
+    <value>Avoid lazily initialized, self-contained, static singleton properties</value>
+  </data>
+
     <data name="DSA008AnalyzerDescription" xml:space="preserve">
     <value>Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable DateTime property. In reality, not-nullable types are ignored by the RequiredAttribute, so it doesn't make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008).
 </value>
