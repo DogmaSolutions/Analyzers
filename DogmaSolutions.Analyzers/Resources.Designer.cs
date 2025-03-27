@@ -327,5 +327,34 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA009AnalyzerTitle", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Self-contained static singleton properties, particularly when they involve lazy initialization within the property itself, can lead to several problems, especially in multithreaded environments. Use a IoC/DI framework instead, or at least use proper locking when initializing the instance (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa011).
+        ///.
+        /// </summary>
+        internal static string DSA011AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA011AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Avoid lazily initialized, self-contained, static singleton properties. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa011.       
+        ///    .
+        /// </summary>
+        internal static string DSA011AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA011AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Avoid lazily initialized, self-contained, static singleton properties.
+        /// </summary>
+        internal static string DSA011AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA011AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

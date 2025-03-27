@@ -25,7 +25,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA007](#dsa007) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")                                                                                         | ⚠ Warning        | ✅          | ❌        |
 | [DSA008](#dsa008) | Bug         | The Required Attribute has no impact on a not-nullable DateTime                                                                                                                                            | ⛔ Error          | ✅          | ❌        |
 | [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset                                                                                                                                      | ⛔ Error          | ✅          | ❌        |
-
+| [DSA011](#dsa011) | Design         | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                     | ⚠ Warning          | ✅          | ❌        |
 ---
        
 # DSA001
@@ -498,6 +498,82 @@ In order to change the severity level of this rule, change/add this line in the 
 # DSA009: The Required Attribute has no impact on a not-nullable DateTimeOffset
 dotnet_diagnostic.DSA009.severity = warning
 ```
+
+---
+
+
+# DSA011
+Avoid lazily initialized, self-contained, static singleton properties
+
+- **Category**: Design
+- **Severity**: ⚠ Warning
+
+
+## Description
+Self-contained static singleton properties, particularly when they involve lazy initialization within the property itself, can lead to several problems, especially in multithreaded environments. 
+Due to their static nature, they are also difficult to test, and could manifest unpredictable results if the testing framework (or the tests) doesn't clean the static instances in-between sessions.
+
+The following patterns are matched:
+
+```cs
+public class MyClass
+{
+    private static MyClass _instance;
+
+    public static MyClass Instance
+    {
+        get
+        {
+            if (_instance == null)
+                _instance = new MyClass();
+            return _instance;
+        }
+    }
+}
+```
+
+```cs
+public class MyClass
+{
+    private static MyClass _instance;
+
+    public static MyClass Instance
+    {
+        get
+        {
+            if (_instance != null)
+                return _instance;
+            
+            _instance = new MyClass();
+            return _instance;
+        }
+    }
+}
+```
+
+```cs
+public class MyClass
+{
+    private static MyClass _instance;
+
+    public static MyClass Instance => _instance??=new MyClass();
+}
+```
+
+## Fix/Mitigation
+Use a IoC/DI framework instead, or at least use proper locking when initializing the instance.
+
+## See also
+- [Singletons Are Evil](https://wiki.c2.com/?SingletonsAreEvil)
+- [Singleton Pattern](https://en.wikipedia.org/wiki/Singleton_pattern)
+
+## Rule configuration
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+```
+# DSA011: The Required Attribute has no impact on a not-nullable DateTimeOffset
+dotnet_diagnostic.DSA011.severity = warning
+```
+
 
 
 ---
