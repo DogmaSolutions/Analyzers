@@ -222,8 +222,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.       
-        ///    .
+        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors..
         /// </summary>
         internal static string DSA006AnalyzerMessageFormat {
             get {
@@ -241,8 +240,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;) to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs.
-        ///.
+        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;) to efficiently ensure that the variable is not initialized multiple times, and that no race-conditions occurs..
         /// </summary>
         internal static string DSA007AnalyzerDescription {
             get {
@@ -251,8 +249,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;).  
-        ///    .
+        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;).
         /// </summary>
         internal static string DSA007AnalyzerMessageFormat {
             get {
@@ -270,8 +267,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable DateTime property. In reality, not-nullable types are ignored by the RequiredAttribute, so it doesn&apos;t make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008).
-        ///.
+        ///   Looks up a localized string similar to Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable DateTime property. In reality, not-nullable types are ignored by the RequiredAttribute, so it doesn&apos;t make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008)..
         /// </summary>
         internal static string DSA008AnalyzerDescription {
             get {
@@ -280,8 +276,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTime property. Remove it, or make the property nullable.       
-        ///    .
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTime property. Remove it, or make the property nullable..
         /// </summary>
         internal static string DSA008AnalyzerMessageFormat {
             get {
@@ -299,8 +294,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable DateTimeOffset property. In reality, not-nullable types are ignored by the RequiredAttribute, so it doesn&apos;t make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009).
-        ///.
+        ///   Looks up a localized string similar to Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable DateTimeOffset property. In reality, not-nullable types are ignored by the RequiredAttribute, so it doesn&apos;t make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009)..
         /// </summary>
         internal static string DSA009AnalyzerDescription {
             get {
@@ -309,8 +303,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove it, or make the property nullable.       
-        ///    .
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove it, or make the property nullable..
         /// </summary>
         internal static string DSA009AnalyzerMessageFormat {
             get {
@@ -328,8 +321,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Self-contained static singleton properties, particularly when they involve lazy initialization within the property itself, can lead to several problems, especially in multithreaded environments. Use a IoC/DI framework instead, or at least use proper locking when initializing the instance (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa011).
-        ///.
+        ///   Looks up a localized string similar to Self-contained static singleton properties, particularly when they involve lazy initialization within the property itself, can lead to several problems, especially in multithreaded environments. Use a IoC/DI framework instead, or at least use proper locking when initializing the instance (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa011)..
         /// </summary>
         internal static string DSA011AnalyzerDescription {
             get {
@@ -338,8 +330,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Avoid lazily initialized, self-contained, static singleton properties.       
-        ///    .
+        ///   Looks up a localized string similar to Avoid lazily initialized, self-contained, static singleton properties.
         /// </summary>
         internal static string DSA011AnalyzerMessageFormat {
             get {
