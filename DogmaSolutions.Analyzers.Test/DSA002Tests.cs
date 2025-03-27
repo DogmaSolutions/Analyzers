@@ -138,26 +138,26 @@ namespace WebApplication1.Controllers
          test.ExpectedDiagnostics.Add(
             VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId).
                WithMessage(
-                  @"The WebApi method 'MyEntitiesController.GetAll1' is invoking the method 'Select' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002").
+                  @"The WebApi method 'MyEntitiesController.GetAll1' is invoking the method 'Select' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics.").
                WithLocation(1));
 
          test.ExpectedDiagnostics.Add(
             VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId).
                WithMessage(
-                  @"The WebApi method 'MyEntitiesController.GetAll1' is invoking the method 'Where' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002").
+                  @"The WebApi method 'MyEntitiesController.GetAll1' is invoking the method 'Where' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics.").
                WithLocation(1));
 
          test.ExpectedDiagnostics.Add(
             VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId).
                WithMessage(
-                  @"The WebApi method 'InheritedEntitiesController.GetAll2' is invoking the method 'Select' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002").
+                  @"The WebApi method 'InheritedEntitiesController.GetAll2' is invoking the method 'Select' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics.").
                WithLocation(2));
 
 
          test.ExpectedDiagnostics.Add(
             VerifyCS.Diagnostic(DSA002Analyzer.DiagnosticId).
                WithMessage(
-                  @"The WebApi method 'InheritedEntitiesController.GetAll2' is invoking the method 'Where' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002").
+                  @"The WebApi method 'InheritedEntitiesController.GetAll2' is invoking the method 'Where' of the DbSet 'MyEntities' to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics.").
                WithLocation(2));
 
          await test.RunAsync().ConfigureAwait(false);

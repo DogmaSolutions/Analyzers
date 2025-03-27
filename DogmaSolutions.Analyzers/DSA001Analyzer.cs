@@ -34,7 +34,8 @@ namespace DogmaSolutions.Analyzers
             Category,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
-            description: _description);
+            description: _description,
+            helpLinkUri: "https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA001");
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
 

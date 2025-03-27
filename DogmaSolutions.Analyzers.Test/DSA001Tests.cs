@@ -138,13 +138,13 @@ namespace WebApplication1.Controllers
          test.ExpectedDiagnostics.Add(
             VerifyCS.Diagnostic(DSA001Analyzer.DiagnosticId).
                WithMessage(
-                  @"The WebApi method 'MyEntitiesController.GetAll0' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001").
+                  @"The WebApi method 'MyEntitiesController.GetAll0' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics.").
                WithLocation(0));
 
          test.ExpectedDiagnostics.Add(
             VerifyCS.Diagnostic(DSA001Analyzer.DiagnosticId).
                WithMessage(
-                  @"The WebApi method 'InheritedEntitiesController.GetAll3' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001").
+                  @"The WebApi method 'InheritedEntitiesController.GetAll3' is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics.").
                WithLocation(3));
 
          await test.RunAsync().ConfigureAwait(false);

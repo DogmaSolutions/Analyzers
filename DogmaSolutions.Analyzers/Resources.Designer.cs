@@ -71,7 +71,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa001.
+        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is using Entity Framework DbContext to directly manipulate data through a LINQ query expression. WebApi controllers should not contain data-manipulation business logics..
         /// </summary>
         internal static string DSA001AnalyzerMessageFormat {
             get {
@@ -100,7 +100,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is invoking the method &apos;{1}&apos; of the DbSet &apos;{2}&apos; to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa002.
+        ///   Looks up a localized string similar to The WebApi method &apos;{0}&apos; is invoking the method &apos;{1}&apos; of the DbSet &apos;{2}&apos; to directly manipulate data through a LINQ fluent query. WebApi controllers should not contain data-manipulation business logics..
         /// </summary>
         internal static string DSA002AnalyzerMessageFormat {
             get {
@@ -127,7 +127,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Don&apos;t use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa003.
+        ///   Looks up a localized string similar to Don&apos;t use `string.IsNullOrEmpty`. Use `string.IsNullOrWhiteSpace` instead..
         /// </summary>
         internal static string DSA003AnalyzerMessageFormat {
             get {
@@ -162,7 +162,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to In a i18n-compliant system, it&apos;s almost never a good idea to use System.DateTime.Now. Use System.DateTime.UtcNow instead. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa004.
+        ///   Looks up a localized string similar to In a i18n-compliant system, it&apos;s almost never a good idea to use System.DateTime.Now. Use System.DateTime.UtcNow instead..
         /// </summary>
         internal static string DSA004AnalyzerMessageFormat {
             get {
@@ -193,8 +193,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa005        
-        ///    .
+        ///   Looks up a localized string similar to Referencing multiple times `DateTime***.Now` or `DateTime***.UtcNow` in the same method, could lead to a non-deterministic point-in-time execution..
         /// </summary>
         internal static string DSA005AnalyzerMessageFormat {
             get {
@@ -223,7 +222,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa006        
+        ///   Looks up a localized string similar to General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.       
         ///    .
         /// </summary>
         internal static string DSA006AnalyzerMessageFormat {
@@ -252,7 +251,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;). See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa007  
+        ///   Looks up a localized string similar to When initializing a lazy field, use a robust locking pattern, i.e. the &quot;if-lock-if&quot; (aka &quot;double checked locking&quot;).  
         ///    .
         /// </summary>
         internal static string DSA007AnalyzerMessageFormat {
@@ -281,7 +280,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTime property. Remove it, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa008.       
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTime property. Remove it, or make the property nullable.       
         ///    .
         /// </summary>
         internal static string DSA008AnalyzerMessageFormat {
@@ -310,7 +309,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove it, or make the property nullable. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa009.       
+        ///   Looks up a localized string similar to The RequiredAttribute has no impact on a not-nullable DateTimeOffset property. Remove it, or make the property nullable.       
         ///    .
         /// </summary>
         internal static string DSA009AnalyzerMessageFormat {
@@ -339,7 +338,7 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Avoid lazily initialized, self-contained, static singleton properties. See https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa011.       
+        ///   Looks up a localized string similar to Avoid lazily initialized, self-contained, static singleton properties.       
         ///    .
         /// </summary>
         internal static string DSA011AnalyzerMessageFormat {
