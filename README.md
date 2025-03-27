@@ -25,7 +25,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA007](#dsa007) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")                                                                                         | ⚠ Warning        | ✅          | ❌        |
 | [DSA008](#dsa008) | Bug         | The Required Attribute has no impact on a not-nullable DateTime                                                                                                                                            | ⛔ Error          | ✅          | ❌        |
 | [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset                                                                                                                                      | ⛔ Error          | ✅          | ❌        |
-| [DSA011](#dsa011) | Design         | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                     | ⚠ Warning          | ✅          | ❌        |
+| [DSA011](#dsa011) | Design      | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                      | ⚠ Warning        | ✅          | ❌        |
 ---
        
 # DSA001
@@ -570,7 +570,7 @@ Use a IoC/DI framework instead, or at least use proper locking when initializing
 ## Rule configuration
 In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
 ```
-# DSA011: The Required Attribute has no impact on a not-nullable DateTimeOffset
+# DSA011: Avoid lazily initialized, self-contained, static singleton properties
 dotnet_diagnostic.DSA011.severity = warning
 ```
 
