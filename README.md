@@ -603,10 +603,31 @@ Avoid lazily initialized, self-contained, static singleton properties
 - **Severity**: ⚠ Warning
 
 ## Description
+The [Singleton Pattern](https://en.wikipedia.org/wiki/Singleton_pattern) is subject of many controversies. Technically, there is nothing wrong with it, but its usefulness and robustness is very implementation-dependent, and in some cases it's seen as an anti-pattern. 
+
+A good strategy to make use of this pattern, is to use an IoC/DI framework that ensures proper thread-safeness, dependencies management, and resources allocation/deallocation. 
+```cs
+// Good/Safe implementation, based on Microsoft IoC/DI
+services.AddSingleton<IMyService, MyService>();  
+```
+
+A simpler but **very problematic** strategy relies on directly exposing a public static property in the singleton class, like this.
+```cs
+public class MyClass
+{
+    private static MyClass _instance;
+    
+    // Bad practice: 
+    // - fragile, because lacks proper locking
+    // - badly designed, because forces the caller to "know" the implementor class
+    public static MyClass Instance => _instance??=new MyClass();
+}
+```
 
 Self-contained static singleton properties, particularly when they involve lazy initialization within the property itself, can lead to several problems, especially in multithreaded environments.
-Due to their static nature, they are also difficult to test, and could manifest unpredictable results if the testing framework (or the tests) doesn't clean the static instances in-between sessions.
+Due to their static nature, they are also difficult to test, and could manifest unpredictable results if the testing framework (or the tests) doesn't clean the static instances in-between sessions. Also, they force the caller to know the implementor class, instead of just an abstraction (i.e. an interface implemented by the singleton class).
 
+This analyzer aims to find occurrences of this kind of ill-conceived implementations.  
 The following patterns are matched:
 
 ```cs
