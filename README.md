@@ -43,8 +43,7 @@ Don't use Entity Framework to launch LINQ queries in a WebApi controller.
 
 ## Description
 
-[WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression
-**.  
+[WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**.  
 In the analyzed code, a [WebApi controller method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) is
 using [Entity Framework DbContext](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext) to directly manipulate data through a LINQ query expression.  
 WebApi controllers should not contain data-manipulation business logics.
@@ -266,16 +265,16 @@ dotnet_diagnostic.DSA004.severity = error
 public class MyClass
 {
 
- public bool IsOk(string s)
+ public DateTime IsOk()
  {
      // this WILL NOT trigger the rule
-     return string.IsNullOrWhiteSpace(s);
+     return DateTime.UtcNow;
  }
 
- public bool IsNotOk(string s)
+ public DateTime IsNotOk()
  {
      // this WILL trigger the rule
-     return string.IsNullOrEmpty(s);
+     return DateTime.Now;
  }
 
 }
