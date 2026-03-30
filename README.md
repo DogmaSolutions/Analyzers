@@ -30,6 +30,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA008](#dsa008) | Bug         | The Required Attribute has no impact on a not-nullable DateTime                                                                                                                                            | ⛔ Error          | ✅          | ❌        |
 | [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset                                                                                                                                      | ⛔ Error          | ✅          | ❌        |
 | [DSA011](#dsa011) | Design      | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                      | ⚠ Warning        | ✅          | ❌        |
+| [DSA012](#dsa012) | Design      | Avoid the "if not exists, then insert" check-then-act antipattern (TOCTOU)                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
 
 ---
 
@@ -670,6 +671,112 @@ In order to change the severity level of this rule, change/add this line in the 
 ```
 # DSA011: Avoid lazily initialized, self-contained, static singleton properties
 dotnet_diagnostic.DSA011.severity = warning
+```
+
+---
+
+# DSA012
+
+Avoid the "if not exists, then insert" check-then-act antipattern (TOCTOU).
+
+- **Category**: Design
+- **Severity**: Warning ⚠
+- **Related rules**: [DSA005](#dsa005)
+
+## Description
+
+The "if not exists, then insert" pattern (also known as "check-then-act") is a non-atomic sequence that first checks whether a record exists and then, based on the result, inserts a new one.
+This pattern is prone to [TOCTOU (Time-of-Check to Time-of-Use)](https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use) race conditions: between the moment the existence check completes and the insert executes, another thread or process could insert the same record, leading to duplicate entries and data corruption.
+
+This is particularly dangerous in database operations when no `UNIQUE` constraint is in place. Without such a constraint, the only safeguard against duplication is the application-level check, which is inherently non-atomic and unreliable under concurrent access.
+
+The following patterns are matched:
+
+```cs
+// Pattern A: negated existence check + insert
+if (!items.Any(x => x.Id == id))
+{
+    items.Add(newItem);
+}
+
+// Pattern B: existence check + throw, followed by insert
+if (items.Any(x => x.Id == id))
+    throw new ConflictException("Already exists");
+items.Add(newItem);
+
+// Pattern C: existence check + else insert
+if (items.Any(x => x.Id == id))
+{
+    // update or other logic
+}
+else
+{
+    items.Add(newItem);
+}
+```
+
+Variants using `Count(...) == 0`, `FirstOrDefault(...) == null`, `Contains(...)`, and their async counterparts are also detected.
+
+## See also
+
+- [TOCTOU - Time-of-Check to Time-of-Use](https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use)
+- [MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition](https://cwe.mitre.org/data/definitions/367.html)
+- [EAFP - Easier to Ask for Forgiveness than Permission](https://devblogs.microsoft.com/python/idiomatic-python-eafp-versus-lbyl/)
+- [OWASP: Race Conditions](https://owasp.org/www-community/vulnerabilities/Race_condition)
+
+## When to ignore this rule
+If the `if` in the code is **ONLY** a precaution you added to proactively handle errors (e.g. to show a more user-friendly message), **AND** the database is protected by a `UNIQUE` constraint or other mechanisms that guarantee data consistency and uniqueness, than you can explicitly ignore this warning with `#pragma warning disable DSA012`.
+
+Otherwise, it's almost guaranteed that this is an issue to handle, and you shouldn't ignore it.
+
+## Fix / Mitigation
+
+In order to fix the problem, apply one of the following approaches depending on the situation:
+
+- **Atomic upsert**: Use a database-level atomic operation such as SQL `MERGE`, `INSERT ... ON CONFLICT DO NOTHING/UPDATE` (PostgreSQL), or `INSERT ... ON DUPLICATE KEY UPDATE` (MySQL).
+- **UNIQUE constraint**: Add a `UNIQUE` constraint to the database so that duplicate inserts are rejected at the database level, regardless of application-level checks.
+- **EAFP approach**: Attempt the insert directly and catch the resulting exception (e.g., `DbUpdateException` for a unique constraint violation) instead of checking beforehand.
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA012: Avoid the "if not exists, then insert" check-then-act antipattern
+dotnet_diagnostic.DSA012.severity = error
+```
+
+## Code sample
+
+```csharp
+public class MyService
+{
+    private readonly MyDbContext _dbContext;
+
+    public void AddItem_NotOk(string name)
+    {
+        // this WILL trigger the rule: non-atomic check-then-act
+        if (!_dbContext.Items.Any(x => x.Name == name))
+        {
+            _dbContext.Items.Add(new Item { Name = name });
+            _dbContext.SaveChanges();
+        }
+    }
+
+    public void AddItem_Ok(string name)
+    {
+        // this WILL NOT trigger the rule: EAFP approach
+        try
+        {
+            _dbContext.Items.Add(new Item { Name = name });
+            _dbContext.SaveChanges(); // UNIQUE constraint on Name column
+        }
+        catch (DbUpdateException)
+        {
+            // Handle duplicate gracefully
+        }
+    }
+}
 ```
 
 ---

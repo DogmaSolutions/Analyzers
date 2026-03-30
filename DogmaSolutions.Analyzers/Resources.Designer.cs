@@ -346,5 +346,32 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA011AnalyzerTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The &quot;if not exists, then insert&quot; pattern (also known as &quot;check-then-act&quot;) is a non-atomic sequence that performs an existence check followed by an insert operation. This pattern is prone to TOCTOU (Time-of-Check to Time-of-Use) race conditions....
+        /// </summary>
+        internal static string DSA012AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA012AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The &quot;if not exists, then insert&quot; pattern is a non-atomic check-then-act sequence prone to race conditions (TOCTOU). Use an atomic upsert, a UNIQUE constraint, or an EAFP approach instead..
+        /// </summary>
+        internal static string DSA012AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA012AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Avoid the &quot;if not exists, then insert&quot; check-then-act antipattern.
+        /// </summary>
+        internal static string DSA012AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA012AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

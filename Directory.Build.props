@@ -10,6 +10,7 @@
         -->
         <DefineConstants>JETBRAINS_ANNOTATIONS</DefineConstants>
         <Authors>Dogma Solutions srl</Authors>
+        <Company>Dogma Solutions srl</Company>
         <Owners>DogmaSolutions</Owners>
         <PackageLicenseUrl>https://github.com/DogmaSolutions/Analyzers/blob/main/LICENSE</PackageLicenseUrl>
         <PackageProjectUrl>https://github.com/DogmaSolutions/Analyzers</PackageProjectUrl>

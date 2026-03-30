@@ -238,4 +238,14 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA009AnalyzerTitle" xml:space="preserve">
     <value>Do not use the RequiredAttribute for a non-nullable DateTimeOffset property</value>
   </data>
+
+    <data name="DSA012AnalyzerDescription" xml:space="preserve">
+    <value>The "if not exists, then insert" pattern (also known as "check-then-act") is a non-atomic sequence that performs an existence check followed by an insert operation. This pattern is prone to TOCTOU (Time-of-Check to Time-of-Use) race conditions: between the moment the existence check completes and the insert executes, another thread or process could insert the same record, leading to duplicate entries and data corruption. This is particularly dangerous in database operations without a UNIQUE constraint. Use an atomic upsert operation (e.g., SQL MERGE, INSERT ... ON CONFLICT), add a UNIQUE constraint to the database, or adopt the EAFP (Easier to Ask for Forgiveness than Permission) approach by catching the duplicate key exception instead (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa012).</value>
+  </data>
+    <data name="DSA012AnalyzerMessageFormat" xml:space="preserve">
+    <value>The "if not exists, then insert" pattern is a non-atomic check-then-act sequence prone to race conditions (TOCTOU). Use an atomic upsert, a UNIQUE constraint, or an EAFP approach instead.</value>
+  </data>
+    <data name="DSA012AnalyzerTitle" xml:space="preserve">
+    <value>Avoid the "if not exists, then insert" check-then-act antipattern</value>
+  </data>
 </root>

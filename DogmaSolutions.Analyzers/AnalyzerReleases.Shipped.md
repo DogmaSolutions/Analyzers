@@ -11,3 +11,5 @@
 | DSA007  | Code Smells | Warning  | DSA007Analyzer |
 | DSA008  | Bug         | Error  | DSA008Analyzer |
 | DSA009  | Bug         | Error  | DSA009Analyzer |
+| DSA011  | Design      | Warning  | DSA011Analyzer |
+| DSA012  | Design      | Warning  | DSA012Analyzer |
