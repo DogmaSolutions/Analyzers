@@ -2,11 +2,11 @@
 
 [![DogmaSolutions.Analyzers on NuGet](https://img.shields.io/nuget/v/DogmaSolutions.Analyzers.svg)](https://www.nuget.org/packages/DogmaSolutions.Analyzers/)
 
-A set of Roslyn Analyzer aimed to enforce some design good practices and code quality (QA) rules.
+A set of Roslyn Analyzers aimed to enforce some design good practices and code quality (QA) rules.
 
 # Rules structure
 
-This section describes the rules included into this package.
+This section describes the rules included in this package.
 
 Every rule is accompanied by the following information and clues:
 
@@ -57,7 +57,7 @@ because the controller is doing too many things outside its own purpose.
 ## Fix / Mitigation
 
 In order to fix the problem, the code could be modified in order to rely on the ["Indirection pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Indirection) and maximize
-the ["Low coupling evalutative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design))
+the ["Low coupling evaluative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design))
 principles.
 Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
 
@@ -125,7 +125,7 @@ because the controller is doing too many things outside its own purpose.
 ## Fix / Mitigation
 
 In order to fix the problem, the code could be modified in order to rely on the ["Indirection pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Indirection) and maximize
-the ["Low coupling evalutative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design))
+the ["Low coupling evaluative pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Low_coupling) of the ["GRASP"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design))
 principles.   
 Move the data-manipulation business logics into a more appropriate class, or even better, an injected service.
 
@@ -231,7 +231,7 @@ Use `DateTime.UtcNow` instead of `DateTime.Now`.
 
 Using `DateTime.Now` into business logics potentially leads to many different problems:
 
-- Incoherence between nodes or processes running in different timezones (even in the same country, i.e. USA, Soviet Union, China, etc)
+- Incoherence between nodes or processes running in different timezones (even in the same country, i.e. USA, Russia, China, etc)
 - Unexpected behaviours in-between legal time changes
 - Code conversion problems and loss of timezone info when saving/loading data to/from a datastore
 
@@ -372,9 +372,9 @@ General exceptions should not be thrown by user code.
 
 ## Description
 
-General exceptions should never be thrown, because throwing them, prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.  
+General exceptions should never be thrown, because throwing them prevents calling methods from discriminating between system-generated exceptions, and application-generated errors.  
 This is a bad smell, and could lead to stability and security concerns.  
-General exceptions that triggers this rule are:
+General exceptions that trigger this rule are:
 
 - `Exception`
 - `SystemException`
@@ -415,7 +415,7 @@ public class MyClass
 
     public void IsNotOk(int id)
     {     
-      if(id < 0) // this NOT OK, and will be matched by the rule
+      if(id < 0) // this is NOT OK, and will be matched by the rule
         throw new SystemException("Invalid id");
     }
 
@@ -426,7 +426,7 @@ public class MyClass
 
 # DSA007
 
-When initializing a lazy field (and in particular fields contains the instance of a singleton object), use a robust locking pattern, i.e. the “if-lock-if” (aka “double checked locking”)
+When initializing a lazy field (and in particular fields containing the instance of a singleton object), use a robust locking pattern, i.e. the “if-lock-if” (aka “double checked locking”)
 
 - **Category**: Code smells
 - **Severity**: Warning ⚠
@@ -459,7 +459,7 @@ public class MyClass
 
   public void IsOk(int id)
   {     
-    lock(_theLock){ // ❌ too early, very wastefull, poor performances
+    lock(_theLock){ // ❌ too early, very wasteful, poor performances
         if(_theField == null) { 
            _theField = ComputeExpensiveValue(id);
         }
@@ -498,7 +498,7 @@ public class MyClass
   public void IsOk(int id)
   {     
     if(_theField == null) { // ✅ efficient and fast pre-check (few nanoseconds)
-        lock(_theLock){ // ✅ protects againts race conditions and multithreading
+        lock(_theLock){ // ✅ protects against race conditions and multithreading
             if(_theField == null) { // ✅ only if really needed, safely initialize
                _theField = ComputeExpensiveValue(id); // ✅ guaranteed to be executed only once
             }
@@ -529,7 +529,7 @@ not-nullable [DateTime](https://learn.microsoft.com/it-it/dotnet/api/system.date
 
 ## Description
 
-Is a common misunderstanding that the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) is somehow able to validate a
+It is a common misunderstanding that the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) is somehow able to validate a
 not-nullable [DateTime](https://learn.microsoft.com/it-it/dotnet/api/system.datetime) property.  
 In reality, not-nullable, not-string types are ignored by the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute), so it doesn't
 make any sense to use it in this context.
@@ -545,6 +545,7 @@ If a "valid date"-like validation is needed, use [Range Attribute](https://learn
 - [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute)
 - [Range Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute)
 - [DateTime](https://learn.microsoft.com/it-it/dotnet/api/system.datetime)
+- [MITRE, CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
 
 ## Rule configuration
 
@@ -567,7 +568,7 @@ not-nullable [DateTimeOffset](https://learn.microsoft.com/it-it/dotnet/api/syste
 
 ## Description
 
-Is a common misunderstanding that the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) is somehow able to validate a
+It is a common misunderstanding that the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) is somehow able to validate a
 not-nullable [DateTimeOffset](https://learn.microsoft.com/it-it/dotnet/api/system.DateTimeOffset) property.  
 In reality, not-nullable, not-string types are ignored by the [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute), so it doesn't
 make any sense to use it in this context.
@@ -583,6 +584,7 @@ If a "valid date"-like validation is needed, use [Range Attribute](https://learn
 - [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute)
 - [Range Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute)
 - [DateTimeOffset](https://learn.microsoft.com/it-it/dotnet/api/system.DateTimeOffset)
+- [MITRE, CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
 
 ## Rule configuration
 
@@ -677,12 +679,14 @@ public class MyClass
 
 ## Fix/Mitigation
 
-Use a IoC/DI framework instead, or at least use proper locking when initializing the instance.
+Use an IoC/DI framework instead, or at least use proper locking when initializing the instance.
 
 ## See also
 
 - [Singletons Are Evil](https://wiki.c2.com/?SingletonsAreEvil)
 - [Singleton Pattern](https://en.wikipedia.org/wiki/Singleton_pattern)
+- [MITRE, CWE-543: Use of Singleton Pattern Without Proper Synchronization in a Multithreaded Context](https://cwe.mitre.org/data/definitions/543.html)
+- [MITRE, CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization](https://cwe.mitre.org/data/definitions/362.html)
 
 ## Rule configuration
 
@@ -704,11 +708,19 @@ Avoid the "if not exists, then insert" check-then-act antipattern (TOCTOU).
 - **Related rules**: [DSA005](#dsa005)
 
 ## Description
+The _"if not exists, then insert"_ pattern (also known as "check-then-act") is a non-atomic sequence that first checks whether a record exists and then, based on the result, inserts a new one.  
+This pattern **is not a bad thing per-se**, but _suggests_ (or at least gives the suspicion) that the coherence of the data is _only_ handled by application-level logics which, if true, can lead to undesired effects.
 
-The "if not exists, then insert" pattern (also known as "check-then-act") is a non-atomic sequence that first checks whether a record exists and then, based on the result, inserts a new one.
-This pattern is prone to [TOCTOU (Time-of-Check to Time-of-Use)](https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use) race conditions: between the moment the existence check completes and the insert executes, another thread or process could insert the same record, leading to duplicate entries and data corruption.
+## Rationale
+Since the database is usually the _Single Source of Truth_ for the data, then the uniqueness and semantic consistency of such data must be guaranteed at database-level, not at application-level (or at least not _only_ at application-level).
+If the DB is the _Single Source of Truth_ and guarantees the semantic consistency of the data, then a _"if not exists, then insert"_ pattern shouldn't be necessary at all, unless the developer wanted to be proactive and provide to the caller a user-friendly message.
+
+## Potential problems
+If the DB is not the _Single Source of Truth_, this pattern leads to false confidence, because it's prone to [TOCTOU (Time-of-Check to Time-of-Use)](https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use) race conditions: between the moment the existence check completes and the insert executes, another thread or process could insert the same record, leading to duplicate entries and data corruption.
 
 This is particularly dangerous in database operations when no `UNIQUE` constraint is in place. Without such a constraint, the only safeguard against duplication is the application-level check, which is inherently non-atomic and unreliable under concurrent access.
+
+## Matched patterns
 
 The following patterns are matched:
 
@@ -745,7 +757,7 @@ Variants using `Count(...) == 0`, `FirstOrDefault(...) == null`, `Contains(...)`
 - [OWASP: Race Conditions](https://owasp.org/www-community/vulnerabilities/Race_condition)
 
 ## When to ignore this rule
-If the `if` in the code is **ONLY** a precaution you added to proactively handle errors (e.g. to show a more user-friendly message), **AND** the database is protected by a `UNIQUE` constraint or other mechanisms that guarantee data consistency and uniqueness, than you can explicitly ignore this warning with `#pragma warning disable DSA012`.
+If the `if` in the code is **ONLY** a precaution you added to proactively handle errors (e.g. to show a more user-friendly message), **AND** the database is protected by a `UNIQUE` constraint or other mechanisms that guarantee data consistency and uniqueness, then you can explicitly ignore this warning with `#pragma warning disable DSA012`.
 
 Otherwise, it's almost guaranteed that this is an issue to handle, and you shouldn't ignore it.
 
@@ -775,7 +787,8 @@ public class MyService
 
     public void AddItem_NotOk(string name)
     {
-        // this WILL trigger the rule: non-atomic check-then-act
+        // this WILL trigger the rule: non-atomic check-then-act (suspicious, leads
+        // into thinking that the DB is not taking care of the uniqueness of the data on its own).
         if (!_dbContext.Items.Any(x => x.Name == name))
         {
             _dbContext.Items.Add(new Item { Name = name });
@@ -789,7 +802,9 @@ public class MyService
         try
         {
             _dbContext.Items.Add(new Item { Name = name });
-            _dbContext.SaveChanges(); // UNIQUE constraint on Name column
+            
+            // Assumes that there IS a UNIQUE constraint on Name column taking care of the uniqueness.
+            _dbContext.SaveChanges(); 
         }
         catch (DbUpdateException)
         {
