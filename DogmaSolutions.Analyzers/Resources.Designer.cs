@@ -454,5 +454,32 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA015AnalyzerTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to An enumeration method is invoked multiple times with identical arguments on the same receiver within the same scope....
+        /// </summary>
+        internal static string DSA016AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA016AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The enumeration method &apos;{0}&apos; is invoked multiple times with identical arguments on the same receiver. Extract the result into a variable to avoid redundant enumeration and potential non-deterministic behavior..
+        /// </summary>
+        internal static string DSA016AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA016AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Avoid repeated invocation of the same enumeration method with identical arguments.
+        /// </summary>
+        internal static string DSA016AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA016AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

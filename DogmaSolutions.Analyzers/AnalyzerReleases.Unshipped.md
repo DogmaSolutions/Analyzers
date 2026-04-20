@@ -4,4 +4,5 @@
 |---------|----------|----------|----------------|
 | DSA013  | Security | Warning  | DSA013Analyzer |
 | DSA014  | Security | Warning  | DSA014Analyzer |
-| DSA015  | Security | Warning  | DSA015Analyzer |
+| DSA015  | Security    | Warning  | DSA015Analyzer |
+| DSA016  | Code Smells | Warning  | DSA016Analyzer |

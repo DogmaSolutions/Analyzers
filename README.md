@@ -34,6 +34,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA013](#dsa013) | Security    | Minimal API endpoints should have an explicit authorization configuration                                                                                                                                  | ⚠ Warning        | ✅          | ❌        |
 | [DSA014](#dsa014) | Security    | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                   | ⚠ Warning        | ✅          | ❌        |
 | [DSA015](#dsa015) | Security    | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                   | ⚠ Warning        | ✅          | ❌        |
+| [DSA016](#dsa016) | Code Smells | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
 
 ---
 
@@ -1103,6 +1104,187 @@ public static class EndpointExtensions
             .RequireAuthorization();
 
         return builder;
+    }
+}
+```
+
+---
+
+# DSA016
+
+Avoid repeated invocation of the same enumeration method with identical arguments.
+
+- **Category**: Code Smells
+- **Severity**: Warning ⚠
+- **Related rules**: [DSA005](#dsa005)
+
+## Description
+
+This rule fires when the same LINQ/enumeration method is called **multiple times** on the **same receiver** with the **same arguments** within the **same scope** (method body, lambda body, or local function body).
+
+Each redundant call re-enumerates the source, which causes two distinct problems:
+
+1. **Performance**: if the source is backed by a database query, a network stream, or a large in-memory collection, each call repeats the full scan. For N elements and K duplicate calls, the work becomes O(N * K) instead of O(N).
+2. **Non-determinism**: if the source is a deferred `IEnumerable<T>` (e.g., a LINQ query, a generator, or a stream), consecutive enumerations may return different results. The duplicate calls could see different data, leading to inconsistent state within the same object or method.
+
+The analyzer tracks the following method families:
+- **Element access**: `First`, `FirstOrDefault`, `Single`, `SingleOrDefault`, `Last`, `LastOrDefault`, `ElementAt`, `ElementAtOrDefault`, `Find`
+- **Boolean checks**: `Any`, `All`, `Contains`, `Exists`
+- **Counting**: `Count`, `LongCount`
+- **Aggregation**: `Min`, `Max`, `Sum`, `Average`, `Aggregate`
+- **Async variants**: all of the above with the `Async` suffix
+
+Each scope (method body, lambda, local function) is analyzed independently; invocations in nested lambdas are not compared with invocations in the outer scope.
+
+## See also
+
+- [CA1851: Possible multiple enumerations of IEnumerable collection](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1851)
+- [DSA005: Potential non-deterministic point-in-time execution](#dsa005) (similar concept for `DateTime.Now`)
+
+## Matched patterns
+
+The following patterns are matched:
+
+```cs
+// Pattern A: same FirstOrDefault with same predicate called multiple times in a lambda
+var result = orders.Select(o => new
+{
+    Line = orderLines.FirstOrDefault(l => l.OrderId == o.OrderId)?.Description,    // ❌
+    Qty  = orderLines.FirstOrDefault(l => l.OrderId == o.OrderId)?.Quantity,        // ❌
+    Unit = orderLines.FirstOrDefault(l => l.OrderId == o.OrderId)?.UnitOfMeasure,   // ❌
+});
+
+// Pattern B: same Count() called twice in a method body
+var count1 = items.Count();  // ❌
+var count2 = items.Count();  // ❌
+
+// Pattern C: same Any with same predicate
+var exists1 = items.Any(x => x.Id == id);  // ❌
+var exists2 = items.Any(x => x.Id == id);  // ❌
+
+// Pattern D: same Min/Max/Sum/Average called twice
+var min1 = values.Min();  // ❌
+var min2 = values.Min();  // ❌
+
+// Pattern E: conditional access ?.FirstOrDefault called twice
+var name = items?.FirstOrDefault(x => x.Id == id)?.Name;    // ❌
+var code = items?.FirstOrDefault(x => x.Id == id)?.Code;    // ❌
+
+// Pattern F: chained receiver
+var a = items.Where(x => x.Active).FirstOrDefault(x => x.Id == id);  // ❌
+var b = items.Where(x => x.Active).FirstOrDefault(x => x.Id == id);  // ❌
+
+// Pattern G: Contains with same argument
+var has1 = items.Contains(value);  // ❌
+var has2 = items.Contains(value);  // ❌
+```
+
+## Not matched patterns
+
+The following patterns are NOT matched:
+
+```cs
+// Different predicates on the same receiver
+var a = items.FirstOrDefault(x => x.Id == id);
+var b = items.FirstOrDefault(x => x.Name == name);  // ✅ different predicate
+
+// Same predicate on different receivers
+var a = items1.FirstOrDefault(x => x.Id == id);
+var b = items2.FirstOrDefault(x => x.Id == id);  // ✅ different receiver
+
+// Different methods on the same receiver (Any vs FirstOrDefault)
+var exists = items.Any(x => x.Id == id);
+var item = items.FirstOrDefault(x => x.Id == id);  // ✅ different method
+
+// Same invocation in different scopes (method body vs nested lambda)
+var a = items.FirstOrDefault(x => x.Id == 1);          // scope: method body
+var results = ids.Select(id =>
+    items.FirstOrDefault(x => x.Id == 1));              // ✅ scope: lambda (separate)
+
+// Same invocation in two separate lambdas (each is its own scope)
+Action a1 = () => { var x = items.FirstOrDefault(x => x.Id == 1); };  // scope: lambda 1
+Action a2 = () => { var x = items.FirstOrDefault(x => x.Id == 1); };  // ✅ scope: lambda 2
+
+// Count with vs without predicate (different argument signatures)
+var total = items.Count();
+var filtered = items.Count(x => x.Id > 0);  // ✅ different arguments
+
+// Non-tracked methods (ToString, custom methods, etc.)
+var s1 = value.ToString();
+var s2 = value.ToString();  // ✅ not a tracked enumeration method
+
+// Called only once
+var item = items.FirstOrDefault(x => x.Id == id);  // ✅ single invocation
+```
+
+## Fix / Mitigation
+
+Extract the result of the enumeration method into a local variable and reuse it:
+
+```cs
+// Fix for Pattern A:
+var result = orders.Select(o =>
+{
+    var line = orderLines.FirstOrDefault(l => l.OrderId == o.OrderId);  // ✅ once
+    return new
+    {
+        Line = line?.Description,
+        Qty  = line?.Quantity,
+        Unit = line?.UnitOfMeasure,
+    };
+});
+
+// Fix for Pattern B:
+var count = items.Count();  // ✅ once
+// use 'count' wherever needed
+
+// Fix for Pattern C:
+var exists = items.Any(x => x.Id == id);  // ✅ once
+// use 'exists' wherever needed
+```
+
+## When to ignore this rule
+
+If the collection is known to be modified between the two calls and re-enumeration is intentional, you may suppress this rule with `#pragma warning disable DSA016`. However, in most cases, modifying a collection between two identical queries suggests a design issue that should be addressed.
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA016: Avoid repeated invocation of the same enumeration method with identical arguments
+dotnet_diagnostic.DSA016.severity = error
+```
+
+## Code sample
+
+```csharp
+public class OrderService
+{
+    public object BuildSummary(IEnumerable<Order> orders, IEnumerable<OrderLine> lines)
+    {
+        // this WILL trigger the rule: FirstOrDefault called 3 times
+        // with the same predicate on the same receiver
+        var summary = orders.Select(o => new
+        {
+            Description = lines.FirstOrDefault(l => l.OrderId == o.Id)?.Description,
+            Quantity = lines.FirstOrDefault(l => l.OrderId == o.Id)?.Quantity,
+            Price = lines.FirstOrDefault(l => l.OrderId == o.Id)?.UnitPrice,
+        });
+
+        // this WILL NOT trigger the rule: result extracted into a variable
+        var summaryFixed = orders.Select(o =>
+        {
+            var line = lines.FirstOrDefault(l => l.OrderId == o.Id);
+            return new
+            {
+                Description = line?.Description,
+                Quantity = line?.Quantity,
+                Price = line?.UnitPrice,
+            };
+        });
+
+        return summaryFixed;
     }
 }
 ```

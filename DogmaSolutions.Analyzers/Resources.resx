@@ -278,4 +278,14 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA015AnalyzerTitle" xml:space="preserve">
     <value>Minimal API endpoints on parameterized route builders should have an explicit authorization configuration</value>
   </data>
+
+    <data name="DSA016AnalyzerDescription" xml:space="preserve">
+    <value>An enumeration method is invoked multiple times with identical arguments on the same receiver within the same scope. Each call re-enumerates the source, which is wasteful and potentially non-deterministic if the source is a deferred IEnumerable. Extract the result into a local variable and reuse it. This is particularly impactful when the source is backed by a database query, a network stream, or any non-materialized sequence where repeated enumeration may yield different results or cause redundant I/O (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa016).</value>
+  </data>
+    <data name="DSA016AnalyzerMessageFormat" xml:space="preserve">
+    <value>The enumeration method '{0}' is invoked multiple times with identical arguments on the same receiver. Extract the result into a variable to avoid redundant enumeration and potential non-deterministic behavior.</value>
+  </data>
+    <data name="DSA016AnalyzerTitle" xml:space="preserve">
+    <value>Avoid repeated invocation of the same enumeration method with identical arguments</value>
+  </data>
 </root>
