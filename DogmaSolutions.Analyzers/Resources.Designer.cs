@@ -373,5 +373,86 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA012AnalyzerTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Minimal API endpoints mapped on a local IEndpointRouteBuilder should always have an explicit authorization configuration in their fluent chain....
+        /// </summary>
+        internal static string DSA013AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA013AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The Minimal API endpoint &apos;{0}&apos; does not have an explicit authorization configuration. Add .RequireAuthorization() or .AllowAnonymous() to make the authorization intent explicit..
+        /// </summary>
+        internal static string DSA013AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA013AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Minimal API endpoints should have an explicit authorization configuration.
+        /// </summary>
+        internal static string DSA013AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA013AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Minimal API endpoints mapped on a RouteGroupBuilder should have an explicit authorization configuration....
+        /// </summary>
+        internal static string DSA014AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA014AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The Minimal API endpoint &apos;{0}&apos; on a route group does not have an explicit authorization configuration....
+        /// </summary>
+        internal static string DSA014AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA014AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Minimal API endpoints on route groups should have an explicit authorization configuration.
+        /// </summary>
+        internal static string DSA014AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA014AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Minimal API endpoints mapped on an IEndpointRouteBuilder received as a method parameter should have an explicit authorization configuration....
+        /// </summary>
+        internal static string DSA015AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA015AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The Minimal API endpoint &apos;{0}&apos; is mapped on a route builder received as a method parameter without explicit authorization....
+        /// </summary>
+        internal static string DSA015AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA015AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Minimal API endpoints on parameterized route builders should have an explicit authorization configuration.
+        /// </summary>
+        internal static string DSA015AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA015AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

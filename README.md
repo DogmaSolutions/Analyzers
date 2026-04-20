@@ -31,6 +31,9 @@ Every rule is accompanied by the following information and clues:
 | [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset                                                                                                                                      | ⛔ Error          | ✅          | ❌        |
 | [DSA011](#dsa011) | Design      | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                      | ⚠ Warning        | ✅          | ❌        |
 | [DSA012](#dsa012) | Design      | Avoid the "if not exists, then insert" check-then-act antipattern (TOCTOU)                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
+| [DSA013](#dsa013) | Security    | Minimal API endpoints should have an explicit authorization configuration                                                                                                                                  | ⚠ Warning        | ✅          | ❌        |
+| [DSA014](#dsa014) | Security    | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                   | ⚠ Warning        | ✅          | ❌        |
+| [DSA015](#dsa015) | Security    | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                   | ⚠ Warning        | ✅          | ❌        |
 
 ---
 
@@ -810,6 +813,296 @@ public class MyService
         {
             // Handle duplicate gracefully
         }
+    }
+}
+```
+
+---
+
+# DSA013
+
+Minimal API endpoints should have an explicit authorization configuration.
+
+- **Category**: Security
+- **Severity**: Warning ⚠
+- **Related rules**: [DSA014](#dsa014), [DSA015](#dsa015)
+
+## Description
+
+This rule fires when a Minimal API endpoint (`MapGet`, `MapPost`, `MapPut`, `MapDelete`, `MapPatch`, `MapMethods`, or `Map`) is called on a **local (non-parameter) `IEndpointRouteBuilder`** without `.RequireAuthorization()` or `.AllowAnonymous()` in its fluent chain.
+
+Without an explicit authorization configuration, the endpoint silently defaults to **anonymous access**, creating an unauthenticated attack surface. Every endpoint should make a conscious, reviewable authorization decision.
+
+This rule has the highest confidence level among the three authorization rules: the builder is a local variable (not received from a caller), and it is not a `RouteGroupBuilder` (no group-level inheritance to consider). If auth is missing from the chain, it is almost certainly a bug.
+
+For endpoints on `RouteGroupBuilder`, see [DSA014](#dsa014).  
+For endpoints on `IEndpointRouteBuilder` received as a method parameter, see [DSA015](#dsa015).
+
+## See also
+
+- [MITRE, CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)
+- [ASP.NET Core Minimal APIs - Authorization](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security)
+- [OWASP: Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+
+## Matched patterns
+
+```cs
+var app = WebApplication.Create();
+
+// direct endpoint without auth
+app.MapGet("/api/items", GetItemsAsync);
+
+// fluent chain without auth
+app.MapGet("/api/items", GetItemsAsync)
+    .WithName("GetItems")
+    .Produces<List<Item>>(StatusCodes.Status200OK);
+```
+
+## Fix / Mitigation
+
+Add `.RequireAuthorization()` or `.AllowAnonymous()` directly to the endpoint:
+
+```cs
+// explicit auth
+app.MapGet("/api/items", GetItemsAsync)
+    .RequireAuthorization();  // ✅
+
+// explicit anonymous access (conscious decision)
+app.MapGet("/public/health", HealthCheckAsync)
+    .AllowAnonymous();  // ✅
+```
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA013: Minimal API endpoints should have an explicit authorization configuration
+dotnet_diagnostic.DSA013.severity = error
+```
+
+## Code sample
+
+```csharp
+public class Program
+{
+    public static void Main()
+    {
+        var app = WebApplication.Create();
+
+        // this WILL trigger the rule
+        app.MapGet("/api/items", GetItems)
+            .WithName("GetItems")
+            .Produces<List<DataItem>>(StatusCodes.Status200OK);
+
+        // this WILL NOT trigger the rule
+        app.MapGet("/api/items", GetItems)
+            .WithName("GetItems")
+            .Produces<List<DataItem>>(StatusCodes.Status200OK)
+            .RequireAuthorization();
+    }
+}
+```
+
+---
+
+# DSA014
+
+Minimal API endpoints on route groups should have an explicit authorization configuration.
+
+- **Category**: Security
+- **Severity**: Warning ⚠
+- **Related rules**: [DSA013](#dsa013), [DSA015](#dsa015)
+
+## Description
+
+This rule fires when a Minimal API endpoint is called on a **`RouteGroupBuilder`** (obtained via `MapGroup`) and neither the endpoint's fluent chain nor the route group (or any ancestor group) carries `.RequireAuthorization()` or `.AllowAnonymous()`.
+
+The analyzer checks multiple levels:
+
+1. **Endpoint chain**: `.RequireAuthorization()` or `.AllowAnonymous()` on the `MapGet`/`MapPost`/etc. call itself.
+2. **Local group auth**: auth on the group's `MapGroup()` chain or as a separate statement in the same method.
+3. **Nested group ancestry**: auth inherited from a parent group (e.g., outer group has auth, inner group inherits).
+4. **Cross-method tracing**: when the `RouteGroupBuilder` is received as a method parameter, the analyzer searches the compilation for all call sites and verifies that every caller passes a group with authorization configured.
+
+## See also
+
+- [MITRE, CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)
+- [ASP.NET Core Minimal APIs - Authorization](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security)
+- [OWASP: Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+
+## Matched patterns
+
+```cs
+// Pattern A: group without auth, endpoint without auth
+var group = builder.MapGroup("/api");
+group.MapGet("/items", GetItemsAsync); // ❌
+
+// Pattern B: nested groups, neither has auth
+var api = builder.MapGroup("/api");
+var v1 = api.MapGroup("/v1");
+v1.MapGet("/items", GetItemsAsync); // ❌
+
+// Pattern C: group parameter, call site has no auth
+public static void MapItems(RouteGroupBuilder group)
+{
+    group.MapGet("/items", GetItemsAsync); // ❌ if caller doesn't authorize
+}
+```
+
+## Fix / Mitigation
+
+Add auth to the endpoint, the group, or ensure all callers pass an authorized group:
+
+```cs
+// Fix 1: auth on the endpoint itself
+group.MapGet("/items", GetItemsAsync)
+    .RequireAuthorization();  // ✅
+
+// Fix 2: auth on the group (inline)
+var group = builder.MapGroup("/api").RequireAuthorization();  // ✅
+group.MapGet("/items", GetItemsAsync);  // covered
+
+// Fix 3: auth on the group (separate statement)
+var group = builder.MapGroup("/api");
+group.RequireAuthorization();  // ✅
+group.MapGet("/items", GetItemsAsync);  // covered
+
+// Fix 4: auth at the call site for parameterized groups
+var api = builder.MapGroup("/api").RequireAuthorization();
+MapItems(api);  // ✅ caller provides authorized group
+```
+
+## When to ignore this rule
+
+If the `RouteGroupBuilder` is received as a parameter and the method is part of a public API consumed by external assemblies (where call sites are not visible to the analyzer), you may suppress this rule with `#pragma warning disable DSA014` and document that callers are expected to provide an authorized group.
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA014: Minimal API endpoints on route groups should have an explicit authorization configuration
+dotnet_diagnostic.DSA014.severity = error
+```
+
+## Code sample
+
+```csharp
+public class Startup
+{
+    public void Configure(IEndpointRouteBuilder builder)
+    {
+        // this WILL trigger the rule: group has no auth
+        var unprotected = builder.MapGroup("/api");
+        unprotected.MapGet("/items", GetItemsAsync);
+
+        // this WILL NOT trigger the rule: group has auth
+        var secured = builder.MapGroup("/api").RequireAuthorization();
+        secured.MapGet("/items", GetItemsAsync);
+    }
+}
+```
+
+---
+
+# DSA015
+
+Minimal API endpoints on parameterized route builders should have an explicit authorization configuration.
+
+- **Category**: Security
+- **Severity**: Warning ⚠
+- **Related rules**: [DSA013](#dsa013), [DSA014](#dsa014)
+
+## Description
+
+This rule fires when a Minimal API endpoint is called on an **`IEndpointRouteBuilder` received as a method parameter** (not a `RouteGroupBuilder` — that is handled by [DSA014](#dsa014)) without `.RequireAuthorization()` or `.AllowAnonymous()` in its fluent chain.
+
+Since the builder comes from the caller, authorization may be configured at the call site. The analyzer performs **cross-method tracing**: it searches the entire compilation for all invocations of the method and verifies that every call site passes a builder with authorization configured. This includes:
+
+- Arguments with inline auth (e.g., `group.RequireAuthorization()`)
+- Local variables whose declaration or separate statements carry auth
+- Nested group ancestry (auth inherited from parent groups)
+- Recursive pass-through (parameter passed through multiple method layers)
+
+If authorization cannot be confirmed at every call site, the endpoint is flagged.
+
+**Note**: if no call sites are found in the compilation (e.g., the method is a public API consumed by an external assembly), the rule flags the endpoint. In this case, add auth directly to the endpoint or suppress with `#pragma warning disable DSA015`.
+
+## See also
+
+- [MITRE, CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)
+- [ASP.NET Core Minimal APIs - Authorization](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security)
+- [OWASP: Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+
+## Matched patterns
+
+```cs
+// Pattern A: extension method, no call sites or call sites lack auth
+public static void MapItems(this IEndpointRouteBuilder builder)
+{
+    builder.MapGet("/items", GetItemsAsync); // ❌
+}
+
+// Pattern B: call site passes unauthenticated builder
+public static void MapItems(IEndpointRouteBuilder builder)
+{
+    builder.MapGet("/items", GetItemsAsync); // ❌
+}
+
+var app = GetBuilder();
+MapItems(app); // no auth on app
+```
+
+## Fix / Mitigation
+
+Add auth directly to the endpoint, or ensure all callers provide an authorized builder:
+
+```cs
+// Fix 1: auth on the endpoint itself
+public static void MapItems(this IEndpointRouteBuilder builder)
+{
+    builder.MapGet("/items", GetItemsAsync)
+        .RequireAuthorization();  // ✅
+}
+
+// Fix 2: ensure all callers pass authorized builders
+var group = builder.MapGroup("/api").RequireAuthorization();
+group.MapItems();  // ✅ group has auth
+```
+
+## When to ignore this rule
+
+If the method is part of a public API or a shared library consumed by external assemblies (where call sites are not visible to the analyzer), and you have ensured that all external callers provide an authorized builder, you may suppress this rule with `#pragma warning disable DSA015`.
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA015: Minimal API endpoints on parameterized route builders should have an explicit authorization configuration
+dotnet_diagnostic.DSA015.severity = error
+```
+
+## Code sample
+
+```csharp
+public static class EndpointExtensions
+{
+    public static IEndpointRouteBuilder MapDataItems(this IEndpointRouteBuilder builder)
+    {
+        // this WILL trigger the rule if any call site lacks auth
+        builder.MapGet("/api/items", GetItems)
+            .WithName("GetItems")
+            .Produces<List<DataItem>>(StatusCodes.Status200OK);
+
+        // this WILL NOT trigger the rule: explicit authorization
+        builder.MapGet("/api/items", GetItems)
+            .WithName("GetItems")
+            .Produces<List<DataItem>>(StatusCodes.Status200OK)
+            .RequireAuthorization();
+
+        return builder;
     }
 }
 ```

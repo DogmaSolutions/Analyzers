@@ -248,4 +248,34 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA012AnalyzerTitle" xml:space="preserve">
     <value>Avoid the "if not exists, then insert" check-then-act antipattern</value>
   </data>
+
+    <data name="DSA013AnalyzerDescription" xml:space="preserve">
+    <value>Minimal API endpoints mapped on a local IEndpointRouteBuilder (not a RouteGroupBuilder, and not received as a method parameter) should always have an explicit authorization configuration in their fluent chain. Without a call to RequireAuthorization() or AllowAnonymous(), the endpoint silently defaults to anonymous access, creating an unauthenticated attack surface. Every endpoint should make a conscious, reviewable authorization decision. See also: MITRE, CWE-862 - Missing Authorization (https://cwe.mitre.org/data/definitions/862.html) (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa013).</value>
+  </data>
+    <data name="DSA013AnalyzerMessageFormat" xml:space="preserve">
+    <value>The Minimal API endpoint '{0}' does not have an explicit authorization configuration. Add .RequireAuthorization() or .AllowAnonymous() to make the authorization intent explicit.</value>
+  </data>
+    <data name="DSA013AnalyzerTitle" xml:space="preserve">
+    <value>Minimal API endpoints should have an explicit authorization configuration</value>
+  </data>
+
+    <data name="DSA014AnalyzerDescription" xml:space="preserve">
+    <value>Minimal API endpoints mapped on a RouteGroupBuilder should have an explicit authorization configuration, either directly on the endpoint or inherited from the route group. Without a call to RequireAuthorization() or AllowAnonymous() on the endpoint or on any ancestor group, the endpoint silently defaults to anonymous access, creating an unauthenticated attack surface. This analyzer traces authorization across method boundaries when the group is received as a parameter, verifying that all call sites pass a group with authorization configured. See also: MITRE, CWE-862 - Missing Authorization (https://cwe.mitre.org/data/definitions/862.html) (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa014).</value>
+  </data>
+    <data name="DSA014AnalyzerMessageFormat" xml:space="preserve">
+    <value>The Minimal API endpoint '{0}' on a route group does not have an explicit authorization configuration. Add .RequireAuthorization() or .AllowAnonymous() to the endpoint or to its route group.</value>
+  </data>
+    <data name="DSA014AnalyzerTitle" xml:space="preserve">
+    <value>Minimal API endpoints on route groups should have an explicit authorization configuration</value>
+  </data>
+
+    <data name="DSA015AnalyzerDescription" xml:space="preserve">
+    <value>Minimal API endpoints mapped on an IEndpointRouteBuilder received as a method parameter should have an explicit authorization configuration. Since the builder is received from the caller, authorization may need to be configured at the call site. This analyzer traces authorization across method boundaries to verify that all call sites provide an authorized builder. If authorization cannot be confirmed at every call site, the endpoint is flagged. Add .RequireAuthorization() or .AllowAnonymous() directly to the endpoint, or ensure all callers provide an authorized builder. See also: MITRE, CWE-862 - Missing Authorization (https://cwe.mitre.org/data/definitions/862.html) (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa015).</value>
+  </data>
+    <data name="DSA015AnalyzerMessageFormat" xml:space="preserve">
+    <value>The Minimal API endpoint '{0}' is mapped on a route builder received as a method parameter without explicit authorization. Ensure all call sites provide an authorized builder, or add .RequireAuthorization() or .AllowAnonymous() directly to the endpoint.</value>
+  </data>
+    <data name="DSA015AnalyzerTitle" xml:space="preserve">
+    <value>Minimal API endpoints on parameterized route builders should have an explicit authorization configuration</value>
+  </data>
 </root>
