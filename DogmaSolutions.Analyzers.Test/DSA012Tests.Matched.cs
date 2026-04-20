@@ -10,161 +10,113 @@ public partial class DSA012Tests
     private static IEnumerable<object[]> GetQueryExpressionSyntaxMatchedCases =>
     [
         [
-            "Negated Any + Add (block body)",
+            "Negated Any + Add on DbSet",
             @"
-            using System.Collections.Generic;
             using System.Linq;
+            using Microsoft.EntityFrameworkCore;
             namespace TestApp
             {
-                public class MyClass
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
                 {
-                    public void MyMethod()
+                    private readonly MyDbContext _db = null;
+                    public void AddItem(string name)
                     {
-                        var items = new List<string>();
-                        {|#0:if (!items.Any(x => x == ""test""))
+                        {|#0:if (!_db.Items.Any(x => x.Name == name))
                         {
-                            items.Add(""test"");
+                            _db.Items.Add(new Item { Name = name });
                         }|}
                     }
                 }
             }"
         ],
         [
-            "Negated Any + Add (single statement)",
+            "Positive Any + throw + Add after on DbSet",
             @"
-            using System.Collections.Generic;
             using System.Linq;
+            using Microsoft.EntityFrameworkCore;
             namespace TestApp
             {
-                public class MyClass
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
                 {
-                    public void MyMethod()
+                    private readonly MyDbContext _db = null;
+                    public void AddItem(string name)
                     {
-                        var items = new List<string>();
-                        {|#0:if (!items.Any(x => x == ""test""))
-                            items.Add(""test"");|}
-                    }
-                }
-            }"
-        ],
-        [
-            "Positive Any + throw + Add after (single statement throw)",
-            @"
-            using System.Collections.Generic;
-            using System.Linq;
-            namespace TestApp
-            {
-                public class MyClass
-                {
-                    public void MyMethod()
-                    {
-                        var items = new List<string>();
-                        {|#0:if (items.Any(x => x == ""test""))
+                        {|#0:if (_db.Items.Any(x => x.Name == name))
                             throw new System.InvalidOperationException();|}
-                        items.Add(""test"");
+                        _db.Items.Add(new Item { Name = name });
                     }
                 }
             }"
         ],
         [
-            "Positive Any + throw + Add after (block throw)",
+            "Count == 0 + Add on DbSet",
             @"
-            using System.Collections.Generic;
             using System.Linq;
+            using Microsoft.EntityFrameworkCore;
             namespace TestApp
             {
-                public class MyClass
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
                 {
-                    public void MyMethod()
+                    private readonly MyDbContext _db = null;
+                    public void AddItem(string name)
                     {
-                        var items = new List<string>();
-                        {|#0:if (items.Any(x => x == ""test""))
+                        {|#0:if (_db.Items.Count(x => x.Name == name) == 0)
                         {
-                            throw new System.InvalidOperationException();
-                        }|}
-                        items.Add(""test"");
-                    }
-                }
-            }"
-        ],
-        [
-            "Count == 0 + Add",
-            @"
-            using System.Collections.Generic;
-            using System.Linq;
-            namespace TestApp
-            {
-                public class MyClass
-                {
-                    public void MyMethod()
-                    {
-                        var items = new List<string>();
-                        {|#0:if (items.Count(x => x == ""test"") == 0)
-                        {
-                            items.Add(""test"");
+                            _db.Items.Add(new Item { Name = name });
                         }|}
                     }
                 }
             }"
         ],
         [
-            "FirstOrDefault == null + Add",
+            "FirstOrDefault == null + Add on DbSet",
             @"
-            using System.Collections.Generic;
             using System.Linq;
+            using Microsoft.EntityFrameworkCore;
             namespace TestApp
             {
-                public class MyClass
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
                 {
-                    public void MyMethod()
+                    private readonly MyDbContext _db = null;
+                    public void AddItem(string name)
                     {
-                        var items = new List<string>();
-                        {|#0:if (items.FirstOrDefault(x => x == ""test"") == null)
+                        {|#0:if (_db.Items.FirstOrDefault(x => x.Name == name) == null)
                         {
-                            items.Add(""test"");
+                            _db.Items.Add(new Item { Name = name });
                         }|}
                     }
                 }
             }"
         ],
         [
-            "Positive Any + else Add",
+            "Positive Any + else Add on DbSet",
             @"
-            using System.Collections.Generic;
             using System.Linq;
+            using Microsoft.EntityFrameworkCore;
             namespace TestApp
             {
-                public class MyClass
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
                 {
-                    public void MyMethod()
+                    private readonly MyDbContext _db = null;
+                    public void AddItem(string name)
                     {
-                        var items = new List<string>();
-                        {|#0:if (items.Any(x => x == ""test""))
+                        {|#0:if (_db.Items.Any(x => x.Name == name))
                         {
                             System.Console.WriteLine(""exists"");
                         }
                         else
                         {
-                            items.Add(""test"");
-                        }|}
-                    }
-                }
-            }"
-        ],
-        [
-            "Negated Contains + Add",
-            @"
-            using System.Collections.Generic;
-            namespace TestApp
-            {
-                public class MyClass
-                {
-                    public void MyMethod()
-                    {
-                        var items = new List<string>();
-                        {|#0:if (!items.Contains(""test""))
-                        {
-                            items.Add(""test"");
+                            _db.Items.Add(new Item { Name = name });
                         }|}
                     }
                 }

@@ -249,6 +249,26 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>Avoid the "if not exists, then insert" check-then-act antipattern</value>
   </data>
 
+    <data name="DSA017AnalyzerDescription" xml:space="preserve">
+    <value>The "if not exists, then insert" pattern on a collection type that offers an atomic alternative is redundant and prone to TOCTOU (Time-of-Check to Time-of-Use) race conditions. The collection type provides a built-in operation that combines the check and insert atomically. Use the atomic operation instead of the check-then-act pattern (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa017).</value>
+  </data>
+    <data name="DSA017AnalyzerMessageFormat" xml:space="preserve">
+    <value>The check-then-act pattern on '{0}' is not atomic and prone to race conditions. Use {1} instead.</value>
+  </data>
+    <data name="DSA017AnalyzerTitle" xml:space="preserve">
+    <value>Use the collection's atomic operation instead of the check-then-act pattern</value>
+  </data>
+
+    <data name="DSA018AnalyzerDescription" xml:space="preserve">
+    <value>The "if not exists, then insert" pattern on a collection type without an atomic alternative is prone to TOCTOU (Time-of-Check to Time-of-Use) race conditions in multithreaded code. Between the existence check and the insert, another thread could modify the collection, leading to duplicates or corruption. Protect the check-then-act sequence with a lock or SemaphoreSlim, or consider switching to a collection type with built-in duplicate handling such as HashSet or ConcurrentDictionary (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa018).</value>
+  </data>
+    <data name="DSA018AnalyzerMessageFormat" xml:space="preserve">
+    <value>The check-then-act pattern is not atomic and prone to race conditions. Protect with a lock or SemaphoreSlim, or switch to a collection type with built-in duplicate handling.</value>
+  </data>
+    <data name="DSA018AnalyzerTitle" xml:space="preserve">
+    <value>Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling</value>
+  </data>
+
     <data name="DSA013AnalyzerDescription" xml:space="preserve">
     <value>Minimal API endpoints mapped on a local IEndpointRouteBuilder (not a RouteGroupBuilder, and not received as a method parameter) should always have an explicit authorization configuration in their fluent chain. Without a call to RequireAuthorization() or AllowAnonymous(), the endpoint silently defaults to anonymous access, creating an unauthenticated attack surface. Every endpoint should make a conscious, reviewable authorization decision. See also: MITRE, CWE-862 - Missing Authorization (https://cwe.mitre.org/data/definitions/862.html) (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa013).</value>
   </data>

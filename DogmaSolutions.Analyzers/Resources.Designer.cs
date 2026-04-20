@@ -375,6 +375,60 @@ namespace DogmaSolutions.Analyzers {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to The "if not exists, then insert" pattern on a collection type that offers an atomic alternative is redundant and prone to TOCTOU race conditions....
+        /// </summary>
+        internal static string DSA017AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA017AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The check-then-act pattern on &apos;{0}&apos; is not atomic and prone to race conditions. Use {1} instead..
+        /// </summary>
+        internal static string DSA017AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA017AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Use the collection&apos;s atomic operation instead of the check-then-act pattern.
+        /// </summary>
+        internal static string DSA017AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA017AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The "if not exists, then insert" pattern on a collection type without an atomic alternative is prone to TOCTOU race conditions in multithreaded code....
+        /// </summary>
+        internal static string DSA018AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA018AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The check-then-act pattern is not atomic and prone to race conditions. Protect with a lock or SemaphoreSlim, or switch to a collection type with built-in duplicate handling..
+        /// </summary>
+        internal static string DSA018AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA018AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling.
+        /// </summary>
+        internal static string DSA018AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA018AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Minimal API endpoints mapped on a local IEndpointRouteBuilder should always have an explicit authorization configuration in their fluent chain....
         /// </summary>
         internal static string DSA013AnalyzerDescription {

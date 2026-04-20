@@ -5,12 +5,32 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace DogmaSolutions.Analyzers.Test;
 
-public partial class DSA012Tests
+public partial class DSA018Tests
 {
-    private static IEnumerable<object[]> GetQueryExpressionSyntaxNotMatchedCases =>
+    private static IEnumerable<object[]> GetMatchedCases =>
     [
         [
-            "Just Add without existence check",
+            "List: negated Any + Add",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod()
+                    {
+                        var items = new List<string>();
+                        {|#0:if (!items.Any(x => x == ""test""))
+                        {
+                            items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List: negated Contains + Add",
             @"
             using System.Collections.Generic;
             namespace TestApp
@@ -20,13 +40,35 @@ public partial class DSA012Tests
                     public void MyMethod()
                     {
                         var items = new List<string>();
+                        {|#0:if (!items.Contains(""test""))
+                        {
+                            items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List: positive Any + throw + Add after",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod()
+                    {
+                        var items = new List<string>();
+                        {|#0:if (items.Any(x => x == ""test""))
+                            throw new System.InvalidOperationException();|}
                         items.Add(""test"");
                     }
                 }
             }"
         ],
         [
-            "Negated Any without Add in body",
+            "List: positive Any + else Add",
             @"
             using System.Collections.Generic;
             using System.Linq;
@@ -37,35 +79,20 @@ public partial class DSA012Tests
                     public void MyMethod()
                     {
                         var items = new List<string>();
-                        if (!items.Any(x => x == ""test""))
+                        {|#0:if (items.Any(x => x == ""test""))
                         {
-                            System.Console.WriteLine(""not found"");
+                            System.Console.WriteLine(""exists"");
                         }
-                    }
-                }
-            }"
-        ],
-        [
-            "Non-existence condition + Add",
-            @"
-            using System.Collections.Generic;
-            namespace TestApp
-            {
-                public class MyClass
-                {
-                    public void MyMethod(bool someFlag)
-                    {
-                        var items = new List<string>();
-                        if (someFlag)
+                        else
                         {
                             items.Add(""test"");
-                        }
+                        }|}
                     }
                 }
             }"
         ],
         [
-            "Positive Any + throw without Add after",
+            "List: Count == 0 + Add",
             @"
             using System.Collections.Generic;
             using System.Linq;
@@ -76,83 +103,66 @@ public partial class DSA012Tests
                     public void MyMethod()
                     {
                         var items = new List<string>();
-                        if (items.Any(x => x == ""test""))
-                            throw new System.InvalidOperationException();
-                    }
-                }
-            }"
-        ],
-        [
-            "Standalone Any without if",
-            @"
-            using System.Collections.Generic;
-            using System.Linq;
-            namespace TestApp
-            {
-                public class MyClass
-                {
-                    public void MyMethod()
-                    {
-                        var items = new List<string>();
-                        var exists = items.Any(x => x == ""test"");
-                    }
-                }
-            }"
-        ],
-        [
-            "List check-then-act (DSA018 territory, not DSA012)",
-            @"
-            using System.Collections.Generic;
-            using System.Linq;
-            namespace TestApp
-            {
-                public class MyClass
-                {
-                    public void MyMethod()
-                    {
-                        var items = new List<string>();
-                        if (!items.Any(x => x == ""test""))
+                        {|#0:if (items.Count(x => x == ""test"") == 0)
                         {
                             items.Add(""test"");
-                        }
+                        }|}
                     }
                 }
             }"
         ],
         [
-            "Dictionary check-then-act (DSA017 territory, not DSA012)",
+            "List: FirstOrDefault == null + Add",
             @"
             using System.Collections.Generic;
+            using System.Linq;
             namespace TestApp
             {
                 public class MyClass
                 {
                     public void MyMethod()
                     {
-                        var dict = new Dictionary<string, int>();
-                        if (!dict.ContainsKey(""test""))
+                        var items = new List<string>();
+                        {|#0:if (items.FirstOrDefault(x => x == ""test"") == null)
                         {
-                            dict.Add(""test"", 1);
-                        }
+                            items.Add(""test"");
+                        }|}
                     }
                 }
             }"
         ],
         [
-            "HashSet check-then-act (DSA017 territory, not DSA012)",
+            "ICollection: Contains + Add",
             @"
             using System.Collections.Generic;
             namespace TestApp
             {
                 public class MyClass
                 {
-                    public void MyMethod()
+                    public void MyMethod(ICollection<string> items, string item)
                     {
-                        var set = new HashSet<string>();
-                        if (!set.Contains(""test""))
+                        {|#0:if (!items.Contains(item))
                         {
-                            set.Add(""test"");
-                        }
+                            items.Add(item);
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "IList: Contains + Add (interface without atomic alternative)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod(IList<string> items, string item)
+                    {
+                        {|#0:if (!items.Contains(item))
+                        {
+                            items.Add(item);
+                        }|}
                     }
                 }
             }"
@@ -160,22 +170,19 @@ public partial class DSA012Tests
     ];
 
     [TestMethod]
-    [DynamicData(nameof(GetQueryExpressionSyntaxNotMatchedCases), DynamicDataDisplayName = nameof(GetQueryExpressionSyntaxCaseDisplayName))]
-    public async Task QueryExpressionSyntax_NotMatched(
+    [DynamicData(nameof(GetMatchedCases), DynamicDataDisplayName = nameof(GetCaseDisplayName))]
+    public async Task Matched(
         string title,
         string sourceCode
     )
     {
-        var test = new CSharpAnalyzerVerifier<DSA012Analyzer>.Test();
+        var test = new CSharpAnalyzerVerifier<DSA018Analyzer>.Test();
         test.TestCode = sourceCode;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
-        [
-            ..new PackageIdentity[]
-            {
-                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
-                new("Microsoft.EntityFrameworkCore", "3.1.22")
-            }
-        ]);
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA018Analyzer>.Diagnostic(DSA018Analyzer.DiagnosticId)
+                .WithLocation(0));
 
         await test.RunAsync().ConfigureAwait(false);
     }

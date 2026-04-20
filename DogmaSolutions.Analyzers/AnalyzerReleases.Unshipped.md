@@ -6,3 +6,5 @@
 | DSA014  | Security | Warning  | DSA014Analyzer |
 | DSA015  | Security    | Warning  | DSA015Analyzer |
 | DSA016  | Code Smells | Warning  | DSA016Analyzer |
+| DSA017  | Design      | Warning  | DSA017Analyzer |
+| DSA018  | Design      | Warning  | DSA018Analyzer |

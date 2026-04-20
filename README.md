@@ -30,11 +30,13 @@ Every rule is accompanied by the following information and clues:
 | [DSA008](#dsa008) | Bug         | The Required Attribute has no impact on a not-nullable DateTime                                                                                                                                            | ⛔ Error          | ✅          | ❌        |
 | [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset                                                                                                                                      | ⛔ Error          | ✅          | ❌        |
 | [DSA011](#dsa011) | Design      | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                      | ⚠ Warning        | ✅          | ❌        |
-| [DSA012](#dsa012) | Design      | Avoid the "if not exists, then insert" check-then-act antipattern (TOCTOU)                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
+| [DSA012](#dsa012) | Design      | Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU)                                                                                                               | ⚠ Warning        | ✅          | ❌        |
 | [DSA013](#dsa013) | Security    | Minimal API endpoints should have an explicit authorization configuration                                                                                                                                  | ⚠ Warning        | ✅          | ❌        |
 | [DSA014](#dsa014) | Security    | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                   | ⚠ Warning        | ✅          | ❌        |
 | [DSA015](#dsa015) | Security    | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                   | ⚠ Warning        | ✅          | ❌        |
 | [DSA016](#dsa016) | Code Smells | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
+| [DSA017](#dsa017) | Design      | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
+| [DSA018](#dsa018) | Design      | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                         | ⚠ Warning        | ✅          | ❌        |
 
 ---
 
@@ -705,15 +707,20 @@ dotnet_diagnostic.DSA011.severity = warning
 
 # DSA012
 
-Avoid the "if not exists, then insert" check-then-act antipattern (TOCTOU).
+Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU).
 
 - **Category**: Design
 - **Severity**: Warning ⚠
-- **Related rules**: [DSA005](#dsa005)
+- **Related rules**: [DSA005](#dsa005), [DSA017](#dsa017), [DSA018](#dsa018)
 
 ## Description
-The _"if not exists, then insert"_ pattern (also known as "check-then-act") is a non-atomic sequence that first checks whether a record exists and then, based on the result, inserts a new one.  
+This rule fires when the _"if not exists, then insert"_ check-then-act pattern is used on **database types** (`DbSet<T>`, `IQueryable<T>`).
+
+The pattern is a non-atomic sequence that first checks whether a record exists and then, based on the result, inserts a new one.  
 This pattern **is not a bad thing per-se**, but _suggests_ (or at least gives the suspicion) that the coherence of the data is _only_ handled by application-level logics which, if true, can lead to undesired effects.
+
+For the same pattern on **in-memory collections with atomic alternatives** (e.g., `Dictionary.TryAdd`, `HashSet.Add`), see [DSA017](#dsa017).  
+For the same pattern on **collections without atomic alternatives** (e.g., `List<T>`, `ICollection<T>`), see [DSA018](#dsa018).
 
 ## Rationale
 Since the database is usually the _Single Source of Truth_ for the data, then the uniqueness and semantic consistency of such data must be guaranteed at database-level, not at application-level (or at least not _only_ at application-level).
@@ -813,6 +820,252 @@ public class MyService
         catch (DbUpdateException)
         {
             // Handle duplicate gracefully
+        }
+    }
+}
+```
+
+---
+
+# DSA017
+
+Use the collection's atomic operation instead of the check-then-act pattern.
+
+- **Category**: Design
+- **Severity**: Warning ⚠
+- **Related rules**: [DSA012](#dsa012), [DSA018](#dsa018)
+
+## Description
+
+This rule fires when the _"if not exists, then insert"_ check-then-act pattern is used on a **collection type that offers an atomic alternative**. The check is redundant because the collection provides a built-in operation that combines existence verification and insertion atomically. Using the check-then-act pattern instead of the atomic operation is prone to TOCTOU race conditions in multithreaded code.
+
+The following collection types and their suggested alternatives are covered:
+
+| Collection type | Suggested atomic alternative |
+|---|---|
+| `Dictionary<K,V>` | `TryAdd` or indexer assignment `[key] = value` |
+| `ConcurrentDictionary<K,V>` | `GetOrAdd`, `AddOrUpdate`, or `TryAdd` |
+| `HashSet<T>` | `Add` (already returns a `bool` indicating whether the element was added) |
+| `SortedSet<T>` | `Add` (already returns a `bool`) |
+| `SortedDictionary<K,V>` | `TryAdd` or indexer assignment `[key] = value` |
+| `SortedList<K,V>` | Indexer assignment `[key] = value` |
+| `ImmutableHashSet<T>` | `Add` (already handles duplicates) |
+| `ImmutableDictionary<K,V>` | `SetItem` (upsert semantics) |
+| `ImmutableSortedSet<T>` | `Add` (already handles duplicates) |
+| `ImmutableSortedDictionary<K,V>` | `SetItem` (upsert semantics) |
+
+## See also
+
+- [DSA012: Check-then-act on database types](#dsa012)
+- [DSA018: Check-then-act on collections without atomic alternatives](#dsa018)
+- [MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition](https://cwe.mitre.org/data/definitions/367.html)
+
+## Matched patterns
+
+```cs
+// Dictionary: ContainsKey + Add
+if (!dict.ContainsKey(key))
+{
+    dict.Add(key, value);  // ❌ use dict.TryAdd(key, value) or dict[key] = value
+}
+
+// HashSet: Contains + Add
+if (!set.Contains(item))
+{
+    set.Add(item);  // ❌ just call set.Add(item) — it returns false if already present
+}
+
+// Dictionary: TryGetValue negated + Add
+if (!dict.TryGetValue(key, out var existing))
+{
+    dict.Add(key, value);  // ❌ use dict.TryAdd(key, value)
+}
+```
+
+## Not matched patterns
+
+```cs
+// List (no atomic alternative — handled by DSA018)
+if (!list.Contains(item)) { list.Add(item); }  // ✅ not flagged by DSA017
+
+// DbSet (database type — handled by DSA012)
+if (!dbSet.Any(x => x.Id == id)) { dbSet.Add(entity); }  // ✅ not flagged by DSA017
+
+// ContainsKey without Add in body
+if (!dict.ContainsKey(key)) { Console.WriteLine("not found"); }  // ✅ no insert
+```
+
+## Fix / Mitigation
+
+Replace the check-then-act pattern with the collection's atomic operation:
+
+```cs
+// Dictionary: use TryAdd
+dict.TryAdd(key, value);  // ✅ atomic: returns false if key already exists
+
+// Dictionary: use indexer (upsert — overwrites if exists)
+dict[key] = value;  // ✅ atomic upsert
+
+// HashSet: just call Add
+set.Add(item);  // ✅ returns bool; the Contains check is redundant
+
+// ConcurrentDictionary: use GetOrAdd
+var val = concurrentDict.GetOrAdd(key, _ => ComputeValue());  // ✅ thread-safe
+```
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA017: Use the collection's atomic operation instead of the check-then-act pattern
+dotnet_diagnostic.DSA017.severity = error
+```
+
+## Code sample
+
+```csharp
+public class RegistryService
+{
+    private readonly Dictionary<string, int> _registry = new();
+
+    public void Register_NotOk(string key, int value)
+    {
+        // this WILL trigger the rule
+        if (!_registry.ContainsKey(key))
+        {
+            _registry.Add(key, value);
+        }
+    }
+
+    public void Register_Ok(string key, int value)
+    {
+        // this WILL NOT trigger the rule
+        _registry.TryAdd(key, value);
+    }
+}
+```
+
+---
+
+# DSA018
+
+Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling.
+
+- **Category**: Design
+- **Severity**: Warning ⚠
+- **Related rules**: [DSA012](#dsa012), [DSA017](#dsa017)
+
+## Description
+
+This rule fires when the _"if not exists, then insert"_ check-then-act pattern is used on a **collection type that does not offer an atomic alternative** (e.g., `List<T>`, `IList<T>`, `ICollection<T>`, `LinkedList<T>`), or on an **unknown type** where the analyzer cannot determine whether an atomic operation exists.
+
+Between the existence check and the insert, another thread could modify the collection, leading to duplicate entries or corruption. Since the collection type does not provide a built-in atomic operation, the check-then-act sequence must be protected externally.
+
+## See also
+
+- [DSA012: Check-then-act on database types](#dsa012)
+- [DSA017: Check-then-act on collections with atomic alternatives](#dsa017)
+- [MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition](https://cwe.mitre.org/data/definitions/367.html)
+- [MITRE, CWE-667: Improper Locking](https://cwe.mitre.org/data/definitions/667.html)
+
+## Matched patterns
+
+```cs
+// List: Any + Add
+if (!items.Any(x => x == value))
+{
+    items.Add(value);  // ❌ TOCTOU: another thread could add between check and insert
+}
+
+// List: Contains + Add
+if (!items.Contains(value))
+{
+    items.Add(value);  // ❌
+}
+
+// ICollection: Contains + Add
+if (!collection.Contains(item))
+{
+    collection.Add(item);  // ❌
+}
+```
+
+## Not matched patterns
+
+```cs
+// Dictionary (has atomic alternative — handled by DSA017)
+if (!dict.ContainsKey(key)) { dict.Add(key, value); }  // ✅ not flagged by DSA018
+
+// HashSet (has atomic alternative — handled by DSA017)
+if (!set.Contains(item)) { set.Add(item); }  // ✅ not flagged by DSA018
+
+// DbSet (database type — handled by DSA012)
+if (!dbSet.Any(x => x.Id == id)) { dbSet.Add(entity); }  // ✅ not flagged by DSA018
+```
+
+## Fix / Mitigation
+
+Protect the sequence with a `lock` or `SemaphoreSlim`, or switch to a collection type with built-in duplicate handling:
+
+```cs
+// Fix 1: protect with lock
+lock (_syncRoot)
+{
+    if (!items.Contains(value))
+    {
+        items.Add(value);  // ✅ protected by lock
+    }
+}
+
+// Fix 2: switch to HashSet (which handles duplicates inherently)
+var set = new HashSet<string>();
+set.Add(value);  // ✅ returns false if already present, no check needed
+
+// Fix 3: switch to ConcurrentDictionary for thread-safe keyed access
+var dict = new ConcurrentDictionary<string, bool>();
+dict.TryAdd(value, true);  // ✅ thread-safe, atomic
+```
+
+## When to ignore this rule
+
+If the code is guaranteed to run single-threaded (e.g., inside a single-threaded console application or a synchronization context that serializes access), the TOCTOU risk does not apply. Suppress with `#pragma warning disable DSA018`.
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA018: Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling
+dotnet_diagnostic.DSA018.severity = error
+```
+
+## Code sample
+
+```csharp
+public class TagService
+{
+    private readonly List<string> _tags = new();
+    private readonly object _lock = new();
+
+    public void AddTag_NotOk(string tag)
+    {
+        // this WILL trigger the rule
+        if (!_tags.Contains(tag))
+        {
+            _tags.Add(tag);
+        }
+    }
+
+    public void AddTag_Ok(string tag)
+    {
+        // this WILL NOT trigger the rule (lock protection)
+        lock (_lock)
+        {
+            if (!_tags.Contains(tag))
+            {
+                _tags.Add(tag);
+            }
         }
     }
 }
