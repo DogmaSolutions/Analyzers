@@ -10,6 +10,26 @@ public partial class DSA017Tests
     private static IEnumerable<object[]> GetNotMatchedCases =>
     [
         [
+            "Existence check and insert on different collections",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public bool Validate(string key, Dictionary<string, int> registry)
+                    {
+                        var allowedKeys = new HashSet<string> { ""key1"", ""key2"" };
+                        if (!allowedKeys.Contains(key))
+                        {
+                            registry.Add(key, 0);
+                        }
+                        return true;
+                    }
+                }
+            }"
+        ],
+        [
             "List check-then-act (DSA018 territory, not DSA017)",
             @"
             using System.Collections.Generic;

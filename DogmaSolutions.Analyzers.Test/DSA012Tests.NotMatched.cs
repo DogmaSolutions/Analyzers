@@ -100,6 +100,28 @@ public partial class DSA012Tests
             }"
         ],
         [
+            "Existence check and insert on different collections",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public bool Validate(string value, List<string> errors)
+                    {
+                        var validValues = new List<string> { ""A"", ""B"" };
+                        if (!validValues.Contains(value))
+                        {
+                            errors.Add(""Invalid value"");
+                            return false;
+                        }
+                        return true;
+                    }
+                }
+            }"
+        ],
+        [
             "List check-then-act (DSA018 territory, not DSA012)",
             @"
             using System.Collections.Generic;

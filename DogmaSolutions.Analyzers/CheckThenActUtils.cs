@@ -41,7 +41,8 @@ internal static class CheckThenActUtils
         // Pattern A: if (!collection.Any(...)) { collection.Add(...); }
         if (IsNegatedExistenceCheck(ifStatement.Condition, out var receiver))
         {
-            if (ContainsInsertInvocation(ifStatement.Statement))
+            var receiverText = NormalizeReceiver(receiver);
+            if (ContainsMatchingInsertInvocation(ifStatement.Statement, receiverText))
             {
                 existenceCheckReceiver = receiver;
                 return true;
@@ -50,10 +51,12 @@ internal static class CheckThenActUtils
 
         if (IsPositiveExistenceCheck(ifStatement.Condition, out receiver))
         {
+            var receiverText = NormalizeReceiver(receiver);
+
             // Pattern B: if (collection.Any(...)) { throw; } ... collection.Add(...);
             if (ContainsThrowStatement(ifStatement.Statement) && ifStatement.Else == null)
             {
-                if (HasSubsequentInsertInvocation(ifStatement))
+                if (HasSubsequentMatchingInsertInvocation(ifStatement, receiverText))
                 {
                     existenceCheckReceiver = receiver;
                     return true;
@@ -61,7 +64,7 @@ internal static class CheckThenActUtils
             }
 
             // Pattern C: if (collection.Any(...)) { ... } else { collection.Add(...); }
-            if (ifStatement.Else != null && ContainsInsertInvocation(ifStatement.Else.Statement))
+            if (ifStatement.Else != null && ContainsMatchingInsertInvocation(ifStatement.Else.Statement, receiverText))
             {
                 existenceCheckReceiver = receiver;
                 return true;
@@ -280,12 +283,17 @@ internal static class CheckThenActUtils
         return false;
     }
 
-    internal static bool ContainsInsertInvocation(SyntaxNode node)
+    /// <summary>
+    /// Checks whether the node contains an insert invocation (Add, AddAsync, etc.)
+    /// whose receiver matches the given normalized receiver text from the existence check.
+    /// </summary>
+    private static bool ContainsMatchingInsertInvocation(SyntaxNode node, string expectedReceiverText)
     {
         return node.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Any(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess &&
-                        Array.IndexOf(InsertMethods, memberAccess.Name.Identifier.ValueText) >= 0);
+                        Array.IndexOf(InsertMethods, memberAccess.Name.Identifier.ValueText) >= 0 &&
+                        NormalizeReceiver(memberAccess.Expression) == expectedReceiverText);
     }
 
     internal static bool ContainsThrowStatement(StatementSyntax statement)
@@ -299,7 +307,7 @@ internal static class CheckThenActUtils
         return false;
     }
 
-    internal static bool HasSubsequentInsertInvocation(IfStatementSyntax ifStatement)
+    private static bool HasSubsequentMatchingInsertInvocation(IfStatementSyntax ifStatement, string expectedReceiverText)
     {
         if (ifStatement.Parent is not BlockSyntax block)
             return false;
@@ -310,11 +318,42 @@ internal static class CheckThenActUtils
 
         for (var i = ifIndex + 1; i < block.Statements.Count; i++)
         {
-            if (ContainsInsertInvocation(block.Statements[i]))
+            if (ContainsMatchingInsertInvocation(block.Statements[i], expectedReceiverText))
                 return true;
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Normalizes a receiver expression to a comparable string by collapsing whitespace.
+    /// </summary>
+    private static string NormalizeReceiver(ExpressionSyntax receiver)
+    {
+        if (receiver == null)
+            return string.Empty;
+
+        var text = receiver.ToString();
+        var sb = new System.Text.StringBuilder(text.Length);
+        var lastWasSpace = false;
+        foreach (var c in text)
+        {
+            if (char.IsWhiteSpace(c))
+            {
+                if (!lastWasSpace)
+                {
+                    sb.Append(' ');
+                    lastWasSpace = true;
+                }
+            }
+            else
+            {
+                sb.Append(c);
+                lastWasSpace = false;
+            }
+        }
+
+        return sb.ToString().Trim();
     }
 
     private static bool IsFalseLiteral(ExpressionSyntax expression)

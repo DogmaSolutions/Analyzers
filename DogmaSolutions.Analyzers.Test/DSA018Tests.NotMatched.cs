@@ -123,6 +123,28 @@ public partial class DSA018Tests
             }"
         ],
         [
+            "Existence check and insert on different collections (validation pattern)",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public bool Validate(string scheduleType, List<string> errors)
+                    {
+                        var validTypes = new List<string> { ""TypeA"", ""TypeB"" };
+                        if (!validTypes.Contains(scheduleType))
+                        {
+                            errors.Add(""Invalid schedule type"");
+                            return false;
+                        }
+                        return true;
+                    }
+                }
+            }"
+        ],
+        [
             "Positive Any + throw without Add after",
             @"
             using System.Collections.Generic;
