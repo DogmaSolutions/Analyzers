@@ -87,7 +87,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         // Check if the scope is an expression-body lambda that needs conversion to block
         var lambdaParent = FindExpressionBodyLambda(targetMemberAccess);
         if (lambdaParent != null)
-            return await ExtractInExpressionBodyLambdaAsync(document, root, lambdaParent, allOccurrences, targetMemberAccess, variableName, cancellationToken).ConfigureAwait(false);
+            return ExtractInExpressionBodyLambda(document, root, lambdaParent, allOccurrences, targetMemberAccess, variableName);
 
         // Block body: find the insertion point (earliest statement containing an occurrence)
         var insertionStatement = FindEarliestContainingStatement(allOccurrences, scope);
@@ -116,14 +116,13 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         return document.WithSyntaxRoot(editor.GetChangedRoot());
     }
 
-    private static async Task<Document> ExtractInExpressionBodyLambdaAsync(
+    private static Document ExtractInExpressionBodyLambda(
         Document document,
         SyntaxNode root,
         LambdaExpressionSyntax lambda,
         List<MemberAccessExpressionSyntax> allOccurrences,
         MemberAccessExpressionSyntax targetMemberAccess,
-        string variableName,
-        CancellationToken cancellationToken)
+        string variableName)
     {
         var expressionBody = lambda is SimpleLambdaExpressionSyntax simple
             ? simple.ExpressionBody
@@ -149,10 +148,10 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                     SyntaxFactory.VariableDeclarator(variableName)
                         .WithInitializer(SyntaxFactory.EqualsValueClause(targetMemberAccess.WithoutTrivia())))));
 
-        var returnStatement = SyntaxFactory.ReturnStatement(newExpression.WithoutLeadingTrivia())
-            .WithLeadingTrivia(SyntaxFactory.LineFeed);
+        var returnStatement = SyntaxFactory.ReturnStatement(newExpression.WithoutLeadingTrivia());
 
-        var block = SyntaxFactory.Block(variableDecl, returnStatement);
+        var block = SyntaxFactory.Block(variableDecl, returnStatement)
+            .NormalizeWhitespace();
 
         // Replace lambda body
         SyntaxNode newLambda;
@@ -263,7 +262,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                             .WithInitializer(SyntaxFactory.EqualsValueClause(
                                 expression.WithoutTrivia())))))
             .WithLeadingTrivia(insertBeforeStatement.GetLeadingTrivia())
-            .WithTrailingTrivia(SyntaxFactory.LineFeed);
+            .WithTrailingTrivia(GetEndOfLineTrivia(insertBeforeStatement));
     }
 
     private static SyntaxNode GetContainingScope(SyntaxNode node)
@@ -306,6 +305,20 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                node is ParenthesizedLambdaExpressionSyntax ||
                node is AnonymousMethodExpressionSyntax ||
                node is LocalFunctionStatementSyntax;
+    }
+
+    /// <summary>
+    /// Extracts the end-of-line trivia from an existing node to match the file's line ending style.
+    /// </summary>
+    private static SyntaxTrivia GetEndOfLineTrivia(SyntaxNode node)
+    {
+        foreach (var trivia in node.DescendantTrivia())
+        {
+            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+                return trivia;
+        }
+
+        return SyntaxFactory.LineFeed;
     }
 
     private static string NormalizeWhitespace(string text)

@@ -91,7 +91,7 @@ public sealed class DSA011Analyzer : DiagnosticAnalyzer
         var containingProperty = context.SemanticModel.GetDeclaredSymbol(propertyDeclaration);
 
         // not the same class containing the field ?
-        if (containingType == null || containingProperty == null || !containingType.Equals(containingProperty.ContainingType))
+        if (containingType == null || containingProperty == null || !SymbolEqualityComparer.Default.Equals(containingType, containingProperty.ContainingType))
             return;
 
         // Matched
@@ -125,11 +125,11 @@ public sealed class DSA011Analyzer : DiagnosticAnalyzer
                                 if (assignmentExpression.Left is IdentifierNameSyntax assignmentLeftIdentifier)
                                 {
                                     var assignmentLeftSymbol = context.SemanticModel.GetSymbolInfo(assignmentLeftIdentifier).Symbol;
-                                    if (assignmentLeftSymbol != null && assignmentLeftSymbol.Equals(leftSymbol))
+                                    if (assignmentLeftSymbol != null && SymbolEqualityComparer.Default.Equals(assignmentLeftSymbol, leftSymbol))
                                     {
                                         var containingType = fieldSymbol.ContainingType;
                                         var containingProperty = context.SemanticModel.GetDeclaredSymbol(propertyDeclaration);
-                                        if (containingType != null && containingProperty != null && containingType.Equals(containingProperty.ContainingType))
+                                        if (containingType != null && containingProperty != null && SymbolEqualityComparer.Default.Equals(containingType, containingProperty.ContainingType))
                                         {
                                             var diagnostic = Diagnostic.Create(_rule, propertyDeclaration.GetLocation(), propertyDeclaration.Identifier.ToString());
                                             context.ReportDiagnostic(diagnostic);
@@ -169,7 +169,7 @@ public sealed class DSA011Analyzer : DiagnosticAnalyzer
 
         var assignmentLeftSymbol = context.SemanticModel.GetSymbolInfo(assignmentLeftIdentifier).Symbol;
 
-        if (assignmentLeftSymbol != null && assignmentLeftSymbol.Equals(fieldSymbol))
+        if (assignmentLeftSymbol != null && SymbolEqualityComparer.Default.Equals(assignmentLeftSymbol, fieldSymbol))
         {
             ReportDiagnosticIfMatchingType(context, propertyDeclaration, fieldSymbol);
         }
@@ -180,7 +180,7 @@ public sealed class DSA011Analyzer : DiagnosticAnalyzer
         var containingType = fieldSymbol.ContainingType;
         var containingProperty = context.SemanticModel.GetDeclaredSymbol(propertyDeclaration);
 
-        if (containingType == null || containingProperty == null || !containingType.Equals(containingProperty.ContainingType))
+        if (containingType == null || containingProperty == null || !SymbolEqualityComparer.Default.Equals(containingType, containingProperty.ContainingType))
             return;
 
         var diagnostic = Diagnostic.Create(_rule, propertyDeclaration.GetLocation(), propertyDeclaration.Identifier.ToString());

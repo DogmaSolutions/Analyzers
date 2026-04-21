@@ -266,15 +266,14 @@ namespace TestApp
     {
         public void Process(CatalogEntry[] entries)
         {
-            var result = entries.Select(e =>
-            {
-                var detail = e.Category.Spec.Detail;
-                return new
-            {
-                Name = detail.Name,
-                Price = detail.Price,
-            };
-            });
+            var result = entries.Select(e => {
+    var detail = e.Category.Spec.Detail;
+    return new
+    {
+        Name = detail.Name,
+        Price = detail.Price,
+    };
+});
         }
     }
 }";
