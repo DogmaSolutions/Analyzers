@@ -213,6 +213,57 @@ public partial class DSA019Tests
             }"
         ],
         [
+            "Fully qualified enum members (namespace + type qualification, not instance dereference)",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public void Process()
+                    {
+                        RegexOptions options = System.Text.RegularExpressions.RegexOptions.IgnorePatternWhitespace
+                            | System.Text.RegularExpressions.RegexOptions.Multiline
+                            | System.Text.RegularExpressions.RegexOptions.IgnoreCase;
+                    }
+                }
+            }"
+        ],
+        [
+            "Fully qualified type cast with static members (type qualification)",
+            @"
+            namespace TestApp
+            {
+                public enum MyOptions { A = 1, B = 2, C = 4 }
+                public class MyService
+                {
+                    public void Process()
+                    {
+                        var combined = TestApp.MyOptions.A | TestApp.MyOptions.B | TestApp.MyOptions.C;
+                    }
+                }
+            }"
+        ],
+        [
+            "Static constants accessed via fully qualified type name",
+            @"
+            namespace TestApp
+            {
+                public static class ErrorCodes
+                {
+                    public static class Database { public const int Timeout = 1; public const int ConnectionFailed = 2; }
+                }
+                public class MyService
+                {
+                    public void Process()
+                    {
+                        var a = TestApp.ErrorCodes.Database.Timeout;
+                        var b = TestApp.ErrorCodes.Database.ConnectionFailed;
+                    }
+                }
+            }"
+        ],
+        [
             "Conditional access chain (not detected, different syntax kind)",
             @"
             namespace TestApp

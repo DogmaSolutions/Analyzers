@@ -63,6 +63,10 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         if (IsInsideNameof(memberAccess))
             return;
 
+        // Skip if receiver resolves to a namespace or type (compile-time qualification, not instance dereference)
+        if (IsTypeOrNamespaceAccess(memberAccess, context.SemanticModel))
+            return;
+
         var threshold = GetThreshold(context);
         var depth = ComputeChainDepth(memberAccess);
         if (depth < threshold)
@@ -80,6 +84,9 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
                 continue;
 
             if (IsInsideNameof(sibling))
+                continue;
+
+            if (IsTypeOrNamespaceAccess(sibling, context.SemanticModel))
                 continue;
 
             var sibDepth = ComputeChainDepth(sibling);
@@ -161,6 +168,21 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         }
 
         return depth;
+    }
+
+    /// <summary>
+    /// Returns true if the member access is a compile-time type or namespace qualification
+    /// (e.g., System.Text.RegularExpressions.RegexOptions.Value) rather than an instance
+    /// property dereference chain. Checks whether the receiver resolves to a namespace or
+    /// type symbol.
+    /// </summary>
+    private static bool IsTypeOrNamespaceAccess(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel)
+    {
+        var receiverSymbolInfo = semanticModel.GetSymbolInfo(memberAccess.Expression);
+        if (receiverSymbolInfo.Symbol is INamespaceSymbol || receiverSymbolInfo.Symbol is INamedTypeSymbol)
+            return true;
+
+        return false;
     }
 
     private static bool IsInsideNameof(SyntaxNode node)
