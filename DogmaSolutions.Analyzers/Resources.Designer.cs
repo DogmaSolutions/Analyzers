@@ -535,5 +535,32 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA016AnalyzerTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A deeply nested member access chain is repeated multiple times in the same scope....
+        /// </summary>
+        internal static string DSA019AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA019AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The member access chain &apos;{0}&apos; is repeated multiple times in the same scope. Extract it into a local variable..
+        /// </summary>
+        internal static string DSA019AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA019AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Avoid repeated deeply nested member access chains.
+        /// </summary>
+        internal static string DSA019AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA019AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

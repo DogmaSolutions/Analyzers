@@ -37,6 +37,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA016](#dsa016) | Code Smells | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
 | [DSA017](#dsa017) | Design      | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
 | [DSA018](#dsa018) | Design      | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                         | ⚠ Warning        | ✅          | ❌        |
+| [DSA019](#dsa019) | Code Smells | Avoid repeated deeply nested member access chains                                                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
 
 ---
 
@@ -59,6 +60,11 @@ WebApi controllers should not contain data-manipulation business logics.
 
 This is a typical violation of the ["Single Responsibility" rule](https://en.wikipedia.org/wiki/Single-responsibility_principle) of the ["SOLID" principles](https://en.wikipedia.org/wiki/SOLID),
 because the controller is doing too many things outside its own purpose.
+
+Security-wise, mixing data access logic directly into the presentation layer weakens compartmentalization and increases the attack surface, making it harder to apply consistent authorization, input validation, and audit logging at the data access boundary.
+
+- [MITRE, CWE-653: Improper Isolation or Compartmentalization](https://cwe.mitre.org/data/definitions/653.html)
+- [MITRE, CWE-1057: Data Access Operations Outside of Expected Data Manager Component](https://cwe.mitre.org/data/definitions/1057.html)
 
 ## Fix / Mitigation
 
@@ -128,6 +134,11 @@ WebApi controllers should not contain data-manipulation business logics.
 This is a typical violation of the ["Single Responsibility" rule](https://en.wikipedia.org/wiki/Single-responsibility_principle) of the ["SOLID" principles](https://en.wikipedia.org/wiki/SOLID),
 because the controller is doing too many things outside its own purpose.
 
+Security-wise, mixing data access logic directly into the presentation layer weakens compartmentalization and increases the attack surface, making it harder to apply consistent authorization, input validation, and audit logging at the data access boundary.
+
+- [MITRE, CWE-653: Improper Isolation or Compartmentalization](https://cwe.mitre.org/data/definitions/653.html)
+- [MITRE, CWE-1057: Data Access Operations Outside of Expected Data Manager Component](https://cwe.mitre.org/data/definitions/1057.html)
+
 ## Fix / Mitigation
 
 In order to fix the problem, the code could be modified in order to rely on the ["Indirection pattern"](https://en.wikipedia.org/wiki/GRASP_(object-oriented_design)#Indirection) and maximize
@@ -189,6 +200,12 @@ Usually, business logics distinguish between "string with content", and "string 
 Thus, statistically speaking, almost every call to `string.IsNullOrEmpty` could or should be replaced by a call to `string.IsNullOrWhiteSpace`, because in the large majority of cases, a string
 composed by only spaces, tabs, and return chars is not considered valid because it doesn't have "meaningful content".  
 In most cases, `string.IsNullOrEmpty` is used by mistake, or has been written when `string.IsNullOrWhiteSpace` was not available.
+
+Security-wise, using `IsNullOrEmpty` instead of `IsNullOrWhiteSpace` can allow whitespace-only strings to bypass input validation, potentially leading to injection attacks, data corruption, or logic bypass when the application treats whitespace-only input as valid content.
+
+## See also
+
+- [MITRE, CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
 
 ## Fix / Mitigation
 
@@ -1391,6 +1408,10 @@ Each scope (method body, lambda, local function) is analyzed independently; invo
 
 ## See also
 
+Security-wise, repeated enumeration of a deferred `IEnumerable` backed by a database query or external data source can lead to non-deterministic behavior if the underlying data changes between enumerations, potentially causing inconsistent authorization decisions, data integrity violations, or information disclosure.
+
+- [MITRE, CWE-1049: Interaction Frequency](https://cwe.mitre.org/data/definitions/1049.html) — excessive repeated operations consuming unnecessary resources
+- [MITRE, CWE-834: Excessive Iteration](https://cwe.mitre.org/data/definitions/834.html) — redundant enumeration cycles over the same data source
 - [CA1851: Possible multiple enumerations of IEnumerable collection](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1851)
 - [DSA005: Potential non-deterministic point-in-time execution](#dsa005) (similar concept for `DateTime.Now`)
 
@@ -1538,6 +1559,141 @@ public class OrderService
         });
 
         return summaryFixed;
+    }
+}
+```
+
+---
+
+# DSA019
+
+Avoid repeated deeply nested member access chains.
+
+- **Category**: Code Smells
+- **Severity**: Warning ⚠
+- **Related rules**: [DSA016](#dsa016)
+
+## Description
+
+This rule fires when the same deeply nested member access chain (e.g., `home.Rooms.Bathroom.Lights`) appears **multiple times** in the **same scope** (method body, lambda, or local function). Repeated deep dereferencing reduces readability and may incur unnecessary overhead if the intermediate accesses involve computation, virtual dispatch, or property getters with side effects.
+
+The depth threshold is configurable: only chains whose depth (number of member accesses and element accesses from the root) meets or exceeds the threshold are checked. The default threshold is **3**.
+
+Each scope is analyzed independently; chains in nested lambdas are not compared with chains in the outer scope.
+
+**Depth counting**: each `.Property`, `[index]`, and `.Method` access adds one level. `InvocationExpression` wrappers (e.g., `.GetData()`) are traversed transparently without adding depth. Expressions inside `nameof()` are excluded.
+
+## Configuration
+
+The threshold is configurable via `.editorconfig`:
+
+```
+# Default is 3. Set higher to allow deeper repeated chains; lower to be stricter.
+dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth = 3
+```
+
+## See also
+
+Security-wise, repeated deep member access chains can expose code to non-deterministic behavior if any intermediate property getter has side effects, performs lazy initialization, or reads from a volatile source. In security-sensitive code paths (e.g., authorization checks, input validation), evaluating the same chain multiple times could yield different values, leading to time-of-check to time-of-use vulnerabilities.
+
+- [MITRE, CWE-1049: Interaction Frequency](https://cwe.mitre.org/data/definitions/1049.html) — excessive repeated access operations
+- [MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition](https://cwe.mitre.org/data/definitions/367.html) — repeated evaluation may yield different values if the object graph is mutated concurrently
+- [DSA016: Avoid repeated enumeration method invocations](#dsa016) (similar concept for LINQ method calls)
+
+## Matched patterns
+
+```cs
+// Pattern A: same chain with different indexer
+var primary = home.Rooms.Bathroom.Lights[0].IsOn();    // ❌ home.Rooms.Bathroom.Lights (depth 3)
+var secondary = home.Rooms.Bathroom.Lights[1].IsOn();  // ❌ repeated
+
+// Pattern B: same chain with different terminal property
+var connStr = config.Settings.Infrastructure.Database.ConnectionString;  // ❌ config.Settings.Infrastructure.Database (depth 3)
+var timeout = config.Settings.Infrastructure.Database.Timeout;           // ❌ repeated
+
+// Pattern C: chain with method call in the middle
+var count = provider.Service.GetReport().Summary.Count;  // ❌ provider.Service.GetReport().Summary (depth 3)
+var label = provider.Service.GetReport().Summary.Label;  // ❌ repeated
+```
+
+## Not matched patterns
+
+```cs
+// Chain depth below threshold (depth 2, threshold 3)
+var a = outer.Inner.Value;
+var b = outer.Inner.Value;  // ✅ depth 2, below threshold
+
+// Chain appears only once
+var v = a.B.C.D.Value;  // ✅ single occurrence
+
+// Inside nameof (compile-time, no actual dereferencing)
+var n1 = nameof(A.B.C);
+var n2 = nameof(A.B.C);  // ✅ excluded
+
+// Different scopes (method body vs nested lambda)
+var v1 = a.B.C.D.Value;
+Action act = () => { var v2 = a.B.C.D.Value; };  // ✅ separate scopes
+
+// Chains that differ at the root
+var v1 = a1.B.C.D.Value;
+var v2 = a2.B.C.D.Value;  // ✅ different root identifiers
+
+// Already extracted into a variable
+var lights = home.Rooms.Bathroom.Lights;
+var primary = lights[0].IsOn();
+var secondary = lights[1].IsOn();  // ✅ no deep chain repeated
+```
+
+## Fix / Mitigation
+
+Extract the repeated chain into a local variable:
+
+```cs
+// Before:
+var primary = home.Rooms.Bathroom.Lights[0].IsOn();
+var secondary = home.Rooms.Bathroom.Lights[1].IsOn();
+
+// After:
+var lights = home.Rooms.Bathroom.Lights;
+var primary = lights[0].IsOn();
+var secondary = lights[1].IsOn();
+```
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA019: Avoid repeated deeply nested member access chains
+dotnet_diagnostic.DSA019.severity = error
+```
+
+## Code sample
+
+```csharp
+public class HomeAutomationService
+{
+    public object GetLightStatus(Home home)
+    {
+        // this WILL trigger the rule: home.Rooms.Bathroom.Lights repeated
+        return new
+        {
+            Primary = home.Rooms.Bathroom.Lights[0].IsOn(),
+            Secondary = home.Rooms.Bathroom.Lights[1].IsOn(),
+            Tertiary = home.Rooms.Bathroom.Lights[2].IsOn(),
+        };
+    }
+
+    public object GetLightStatus_Fixed(Home home)
+    {
+        // this WILL NOT trigger the rule: extracted into a variable
+        var lights = home.Rooms.Bathroom.Lights;
+        return new
+        {
+            Primary = lights[0].IsOn(),
+            Secondary = lights[1].IsOn(),
+            Tertiary = lights[2].IsOn(),
+        };
     }
 }
 ```

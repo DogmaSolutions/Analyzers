@@ -308,4 +308,14 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA016AnalyzerTitle" xml:space="preserve">
     <value>Avoid repeated invocation of the same enumeration method with identical arguments</value>
   </data>
+
+    <data name="DSA019AnalyzerDescription" xml:space="preserve">
+    <value>A deeply nested member access chain is repeated multiple times in the same scope. Repeated deep dereferencing reduces readability and may incur unnecessary overhead if the intermediate accesses involve computation, virtual dispatch, or property getters with side effects. Extract the common chain into a local variable and reuse it. The depth threshold is configurable via the .editorconfig option 'dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth' (default: 3) (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa019).</value>
+  </data>
+    <data name="DSA019AnalyzerMessageFormat" xml:space="preserve">
+    <value>The member access chain '{0}' is repeated multiple times in the same scope. Extract it into a local variable.</value>
+  </data>
+    <data name="DSA019AnalyzerTitle" xml:space="preserve">
+    <value>Avoid repeated deeply nested member access chains</value>
+  </data>
 </root>
