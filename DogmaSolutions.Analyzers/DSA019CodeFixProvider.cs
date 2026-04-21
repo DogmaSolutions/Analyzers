@@ -157,8 +157,9 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
 
         var returnStatement = SyntaxFactory.ReturnStatement(newExpression.WithoutLeadingTrivia());
 
+        var eol = GetEndOfLineString(lambda);
         var block = SyntaxFactory.Block(variableDecl, returnStatement)
-            .NormalizeWhitespace();
+            .NormalizeWhitespace(eol: eol);
 
         // Replace lambda body
         SyntaxNode newLambda;
@@ -420,6 +421,20 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         }
 
         return SyntaxFactory.LineFeed;
+    }
+
+    /// <summary>
+    /// Returns the end-of-line string ("\n" or "\r\n") used by the file containing the given node.
+    /// </summary>
+    private static string GetEndOfLineString(SyntaxNode node)
+    {
+        foreach (var trivia in node.DescendantTrivia())
+        {
+            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+                return trivia.ToString();
+        }
+
+        return "\n";
     }
 
     private static string NormalizeWhitespace(string text)
