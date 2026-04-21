@@ -54,6 +54,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterSyntaxNodeAction(AnalyzeMemberAccess, SyntaxKind.SimpleMemberAccessExpression);
+        context.RegisterSyntaxNodeAction(AnalyzeElementAccess, SyntaxKind.ElementAccessExpression);
     }
 
     private static void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context)
@@ -107,6 +108,61 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
                     additionalLocations: null,
                     properties: null,
                     memberAccess.ToString());
+                context.ReportDiagnostic(diagnostic);
+                return;
+            }
+        }
+    }
+
+    private static void AnalyzeElementAccess(SyntaxNodeAnalysisContext context)
+    {
+        var elementAccess = (ElementAccessExpressionSyntax)context.Node;
+
+        if (IsInsideNameof(elementAccess))
+            return;
+
+        var threshold = GetThreshold(context);
+
+        var syntacticDepth = ComputeChainDepth(elementAccess);
+        if (syntacticDepth < threshold)
+            return;
+
+        var effectiveDepth = ComputeEffectiveChainDepth(elementAccess, context.SemanticModel);
+        if (effectiveDepth < threshold)
+            return;
+
+        var key = NormalizeWhitespace(elementAccess.ToString());
+
+        var scope = GetContainingScope(elementAccess);
+        if (scope == null)
+            return;
+
+        foreach (var sibling in GetElementAccessesInScope(scope))
+        {
+            if (ReferenceEquals(sibling, elementAccess))
+                continue;
+
+            if (IsInsideNameof(sibling))
+                continue;
+
+            var sibSyntacticDepth = ComputeChainDepth(sibling);
+            if (sibSyntacticDepth < threshold)
+                continue;
+
+            var sibEffectiveDepth = ComputeEffectiveChainDepth(sibling, context.SemanticModel);
+            if (sibEffectiveDepth < threshold)
+                continue;
+
+            var sibKey = NormalizeWhitespace(sibling.ToString());
+            if (sibKey == key)
+            {
+                var diagnostic = Diagnostic.Create(
+                    descriptor: _rule,
+                    location: elementAccess.GetLocation(),
+                    effectiveSeverity: context.GetDiagnosticSeverity(_rule),
+                    additionalLocations: null,
+                    properties: null,
+                    elementAccess.ToString());
                 context.ReportDiagnostic(diagnostic);
                 return;
             }
@@ -180,10 +236,10 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
     /// accesses do not count as runtime dereferences. Static and instance member accesses
     /// (fields, properties, methods) do count.
     /// </summary>
-    private static int ComputeEffectiveChainDepth(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel)
+    internal static int ComputeEffectiveChainDepth(ExpressionSyntax expression, SemanticModel semanticModel)
     {
         var depth = 0;
-        ExpressionSyntax current = memberAccess;
+        ExpressionSyntax current = expression;
         while (true)
         {
             if (current is MemberAccessExpressionSyntax ma)
@@ -284,6 +340,12 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         }
 
         return null;
+    }
+
+    internal static IEnumerable<ElementAccessExpressionSyntax> GetElementAccessesInScope(SyntaxNode scope)
+    {
+        return scope.DescendantNodes(n => !IsNestedScope(n))
+            .OfType<ElementAccessExpressionSyntax>();
     }
 
     private static IEnumerable<MemberAccessExpressionSyntax> GetMemberAccessesInScope(SyntaxNode scope)

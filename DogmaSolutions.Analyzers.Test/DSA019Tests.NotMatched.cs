@@ -423,6 +423,38 @@ public partial class DSA019Tests
     }
 
     [TestMethod]
+    public async Task InvalidThreshold_FallsBackToDefault()
+    {
+        var sourceCode = @"
+            namespace TestApp
+            {
+                public class Inner { public int Value; }
+                public class Outer { public Inner Inner; }
+                public class MyService
+                {
+                    public void Process(Outer outer)
+                    {
+                        var v1 = outer.Inner.Value;
+                        var v2 = outer.Inner.Value;
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth = invalid_value
+"));
+
+        // Default threshold 3 applies; outer.Inner.Value at depth 2 is below threshold
+        // No diagnostics expected
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
     public async Task CustomThreshold_LowerThanDefault_FlagsShallowerChains()
     {
         var sourceCode = @"

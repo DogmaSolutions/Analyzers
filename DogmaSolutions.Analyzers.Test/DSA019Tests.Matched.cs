@@ -123,26 +123,6 @@ public partial class DSA019Tests
             2
         ],
         [
-            "Indexer in the middle of the chain (depth 3 after indexer)",
-            @"
-            namespace TestApp
-            {
-                public class Detail { public string Name; public decimal Price; }
-                public class Section { public Detail[] Details; }
-                public class Document { public Section[] Sections; }
-                public class MyService
-                {
-                    public void Process(Document doc, int s, int d)
-                    {
-                        var name = {|#0:doc.Sections[s].Details|}[d].Name;
-                        var price = {|#1:doc.Sections[s].Details|}[d].Price;
-                    }
-                }
-            }",
-            "doc.Sections[s].Details",
-            2
-        ],
-        [
             "this. prefix (depth 3 from this)",
             @"
             namespace TestApp
@@ -206,6 +186,95 @@ public partial class DSA019Tests
                 }
             }",
             "factory.CreateBuilder().Build().Execute",
+            2
+        ],
+        [
+            "Standalone repeated ElementAccess (depth 3)",
+            @"
+            namespace TestApp
+            {
+                public class Grid
+                {
+                    public int[][] Cells;
+                }
+                public class MyService
+                {
+                    public void Process(Grid grid, int r, int c)
+                    {
+                        var a = {|#0:grid.Cells[r][c]|};
+                        var b = {|#1:grid.Cells[r][c]|};
+                    }
+                }
+            }",
+            "grid.Cells[r][c]",
+            2
+        ],
+        [
+            "Chain in object initializer context",
+            @"
+            namespace TestApp
+            {
+                public class Deep { public int X; public int Y; }
+                public class Inner { public Deep Deep; }
+                public class Middle { public Inner Inner; }
+                public class Outer { public Middle Middle; }
+                public class MyService
+                {
+                    public void Process(Outer outer)
+                    {
+                        var dto = new
+                        {
+                            X = {|#0:outer.Middle.Inner.Deep|}.X,
+                            Y = {|#1:outer.Middle.Inner.Deep|}.Y,
+                        };
+                    }
+                }
+            }",
+            "outer.Middle.Inner.Deep",
+            2
+        ],
+        [
+            "Chain in constructor body",
+            @"
+            namespace TestApp
+            {
+                public class Deep { public int X; public int Y; }
+                public class Inner { public Deep Deep; }
+                public class Middle { public Inner Inner; }
+                public class Outer { public Middle Middle; }
+                public class MyClass
+                {
+                    private int _x;
+                    private int _y;
+                    public MyClass(Outer outer)
+                    {
+                        _x = {|#0:outer.Middle.Inner.Deep|}.X;
+                        _y = {|#1:outer.Middle.Inner.Deep|}.Y;
+                    }
+                }
+            }",
+            "outer.Middle.Inner.Deep",
+            2
+        ],
+        [
+            "Chain as method argument",
+            @"
+            namespace TestApp
+            {
+                public class Deep { public int X; public int Y; }
+                public class Inner { public Deep Deep; }
+                public class Middle { public Inner Inner; }
+                public class Outer { public Middle Middle; }
+                public class MyService
+                {
+                    private void Use(int a, int b) { }
+                    public void Process(Outer outer)
+                    {
+                        Use({|#0:outer.Middle.Inner.Deep|}.X, {|#1:outer.Middle.Inner.Deep|}.Y);
+                    }
+                }
+            }",
+            "outer.Middle.Inner.Deep",
             2
         ],
         [

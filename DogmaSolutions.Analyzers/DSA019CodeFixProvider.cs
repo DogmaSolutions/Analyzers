@@ -36,27 +36,36 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        var memberAccess = root.FindToken(diagnosticSpan.Start).Parent?
+        // The diagnostic may be on a MemberAccessExpression or an ElementAccessExpression
+        ExpressionSyntax targetExpression = root.FindToken(diagnosticSpan.Start).Parent?
             .AncestorsAndSelf()
             .OfType<MemberAccessExpressionSyntax>()
             .FirstOrDefault(ma => ma.Span == diagnosticSpan);
 
-        if (memberAccess == null)
+        if (targetExpression == null)
+        {
+            targetExpression = root.FindToken(diagnosticSpan.Start).Parent?
+                .AncestorsAndSelf()
+                .OfType<ElementAccessExpressionSyntax>()
+                .FirstOrDefault(ea => ea.Span == diagnosticSpan);
+        }
+
+        if (targetExpression == null)
             return;
 
-        var variableName = GenerateVariableName(memberAccess);
+        var variableName = GenerateVariableName(targetExpression);
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: $"Extract '{memberAccess}' into local variable '{variableName}'",
-                createChangedDocument: ct => ExtractToVariableAsync(context.Document, memberAccess, variableName, ct),
+                title: $"Extract into local variable '{variableName}'",
+                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, variableName, ct),
                 equivalenceKey: DSA019Analyzer.DiagnosticId),
             diagnostic);
     }
 
     private static async Task<Document> ExtractToVariableAsync(
         Document document,
-        MemberAccessExpressionSyntax targetMemberAccess,
+        ExpressionSyntax targetExpression,
         string variableName,
         CancellationToken cancellationToken)
     {
@@ -66,28 +75,26 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
 
         var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
 
-        var targetKey = NormalizeWhitespace(targetMemberAccess.ToString());
+        var targetKey = NormalizeWhitespace(targetExpression.ToString());
         var threshold = DSA019Analyzer.DefaultMaxDepth;
 
         // Find the containing scope
-        var scope = GetContainingScope(targetMemberAccess);
+        var scope = GetContainingScope(targetExpression);
         if (scope == null)
             return document;
 
-        // Find all duplicate occurrences in the same scope
-        var allOccurrences = GetMemberAccessesInScope(scope)
-            .Where(ma => !DSA019Analyzer.ComputeChainDepth(ma).Equals(0) &&
-                         DSA019Analyzer.ComputeChainDepth(ma) >= threshold &&
-                         NormalizeWhitespace(ma.ToString()) == targetKey)
-            .ToList();
-
+        // Find all duplicate occurrences in the same scope (MemberAccess or ElementAccess)
+        var allOccurrences = FindMatchingExpressionsInScope(scope, targetExpression, targetKey, threshold);
         if (allOccurrences.Count < 2)
             return document;
 
+        // Determine what to extract and what to replace
+        var (nodesToReplace, expressionToExtract) = DetermineExtractionTarget(allOccurrences, targetExpression);
+
         // Check if the scope is an expression-body lambda that needs conversion to block
-        var lambdaParent = FindExpressionBodyLambda(targetMemberAccess);
+        var lambdaParent = FindExpressionBodyLambda(targetExpression);
         if (lambdaParent != null)
-            return ExtractInExpressionBodyLambda(document, root, lambdaParent, allOccurrences, targetMemberAccess, variableName);
+            return ExtractInExpressionBodyLambda(document, root, lambdaParent, nodesToReplace, expressionToExtract, variableName);
 
         // Block body: find the insertion point (earliest statement containing an occurrence)
         var insertionStatement = FindEarliestContainingStatement(allOccurrences, scope);
@@ -98,17 +105,17 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         variableName = ResolveNameConflicts(variableName, scope);
 
         // Build the variable declaration
-        var variableDeclaration = CreateVariableDeclaration(variableName, targetMemberAccess, insertionStatement);
+        var variableDeclaration = CreateVariableDeclaration(variableName, expressionToExtract, insertionStatement);
 
         // Apply changes using SyntaxEditor
         var editor = new SyntaxEditor(root, document.Project.Solution.Workspace.Services);
 
-        foreach (var occurrence in allOccurrences)
+        foreach (var nodeToReplace in nodesToReplace)
         {
-            editor.ReplaceNode(occurrence,
+            editor.ReplaceNode(nodeToReplace,
                 SyntaxFactory.IdentifierName(variableName)
-                    .WithLeadingTrivia(occurrence.GetLeadingTrivia())
-                    .WithTrailingTrivia(occurrence.GetTrailingTrivia()));
+                    .WithLeadingTrivia(nodeToReplace.GetLeadingTrivia())
+                    .WithTrailingTrivia(nodeToReplace.GetTrailingTrivia()));
         }
 
         editor.InsertBefore(insertionStatement, variableDeclaration);
@@ -120,8 +127,8 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         Document document,
         SyntaxNode root,
         LambdaExpressionSyntax lambda,
-        List<MemberAccessExpressionSyntax> allOccurrences,
-        MemberAccessExpressionSyntax targetMemberAccess,
+        List<SyntaxNode> nodesToReplace,
+        ExpressionSyntax expressionToExtract,
         string variableName)
     {
         var expressionBody = lambda is SimpleLambdaExpressionSyntax simple
@@ -135,7 +142,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
 
         // Replace occurrences in the expression body
         var newExpression = expressionBody.ReplaceNodes(
-            allOccurrences.Where(o => expressionBody.Contains(o)),
+            nodesToReplace.Where(o => expressionBody.Contains(o)),
             (original, _) => SyntaxFactory.IdentifierName(variableName)
                 .WithLeadingTrivia(original.GetLeadingTrivia())
                 .WithTrailingTrivia(original.GetTrailingTrivia()));
@@ -146,7 +153,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                 SyntaxFactory.IdentifierName("var"),
                 SyntaxFactory.SingletonSeparatedList(
                     SyntaxFactory.VariableDeclarator(variableName)
-                        .WithInitializer(SyntaxFactory.EqualsValueClause(targetMemberAccess.WithoutTrivia())))));
+                        .WithInitializer(SyntaxFactory.EqualsValueClause(expressionToExtract.WithoutTrivia())))));
 
         var returnStatement = SyntaxFactory.ReturnStatement(newExpression.WithoutLeadingTrivia());
 
@@ -185,7 +192,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
     }
 
     private static StatementSyntax FindEarliestContainingStatement(
-        List<MemberAccessExpressionSyntax> occurrences,
+        List<ExpressionSyntax> occurrences,
         SyntaxNode scope)
     {
         StatementSyntax earliest = null;
@@ -212,9 +219,29 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         return earliest;
     }
 
-    private static string GenerateVariableName(MemberAccessExpressionSyntax memberAccess)
+    private static string GenerateVariableName(ExpressionSyntax expression)
     {
-        var name = memberAccess.Name.Identifier.ValueText;
+        string name = null;
+
+        if (expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            name = memberAccess.Name.Identifier.ValueText;
+        }
+        else if (expression is ElementAccessExpressionSyntax elementAccess)
+        {
+            // Walk down to find the last named member in the chain
+            var current = elementAccess.Expression;
+            while (current is ElementAccessExpressionSyntax nested)
+                current = nested.Expression;
+
+            if (current is MemberAccessExpressionSyntax ma)
+                name = ma.Name.Identifier.ValueText;
+            else if (current is IdentifierNameSyntax id)
+                name = id.Identifier.ValueText;
+        }
+
+        if (string.IsNullOrEmpty(name))
+            name = "value";
 
         if (name.Length > 0 && char.IsUpper(name[0]))
             name = char.ToLowerInvariant(name[0]) + name.Substring(1);
@@ -249,9 +276,83 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         return baseName + suffix;
     }
 
+    private static List<ExpressionSyntax> FindMatchingExpressionsInScope(
+        SyntaxNode scope,
+        ExpressionSyntax targetExpression,
+        string targetKey,
+        int threshold)
+    {
+        if (targetExpression is MemberAccessExpressionSyntax)
+        {
+            return GetMemberAccessesInScope(scope)
+                .Where(ma => DSA019Analyzer.ComputeChainDepth(ma) >= threshold &&
+                             NormalizeWhitespace(ma.ToString()) == targetKey)
+                .Cast<ExpressionSyntax>()
+                .ToList();
+        }
+
+        if (targetExpression is ElementAccessExpressionSyntax)
+        {
+            return DSA019Analyzer.GetElementAccessesInScope(scope)
+                .Where(ea => DSA019Analyzer.ComputeChainDepth(ea) >= threshold &&
+                             NormalizeWhitespace(ea.ToString()) == targetKey)
+                .Cast<ExpressionSyntax>()
+                .ToList();
+        }
+
+        return new List<ExpressionSyntax>();
+    }
+
+    /// <summary>
+    /// Determines what to extract and what nodes to replace.
+    /// For MemberAccessExpressions that are method calls:
+    ///   - Same arguments → extract the full InvocationExpression
+    ///   - Different arguments → extract the receiver (the Expression of the MemberAccess)
+    /// For ElementAccessExpressions or plain MemberAccess → extract as-is.
+    /// </summary>
+    private static (List<SyntaxNode> NodesToReplace, ExpressionSyntax ExpressionToExtract) DetermineExtractionTarget(
+        List<ExpressionSyntax> allOccurrences,
+        ExpressionSyntax targetExpression)
+    {
+        if (targetExpression is MemberAccessExpressionSyntax targetMemberAccess &&
+            targetMemberAccess.Parent is InvocationExpressionSyntax targetInvocation)
+        {
+            var targetArgsText = NormalizeWhitespace(targetInvocation.ArgumentList.ToString());
+            var allAreInvocations = allOccurrences.All(o =>
+                o is MemberAccessExpressionSyntax ma && ma.Parent is InvocationExpressionSyntax);
+
+            if (allAreInvocations)
+            {
+                var allHaveSameArgs = allOccurrences.All(o =>
+                    o is MemberAccessExpressionSyntax ma &&
+                    ma.Parent is InvocationExpressionSyntax inv &&
+                    NormalizeWhitespace(inv.ArgumentList.ToString()) == targetArgsText);
+
+                if (allHaveSameArgs)
+                {
+                    // Same method, same args → extract the full InvocationExpression
+                    var invocationNodes = allOccurrences
+                        .Select(o => (SyntaxNode)o.Parent)
+                        .ToList();
+                    return (invocationNodes, targetInvocation);
+                }
+
+                // Same method, different args → extract the receiver of the MemberAccess
+                var receivers = allOccurrences
+                    .Cast<MemberAccessExpressionSyntax>()
+                    .Select(ma => (SyntaxNode)ma.Expression)
+                    .ToList();
+                return (receivers, targetMemberAccess.Expression);
+            }
+        }
+
+        // Default: extract the expression as-is
+        return (allOccurrences.Cast<SyntaxNode>().ToList(), targetExpression);
+    }
+
     private static LocalDeclarationStatementSyntax CreateVariableDeclaration(
         string variableName,
-        MemberAccessExpressionSyntax expression,
+        ExpressionSyntax expression,
         StatementSyntax insertBeforeStatement)
     {
         return SyntaxFactory.LocalDeclarationStatement(
