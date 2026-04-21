@@ -54,6 +54,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterSyntaxNodeAction(AnalyzeMemberAccess, SyntaxKind.SimpleMemberAccessExpression);
+        context.RegisterSyntaxNodeAction(AnalyzeElementAccess, SyntaxKind.ElementAccessExpression);
     }
 
     private static void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context)
@@ -63,13 +64,16 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         if (IsInsideNameof(memberAccess))
             return;
 
-        // Skip if receiver resolves to a namespace or type (compile-time qualification, not instance dereference)
-        if (IsTypeOrNamespaceAccess(memberAccess, context.SemanticModel))
+        var threshold = GetThreshold(context);
+
+        // Quick syntactic pre-filter (cheaper than semantic analysis)
+        var syntacticDepth = ComputeChainDepth(memberAccess);
+        if (syntacticDepth < threshold)
             return;
 
-        var threshold = GetThreshold(context);
-        var depth = ComputeChainDepth(memberAccess);
-        if (depth < threshold)
+        // Semantic effective depth: excludes namespace qualifications from the count
+        var effectiveDepth = ComputeEffectiveChainDepth(memberAccess, context.SemanticModel);
+        if (effectiveDepth < threshold)
             return;
 
         var key = NormalizeWhitespace(memberAccess.ToString());
@@ -86,11 +90,12 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
             if (IsInsideNameof(sibling))
                 continue;
 
-            if (IsTypeOrNamespaceAccess(sibling, context.SemanticModel))
+            var sibSyntacticDepth = ComputeChainDepth(sibling);
+            if (sibSyntacticDepth < threshold)
                 continue;
 
-            var sibDepth = ComputeChainDepth(sibling);
-            if (sibDepth < threshold)
+            var sibEffectiveDepth = ComputeEffectiveChainDepth(sibling, context.SemanticModel);
+            if (sibEffectiveDepth < threshold)
                 continue;
 
             var sibKey = NormalizeWhitespace(sibling.ToString());
@@ -103,6 +108,61 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
                     additionalLocations: null,
                     properties: null,
                     memberAccess.ToString());
+                context.ReportDiagnostic(diagnostic);
+                return;
+            }
+        }
+    }
+
+    private static void AnalyzeElementAccess(SyntaxNodeAnalysisContext context)
+    {
+        var elementAccess = (ElementAccessExpressionSyntax)context.Node;
+
+        if (IsInsideNameof(elementAccess))
+            return;
+
+        var threshold = GetThreshold(context);
+
+        var syntacticDepth = ComputeChainDepth(elementAccess);
+        if (syntacticDepth < threshold)
+            return;
+
+        var effectiveDepth = ComputeEffectiveChainDepth(elementAccess, context.SemanticModel);
+        if (effectiveDepth < threshold)
+            return;
+
+        var key = NormalizeWhitespace(elementAccess.ToString());
+
+        var scope = GetContainingScope(elementAccess);
+        if (scope == null)
+            return;
+
+        foreach (var sibling in GetElementAccessesInScope(scope))
+        {
+            if (ReferenceEquals(sibling, elementAccess))
+                continue;
+
+            if (IsInsideNameof(sibling))
+                continue;
+
+            var sibSyntacticDepth = ComputeChainDepth(sibling);
+            if (sibSyntacticDepth < threshold)
+                continue;
+
+            var sibEffectiveDepth = ComputeEffectiveChainDepth(sibling, context.SemanticModel);
+            if (sibEffectiveDepth < threshold)
+                continue;
+
+            var sibKey = NormalizeWhitespace(sibling.ToString());
+            if (sibKey == key)
+            {
+                var diagnostic = Diagnostic.Create(
+                    descriptor: _rule,
+                    location: elementAccess.GetLocation(),
+                    effectiveSeverity: context.GetDiagnosticSeverity(_rule),
+                    additionalLocations: null,
+                    properties: null,
+                    elementAccess.ToString());
                 context.ReportDiagnostic(diagnostic);
                 return;
             }
@@ -171,18 +231,72 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Returns true if the member access is a compile-time type or namespace qualification
-    /// (e.g., System.Text.RegularExpressions.RegexOptions.Value) rather than an instance
-    /// property dereference chain. Checks whether the receiver resolves to a namespace or
-    /// type symbol.
+    /// Computes the effective chain depth using the semantic model to exclude compile-time
+    /// qualifications. Namespace navigations, nested type accesses, and constant field
+    /// accesses do not count as runtime dereferences. Static and instance member accesses
+    /// (fields, properties, methods) do count.
     /// </summary>
-    private static bool IsTypeOrNamespaceAccess(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel)
+    internal static int ComputeEffectiveChainDepth(ExpressionSyntax expression, SemanticModel semanticModel)
     {
-        var receiverSymbolInfo = semanticModel.GetSymbolInfo(memberAccess.Expression);
-        if (receiverSymbolInfo.Symbol is INamespaceSymbol || receiverSymbolInfo.Symbol is INamedTypeSymbol)
-            return true;
+        var depth = 0;
+        ExpressionSyntax current = expression;
+        while (true)
+        {
+            if (current is MemberAccessExpressionSyntax ma)
+            {
+                // If the receiver is a namespace, everything below is namespace navigation — stop
+                var receiverSymbol = semanticModel.GetSymbolInfo(ma.Expression).Symbol;
+                if (receiverSymbol is INamespaceSymbol)
+                    break;
 
-        return false;
+                // Check what THIS access resolves to
+                var accessSymbol = semanticModel.GetSymbolInfo(ma).Symbol;
+
+                // Nested type resolution (e.g., Outer.Inner.Nested) — compile-time, not a dereference
+                if (accessSymbol is INamespaceSymbol || accessSymbol is INamedTypeSymbol)
+                {
+                    current = ma.Expression;
+                    continue;
+                }
+
+                // Constant fields and enum members — compile-time inlined, not a dereference
+                if (accessSymbol is IFieldSymbol field && field.IsConst)
+                {
+                    current = ma.Expression;
+                    continue;
+                }
+
+                depth++;
+                current = ma.Expression;
+            }
+            else if (current is ElementAccessExpressionSyntax ea)
+            {
+                depth++;
+                current = ea.Expression;
+            }
+            else if (current is InvocationExpressionSyntax inv)
+            {
+                current = inv.Expression;
+            }
+            else if (current is ParenthesizedExpressionSyntax paren)
+            {
+                current = paren.Expression;
+            }
+            else if (current is AwaitExpressionSyntax awaitExpr)
+            {
+                current = awaitExpr.Expression;
+            }
+            else if (current is CastExpressionSyntax castExpr)
+            {
+                current = castExpr.Expression;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return depth;
     }
 
     private static bool IsInsideNameof(SyntaxNode node)
@@ -226,6 +340,12 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         }
 
         return null;
+    }
+
+    internal static IEnumerable<ElementAccessExpressionSyntax> GetElementAccessesInScope(SyntaxNode scope)
+    {
+        return scope.DescendantNodes(n => !IsNestedScope(n))
+            .OfType<ElementAccessExpressionSyntax>();
     }
 
     private static IEnumerable<MemberAccessExpressionSyntax> GetMemberAccessesInScope(SyntaxNode scope)

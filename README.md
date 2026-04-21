@@ -37,7 +37,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA016](#dsa016) | Code Smells | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
 | [DSA017](#dsa017) | Design      | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
 | [DSA018](#dsa018) | Design      | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                         | ⚠ Warning        | ✅          | ❌        |
-| [DSA019](#dsa019) | Code Smells | Avoid repeated deeply nested member access chains                                                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
+| [DSA019](#dsa019) | Code Smells | Avoid repeated deeply nested member access chains                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
 
 ---
 

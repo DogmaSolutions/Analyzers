@@ -145,6 +145,78 @@ public partial class DSA018Tests
             }"
         ],
         [
+            "Check-then-act inside lock statement (already protected)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly List<string> _items = new List<string>();
+                    private readonly object _lock = new object();
+                    public void MyMethod(string item)
+                    {
+                        lock (_lock)
+                        {
+                            if (!_items.Contains(item))
+                            {
+                                _items.Add(item);
+                            }
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Check-then-act inside lock with negated Any",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly List<string> _items = new List<string>();
+                    private readonly object _sync = new object();
+                    public void MyMethod(string item)
+                    {
+                        lock (_sync)
+                        {
+                            if (!_items.Any(x => x == item))
+                            {
+                                _items.Add(item);
+                            }
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Check-then-act inside nested lock (lock within try-catch)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly List<string> _cache = new List<string>();
+                    private readonly object _sync = new object();
+                    public void MyMethod(string key)
+                    {
+                        try
+                        {
+                            lock (_sync)
+                            {
+                                if (!_cache.Contains(key))
+                                    _cache.Add(key);
+                            }
+                        }
+                        catch (System.Exception) { }
+                    }
+                }
+            }"
+        ],
+        [
             "Positive Any + throw without Add after",
             @"
             using System.Collections.Generic;

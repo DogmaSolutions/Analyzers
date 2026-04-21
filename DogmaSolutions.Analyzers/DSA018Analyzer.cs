@@ -63,6 +63,10 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
         if (CheckThenActUtils.CategorizeReceiverType(receiverType) != CheckThenActUtils.ReceiverCategory.NoAtomicAlternative)
             return;
 
+        // Skip if already protected by a lock statement — this is exactly the fix DSA018 recommends
+        if (IsInsideLockStatement(ifStatement))
+            return;
+
         var diagnostic = Diagnostic.Create(
             descriptor: _rule,
             location: ifStatement.GetLocation(),
@@ -70,5 +74,33 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
             additionalLocations: null,
             properties: null);
         context.ReportDiagnostic(diagnostic);
+    }
+
+    /// <summary>
+    /// Checks whether the if statement is already inside a lock block, which provides
+    /// the thread-safety that DSA018 recommends. In that case, the diagnostic is suppressed.
+    /// </summary>
+    private static bool IsInsideLockStatement(IfStatementSyntax ifStatement)
+    {
+        var current = ifStatement.Parent;
+        while (current != null)
+        {
+            if (current is LockStatementSyntax)
+                return true;
+
+            // Stop at method/function boundaries
+            if (current is MethodDeclarationSyntax ||
+                current is LocalFunctionStatementSyntax ||
+                current is SimpleLambdaExpressionSyntax ||
+                current is ParenthesizedLambdaExpressionSyntax ||
+                current is AnonymousMethodExpressionSyntax ||
+                current is ConstructorDeclarationSyntax ||
+                current is AccessorDeclarationSyntax)
+                break;
+
+            current = current.Parent;
+        }
+
+        return false;
     }
 }

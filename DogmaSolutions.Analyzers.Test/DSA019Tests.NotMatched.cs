@@ -213,6 +213,116 @@ public partial class DSA019Tests
             }"
         ],
         [
+            "Nested type chain with constant at the end",
+            @"
+            namespace TestApp
+            {
+                public class Outer
+                {
+                    public class Middle
+                    {
+                        public class Inner
+                        {
+                            public const int MaxRetries = 3;
+                            public const int Timeout = 5000;
+                        }
+                    }
+                }
+                public class MyService
+                {
+                    public void Process()
+                    {
+                        var retries = Outer.Middle.Inner.MaxRetries;
+                        var timeout = Outer.Middle.Inner.Timeout;
+                    }
+                }
+            }"
+        ],
+        [
+            "Nested type chain with enum-like constants",
+            @"
+            namespace TestApp
+            {
+                public class StatusCodes
+                {
+                    public class Http
+                    {
+                        public class Success
+                        {
+                            public const int Ok = 200;
+                            public const int Created = 201;
+                            public const int NoContent = 204;
+                        }
+                    }
+                }
+                public class MyService
+                {
+                    public void Process()
+                    {
+                        var ok = StatusCodes.Http.Success.Ok;
+                        var created = StatusCodes.Http.Success.Created;
+                        var noContent = StatusCodes.Http.Success.NoContent;
+                    }
+                }
+            }"
+        ],
+        [
+            "Mixed namespace and nested type chain",
+            @"
+            namespace TestApp.Configuration
+            {
+                public class Defaults
+                {
+                    public class Timeouts
+                    {
+                        public const int Connection = 30;
+                        public const int Read = 60;
+                    }
+                }
+            }
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public void Process()
+                    {
+                        var conn = Configuration.Defaults.Timeouts.Connection;
+                        var read = Configuration.Defaults.Timeouts.Read;
+                    }
+                }
+            }"
+        ],
+        [
+            "Static property on fully qualified type followed by instance method",
+            @"
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public void Process(byte[] buffer, int length)
+                    {
+                        var s1 = System.Text.Encoding.UTF8.GetString(buffer, 0, length);
+                        var s2 = System.Text.Encoding.UTF8.GetString(buffer, 0, length);
+                    }
+                }
+            }"
+        ],
+        [
+            "Static property on qualified type with different instance members",
+            @"
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public void Process()
+                    {
+                        var name = System.Text.Encoding.UTF8.EncodingName;
+                        var preamble = System.Text.Encoding.UTF8.GetPreamble();
+                    }
+                }
+            }"
+        ],
+        [
             "Fully qualified enum members (namespace + type qualification, not instance dereference)",
             @"
             using System.Text.RegularExpressions;
@@ -309,6 +419,38 @@ public partial class DSA019Tests
         test.TestCode = sourceCode;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
 
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task InvalidThreshold_FallsBackToDefault()
+    {
+        var sourceCode = @"
+            namespace TestApp
+            {
+                public class Inner { public int Value; }
+                public class Outer { public Inner Inner; }
+                public class MyService
+                {
+                    public void Process(Outer outer)
+                    {
+                        var v1 = outer.Inner.Value;
+                        var v2 = outer.Inner.Value;
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth = invalid_value
+"));
+
+        // Default threshold 3 applies; outer.Inner.Value at depth 2 is below threshold
+        // No diagnostics expected
         await test.RunAsync().ConfigureAwait(false);
     }
 

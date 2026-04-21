@@ -89,7 +89,7 @@ namespace DogmaSolutions.Analyzers
                             methodName,
                             identifier.Identifier.ValueText);
 
-                        if (reportedDiagnostics.All(ddd => ddd.GetMessage(CultureInfo.CurrentCulture) != diagnostic.GetMessage(CultureInfo.CurrentCulture)))
+                        if (reportedDiagnostics.All(ddd => ddd.GetMessage(CultureInfo.InvariantCulture) != diagnostic.GetMessage(CultureInfo.InvariantCulture)))
                         {
                             reportedDiagnostics.Add(diagnostic);
                             ctx.ReportDiagnostic(diagnostic);
