@@ -63,13 +63,16 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         if (IsInsideNameof(memberAccess))
             return;
 
-        // Skip if receiver resolves to a namespace or type (compile-time qualification, not instance dereference)
-        if (IsTypeOrNamespaceAccess(memberAccess, context.SemanticModel))
+        var threshold = GetThreshold(context);
+
+        // Quick syntactic pre-filter (cheaper than semantic analysis)
+        var syntacticDepth = ComputeChainDepth(memberAccess);
+        if (syntacticDepth < threshold)
             return;
 
-        var threshold = GetThreshold(context);
-        var depth = ComputeChainDepth(memberAccess);
-        if (depth < threshold)
+        // Semantic effective depth: excludes namespace qualifications from the count
+        var effectiveDepth = ComputeEffectiveChainDepth(memberAccess, context.SemanticModel);
+        if (effectiveDepth < threshold)
             return;
 
         var key = NormalizeWhitespace(memberAccess.ToString());
@@ -86,11 +89,12 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
             if (IsInsideNameof(sibling))
                 continue;
 
-            if (IsTypeOrNamespaceAccess(sibling, context.SemanticModel))
+            var sibSyntacticDepth = ComputeChainDepth(sibling);
+            if (sibSyntacticDepth < threshold)
                 continue;
 
-            var sibDepth = ComputeChainDepth(sibling);
-            if (sibDepth < threshold)
+            var sibEffectiveDepth = ComputeEffectiveChainDepth(sibling, context.SemanticModel);
+            if (sibEffectiveDepth < threshold)
                 continue;
 
             var sibKey = NormalizeWhitespace(sibling.ToString());
@@ -171,18 +175,72 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Returns true if the member access is a compile-time type or namespace qualification
-    /// (e.g., System.Text.RegularExpressions.RegexOptions.Value) rather than an instance
-    /// property dereference chain. Checks whether the receiver resolves to a namespace or
-    /// type symbol.
+    /// Computes the effective chain depth using the semantic model to exclude compile-time
+    /// qualifications. Namespace navigations, nested type accesses, and constant field
+    /// accesses do not count as runtime dereferences. Static and instance member accesses
+    /// (fields, properties, methods) do count.
     /// </summary>
-    private static bool IsTypeOrNamespaceAccess(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel)
+    private static int ComputeEffectiveChainDepth(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel)
     {
-        var receiverSymbolInfo = semanticModel.GetSymbolInfo(memberAccess.Expression);
-        if (receiverSymbolInfo.Symbol is INamespaceSymbol || receiverSymbolInfo.Symbol is INamedTypeSymbol)
-            return true;
+        var depth = 0;
+        ExpressionSyntax current = memberAccess;
+        while (true)
+        {
+            if (current is MemberAccessExpressionSyntax ma)
+            {
+                // If the receiver is a namespace, everything below is namespace navigation — stop
+                var receiverSymbol = semanticModel.GetSymbolInfo(ma.Expression).Symbol;
+                if (receiverSymbol is INamespaceSymbol)
+                    break;
 
-        return false;
+                // Check what THIS access resolves to
+                var accessSymbol = semanticModel.GetSymbolInfo(ma).Symbol;
+
+                // Nested type resolution (e.g., Outer.Inner.Nested) — compile-time, not a dereference
+                if (accessSymbol is INamespaceSymbol || accessSymbol is INamedTypeSymbol)
+                {
+                    current = ma.Expression;
+                    continue;
+                }
+
+                // Constant fields and enum members — compile-time inlined, not a dereference
+                if (accessSymbol is IFieldSymbol field && field.IsConst)
+                {
+                    current = ma.Expression;
+                    continue;
+                }
+
+                depth++;
+                current = ma.Expression;
+            }
+            else if (current is ElementAccessExpressionSyntax ea)
+            {
+                depth++;
+                current = ea.Expression;
+            }
+            else if (current is InvocationExpressionSyntax inv)
+            {
+                current = inv.Expression;
+            }
+            else if (current is ParenthesizedExpressionSyntax paren)
+            {
+                current = paren.Expression;
+            }
+            else if (current is AwaitExpressionSyntax awaitExpr)
+            {
+                current = awaitExpr.Expression;
+            }
+            else if (current is CastExpressionSyntax castExpr)
+            {
+                current = castExpr.Expression;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return depth;
     }
 
     private static bool IsInsideNameof(SyntaxNode node)
