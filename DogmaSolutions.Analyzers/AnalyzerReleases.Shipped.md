@@ -22,3 +22,4 @@ DSA016  | Code Smells | Warning  | DSA016Analyzer
 DSA017  | Design      | Warning  | DSA017Analyzer
 DSA018  | Design      | Warning  | DSA018Analyzer
 DSA019  | Code Smells | Warning  | DSA019Analyzer
+DSA020  | Code Smells | Warning  | DSA020Analyzer

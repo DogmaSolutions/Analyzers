@@ -82,6 +82,11 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         if (!TrackedMethods.Contains(methodName))
             return;
 
+        // Skip static method calls (e.g., File.Exists, Directory.Exists) — these are
+        // not instance enumeration methods and calling them twice is perfectly valid
+        if (IsStaticMethodCall(invocation, context.SemanticModel))
+            return;
+
         var key = BuildKey(receiverText, methodName, argsText);
 
         var scope = GetContainingScope(invocation);
@@ -98,6 +103,9 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
                 continue;
 
             if (!TrackedMethods.Contains(sibMethod))
+                continue;
+
+            if (IsStaticMethodCall(sibling, context.SemanticModel))
                 continue;
 
             if (BuildKey(sibReceiver, sibMethod, sibArgs) == key)
@@ -210,6 +218,22 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
                node is ParenthesizedLambdaExpressionSyntax ||
                node is AnonymousMethodExpressionSyntax ||
                node is LocalFunctionStatementSyntax;
+    }
+
+    /// <summary>
+    /// Returns true if the invocation is a static method call on a type (e.g., File.Exists,
+    /// Directory.Exists) rather than an instance method on a collection.
+    /// </summary>
+    private static bool IsStaticMethodCall(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+    {
+        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            var receiverSymbol = semanticModel.GetSymbolInfo(memberAccess.Expression).Symbol;
+            if (receiverSymbol is INamedTypeSymbol || receiverSymbol is INamespaceSymbol)
+                return true;
+        }
+
+        return false;
     }
 
     private static string NormalizeWhitespace(string text)

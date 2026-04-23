@@ -328,6 +328,26 @@ public partial class DSA016Tests
             "LongCount",
             2
         ],
+        [
+            "List.Exists instance method still caught (not excluded by static method check)",
+            @"
+            using System;
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class Item { public int Id; }
+                public class MyService
+                {
+                    public void Process(List<Item> items, int id)
+                    {
+                        var a = {|#0:items.Exists(x => x.Id == id)|};
+                        var b = {|#1:items.Exists(x => x.Id == id)|};
+                    }
+                }
+            }",
+            "Exists",
+            2
+        ],
     ];
 
     [TestMethod]
