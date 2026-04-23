@@ -65,6 +65,13 @@ public sealed class DSA017Analyzer : DiagnosticAnalyzer
         CheckThenActUtils.HasAtomicAlternative(receiverType, out var suggestion);
         var typeName = receiverType?.Name ?? "collection";
 
+        // For set-like types (HashSet, SortedSet, etc.) whose only atomic alternative is
+        // "Add returns bool", suppress when the body contains logic beyond the Add call.
+        // The check-then-act pattern is often used as a cache guard to avoid redundant
+        // computation, and these types don't offer a "get-or-add" strategy.
+        if (IsSetLikeType(typeName) && HasComplexInsertBody(ifStatement))
+            return;
+
         var diagnostic = Diagnostic.Create(
             descriptor: _rule,
             location: ifStatement.GetLocation(),
@@ -74,5 +81,40 @@ public sealed class DSA017Analyzer : DiagnosticAnalyzer
             typeName,
             suggestion ?? "the type's atomic operation");
         context.ReportDiagnostic(diagnostic);
+    }
+
+    private static bool IsSetLikeType(string typeName)
+    {
+        return typeName == "HashSet" || typeName == "SortedSet" ||
+               typeName == "ImmutableHashSet" || typeName == "ImmutableSortedSet";
+    }
+
+    /// <summary>
+    /// Returns true if the if-body (or else-body) that contains the insert call also
+    /// contains other executable statements beyond the insert itself. This indicates a
+    /// cache/guard pattern where the check gates expensive computation, not just deduplication.
+    /// </summary>
+    private static bool HasComplexInsertBody(IfStatementSyntax ifStatement)
+    {
+        // Pattern A: if (!contains) { add; possibly other logic; }
+        if (HasInsertWithOtherLogic(ifStatement.Statement))
+            return true;
+
+        // Pattern C: if (contains) { ... } else { add; possibly other logic; }
+        if (ifStatement.Else != null && HasInsertWithOtherLogic(ifStatement.Else.Statement))
+            return true;
+
+        return false;
+    }
+
+    private static bool HasInsertWithOtherLogic(StatementSyntax body)
+    {
+        // Single statement (no block) — always simple (just the Add call)
+        if (body is not BlockSyntax block)
+            return false;
+
+        // Check if the block has more than one statement
+        // A block with only the Add call is simple; anything else means complex logic
+        return block.Statements.Count > 1;
     }
 }

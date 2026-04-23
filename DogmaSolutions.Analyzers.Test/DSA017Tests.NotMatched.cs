@@ -100,6 +100,73 @@ public partial class DSA017Tests
             }"
         ],
         [
+            "HashSet: Contains + Add with additional logic in body (cache/guard pattern)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly HashSet<string> _cache = new HashSet<string>();
+                    public void MyMethod(string key)
+                    {
+                        if (!_cache.Contains(key))
+                        {
+                            var data = LoadExpensiveData(key);
+                            _cache.Add(key);
+                        }
+                    }
+                    private string LoadExpensiveData(string key) => null;
+                }
+            }"
+        ],
+        [
+            "SortedSet: Contains + Add with initialization logic (complex body)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly SortedSet<int> _processed = new SortedSet<int>();
+                    public void MyMethod(int id)
+                    {
+                        if (!_processed.Contains(id))
+                        {
+                            ProcessItem(id);
+                            _processed.Add(id);
+                        }
+                    }
+                    private void ProcessItem(int id) { }
+                }
+            }"
+        ],
+        [
+            "HashSet: positive Contains + else with complex body (cache pattern, Pattern C)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly HashSet<string> _seen = new HashSet<string>();
+                    public void MyMethod(string key)
+                    {
+                        if (_seen.Contains(key))
+                        {
+                            System.Console.WriteLine(""already processed"");
+                        }
+                        else
+                        {
+                            InitializeResource(key);
+                            _seen.Add(key);
+                        }
+                    }
+                    private void InitializeResource(string key) { }
+                }
+            }"
+        ],
+        [
             "DbSet check-then-act (DSA012 territory, not DSA017)",
             @"
             using System.Linq;

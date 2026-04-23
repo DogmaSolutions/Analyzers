@@ -152,6 +152,28 @@ public partial class DSA017Tests
             "SortedDictionary",
             "TryAdd or indexer assignment [key] = value"
         ],
+        [
+            "Dictionary: ContainsKey + complex body (still flagged, Dictionary is not set-like)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod(Dictionary<string, int> dict, string key)
+                    {
+                        {|#0:if (!dict.ContainsKey(key))
+                        {
+                            var value = ComputeExpensiveValue(key);
+                            dict.Add(key, value);
+                        }|}
+                    }
+                    private int ComputeExpensiveValue(string key) => 42;
+                }
+            }",
+            "Dictionary",
+            "TryAdd or indexer assignment [key] = value"
+        ],
     ];
 
     [TestMethod]
