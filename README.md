@@ -31,13 +31,14 @@ Every rule is accompanied by the following information and clues:
 | [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset                                                                                                                                      | ⛔ Error          | ✅          | ❌        |
 | [DSA011](#dsa011) | Design      | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                      | ⚠ Warning        | ✅          | ❌        |
 | [DSA012](#dsa012) | Design      | Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU)                                                                                                               | ⚠ Warning        | ✅          | ❌        |
-| [DSA013](#dsa013) | Security    | Minimal API endpoints should have an explicit authorization configuration                                                                                                                                  | ⚠ Warning        | ✅          | ❌        |
-| [DSA014](#dsa014) | Security    | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                   | ⚠ Warning        | ✅          | ❌        |
-| [DSA015](#dsa015) | Security    | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                   | ⚠ Warning        | ✅          | ❌        |
+| [DSA013](#dsa013) | Security    | Minimal API endpoints should have an explicit authorization configuration                                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
+| [DSA014](#dsa014) | Security    | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                   | ⚠ Warning        | ✅          | ✅        |
+| [DSA015](#dsa015) | Security    | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                   | ⚠ Warning        | ✅          | ✅        |
 | [DSA016](#dsa016) | Code Smells | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
 | [DSA017](#dsa017) | Design      | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
 | [DSA018](#dsa018) | Design      | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                         | ⚠ Warning        | ✅          | ❌        |
 | [DSA019](#dsa019) | Code Smells | Avoid repeated deeply nested member access chains                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
+| [DSA020](#dsa020) | Code Smells | Remove redundant async/await on Task.FromResult                                                                                                                                                             | ⚠ Warning        | ✅          | ✅        |
 
 ---
 
@@ -871,6 +872,8 @@ The following collection types and their suggested alternatives are covered:
 | `ImmutableSortedSet<T>` | `Add` (already handles duplicates) |
 | `ImmutableSortedDictionary<K,V>` | `SetItem` (upsert semantics) |
 
+**Set-like types and complex bodies**: for `HashSet<T>`, `SortedSet<T>`, `ImmutableHashSet<T>`, and `ImmutableSortedSet<T>`, the rule only fires when the if-body contains **only** the `Add` call (simple deduplication). When the body contains additional logic (e.g., expensive computation, logging, cache initialization), the check-then-act is treated as an intentional cache/guard pattern and is **not flagged**, because these types do not offer a "get-or-add" strategy equivalent to `ConcurrentDictionary.GetOrAdd`.
+
 ## See also
 
 - [DSA012: Check-then-act on database types](#dsa012)
@@ -910,6 +913,13 @@ if (!dbSet.Any(x => x.Id == id)) { dbSet.Add(entity); }  // ✅ not flagged by D
 
 // ContainsKey without Add in body
 if (!dict.ContainsKey(key)) { Console.WriteLine("not found"); }  // ✅ no insert
+
+// HashSet: Contains + Add with additional logic (cache/guard pattern)
+if (!cache.Contains(key))
+{
+    var data = LoadExpensiveData(key);  // additional logic beyond Add
+    cache.Add(key);                     // ✅ not flagged — intentional cache pattern
+}
 ```
 
 ## Fix / Mitigation
@@ -1406,6 +1416,8 @@ The analyzer tracks the following method families:
 
 Each scope (method body, lambda, local function) is analyzed independently; invocations in nested lambdas are not compared with invocations in the outer scope.
 
+**Static method exclusion**: methods called on a type rather than an instance (e.g., `File.Exists(path)`, `Directory.Exists(path)`) are excluded — these are not enumeration methods and calling them multiple times is legitimate.
+
 ## See also
 
 Security-wise, repeated enumeration of a deferred `IEnumerable` backed by a database query or external data source can lead to non-deterministic behavior if the underlying data changes between enumerations, potentially causing inconsistent authorization decisions, data integrity violations, or information disclosure.
@@ -1486,6 +1498,10 @@ var filtered = items.Count(x => x.Id > 0);  // ✅ different arguments
 // Non-tracked methods (ToString, custom methods, etc.)
 var s1 = value.ToString();
 var s2 = value.ToString();  // ✅ not a tracked enumeration method
+
+// Static method calls (not instance enumeration methods)
+var a = File.Exists(path);
+var b = File.Exists(path);  // ✅ static method on a type, not enumeration
 
 // Called only once
 var item = items.FirstOrDefault(x => x.Id == id);  // ✅ single invocation
@@ -1695,6 +1711,138 @@ public class HomeAutomationService
             Tertiary = lights[2].IsOn(),
         };
     }
+}
+```
+
+---
+
+# DSA020
+
+Remove redundant async/await on Task.FromResult.
+
+- **Category**: Code Smells
+- **Severity**: Warning ⚠
+- **Related rules**: none
+
+## Description
+
+This rule fires when an async lambda only awaits `Task.FromResult(...)`. The async/await is redundant because `Task.FromResult` already returns a completed `Task<T>`; the `async` modifier forces the compiler to generate a state machine that unwraps and re-wraps the value unnecessarily.
+
+**Why the compiler does not simplify this automatically**: the C# compiler (Roslyn) transforms every `async` method or lambda into a full state machine — a struct implementing `IAsyncStateMachine` with a `MoveNext` method, an `AsyncTaskMethodBuilder`, and the associated dispatch logic. This transformation is a faithful implementation of the language specification, not an optimization pass; the compiler does not perform semantic analysis to detect whether the `async`/`await` is "trivially removable." Specifically, it cannot special-case `Task.FromResult` because it has no compile-time knowledge about which methods return already-completed tasks — `Task.FromResult` is just a regular method call from the compiler's perspective.
+
+More importantly, removing `async`/`await` changes the **exception propagation semantics**: in an `async` lambda, any exception thrown during evaluation is captured in the returned `Task` (the caller observes it via `await` or `.Result`); without `async`, the same exception propagates synchronously to the caller. This behavioral difference prevents the compiler from performing the transformation automatically. However, in the specific case of `Task.FromResult` — where the developer is explicitly constructing a completed task from a value — this semantic difference is rarely meaningful, and the developer is in the best position to make that judgment.
+
+**JIT behavior**: the JIT (RyuJIT) optimizes synchronously completed awaits at runtime — when the task's `IsCompleted` returns `true`, the continuation is not scheduled and the result is extracted immediately, avoiding actual suspension. However, the state machine struct, the builder setup, and the `MoveNext` method body are still compiled and executed. The JIT cannot eliminate the state machine itself because the async contract requires it. In .NET 6+, the runtime pools async state machines and the `AsyncTaskMethodBuilder` has been optimized to reduce allocations for synchronously completing paths, but the fundamental overhead of entering and exiting the state machine remains. Tier-0 JIT (used during startup and in ReadyToRun scenarios) does not inline aggressively, so the overhead is more pronounced in those contexts. NativeAOT compilation preserves the state machine as well.
+
+Writing the code without the unnecessary `async`/`await` avoids all of this overhead at the source level, produces cleaner IL, and removes any dependency on runtime optimization quality across .NET versions and platforms.
+
+The rule detects:
+- Expression-body lambdas: `async ct => await Task.FromResult(x)`
+- Block-body lambdas with a single return: `async ct => { return await Task.FromResult(x); }`
+- Generic variants: `Task.FromResult<T>(x)`
+- `ConfigureAwait` chains: `await Task.FromResult(x).ConfigureAwait(false)` (the `ConfigureAwait` is stripped since it's only meaningful in an `await` context)
+
+All lambda forms are handled: simple (`async ct =>`), parenthesized (`async (ct) =>`), discard (`async _ =>`), and parameterless (`async () =>`).
+
+## See also
+
+Security-wise, unnecessary async state machines increase the attack surface for resource exhaustion: each state machine allocates heap memory and scheduler overhead for work that completes synchronously. In high-throughput scenarios (e.g., middleware pipelines, message handlers, event-driven architectures), this overhead compounds across thousands of invocations per second, contributing to GC pressure, increased Gen0/Gen1 collection frequency, and latency spikes under load.
+
+The runtime does optimize synchronously completed awaits — when the task's `IsCompleted` returns `true`, the continuation is not scheduled and the result is extracted immediately, avoiding actual thread suspension. However, the state machine struct is still instantiated, the `AsyncTaskMethodBuilder` is still initialized, and the `MoveNext` method is still called. These costs are small individually but measurable at scale. Furthermore, relying on these optimizations is fragile: their effectiveness varies across .NET versions (the pooling and caching strategies have changed across .NET 5, 6, 7, and 8), across JIT tiers (Tier-0, used during application startup and in ReadyToRun scenarios, does not inline the state machine aggressively; only Tier-1 with PGO achieves maximum optimization), and across compilation modes (NativeAOT preserves the full state machine and does not benefit from tiered JIT). Writing the code correctly at the source level eliminates this entire class of overhead regardless of the runtime environment.
+
+- [MITRE, CWE-1049: Interaction Frequency](https://cwe.mitre.org/data/definitions/1049.html)
+- [CA1849: Call async methods when in an async method](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+- [Stephen Toub: How Async/Await Really Works in C#](https://devblogs.microsoft.com/dotnet/how-async-await-really-works/) — comprehensive explanation of the state machine transformation, builder mechanics, and runtime fast-path for completed tasks
+- [Sergey Tepliakov: Dissecting the async methods in C#](https://devblogs.microsoft.com/premier-developer/dissecting-the-async-methods-in-c/) — deep dive into the generated IL, state machine struct, and MoveNext dispatch with before/after comparisons
+- [.NET 6 Performance Improvements: Async](https://devblogs.microsoft.com/dotnet/performance-improvements-in-net-6/#async) — documents the runtime optimizations for synchronously completing async methods, including state machine pooling and their limitations
+- [.NET 7 Performance Improvements: Async](https://devblogs.microsoft.com/dotnet/performance_improvements_in_net_7/#async) — further async optimizations including on-stack async method builders
+- [Roslyn Async Design](https://github.com/dotnet/roslyn/blob/main/docs/features/async.md) — compiler design document explaining why the state machine transformation is applied uniformly to all async methods without semantic simplification
+
+## Matched patterns
+
+```cs
+// All of these are flagged:
+async (ct) => await Task.FromResult(42)
+async ct => await Task.FromResult(42)
+async _ => await Task.FromResult(42)
+async () => await Task.FromResult("hello")
+async (ct) => await Task.FromResult<int>(42)
+async () => await Task.FromResult<string>("hello")
+async (ct) => { return await Task.FromResult(42); }
+async (ct) => await Task.FromResult(42).ConfigureAwait(false)
+```
+
+## Not matched patterns
+
+```cs
+// Already correct — no async/await
+_ => Task.FromResult(42)  // ✅
+
+// Async lambda with real async work
+async () => await GetValueFromDatabaseAsync()  // ✅ not Task.FromResult
+
+// Multiple statements in the block body
+async () => { var x = Compute(); return await Task.FromResult(x); }  // ✅ multiple statements
+
+// Non-lambda async method
+async Task<int> GetValueAsync() => await Task.FromResult(42);  // ✅ not a lambda
+```
+
+## Fix / Mitigation
+
+Remove the `async` modifier and the `await` keyword. For lambdas with an unused parameter, replace it with a discard (`_`). The code fix also strips `.ConfigureAwait(...)` since it has no effect without `await`.
+
+```cs
+// Before:
+async (ct) => await Task.FromResult(42)
+
+// After:
+_ => Task.FromResult(42)
+
+// Before (parameterless):
+async () => await Task.FromResult("hello")
+
+// After:
+() => Task.FromResult("hello")
+
+// Before (parameter used in expression):
+async ct => await Task.FromResult(ct.IsCancellationRequested)
+
+// After (parameter name preserved):
+ct => Task.FromResult(ct.IsCancellationRequested)
+
+// Before (with ConfigureAwait):
+async (ct) => await Task.FromResult(42).ConfigureAwait(false)
+
+// After (ConfigureAwait stripped):
+_ => Task.FromResult(42)
+```
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA020: Remove redundant async/await on Task.FromResult
+dotnet_diagnostic.DSA020.severity = error
+```
+
+## Code sample
+
+```csharp
+public class EventHandlerSetup
+{
+    public void Configure()
+    {
+        // this WILL trigger the rule
+        Register(async (ct) => await Task.FromResult(GetDefaultValue()));
+
+        // this WILL NOT trigger the rule (already optimized)
+        Register(_ => Task.FromResult(GetDefaultValue()));
+    }
+
+    private void Register(Func<CancellationToken, Task<int>> handler) { }
+    private int GetDefaultValue() => 42;
 }
 ```
 
