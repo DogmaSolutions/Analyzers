@@ -318,4 +318,14 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA019AnalyzerTitle" xml:space="preserve">
     <value>Avoid repeated deeply nested member access chains</value>
   </data>
+
+    <data name="DSA020AnalyzerDescription" xml:space="preserve">
+    <value>An async lambda that only awaits Task.FromResult is redundant. Task.FromResult already returns a completed Task, so the async modifier and await keyword create an unnecessary state machine. The C# compiler cannot perform this simplification automatically because removing async/await changes exception propagation semantics (exceptions in async lambdas are captured in the returned Task; without async, they propagate synchronously). Additionally, the compiler has no compile-time knowledge that Task.FromResult returns a completed task — it is just a regular method call. While the JIT optimizes synchronously completed awaits to avoid actual suspension, the state machine infrastructure (IAsyncStateMachine struct, AsyncTaskMethodBuilder, MoveNext dispatch) is still emitted and executed. Writing the code without the unnecessary async/await avoids this overhead at the source level, produces cleaner IL, and removes any dependency on runtime optimization quality across different .NET versions, JIT tiers, and platforms (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa020).</value>
+  </data>
+    <data name="DSA020AnalyzerMessageFormat" xml:space="preserve">
+    <value>Redundant async/await on Task.FromResult. Remove the async modifier and the await keyword; the Task is already completed.</value>
+  </data>
+    <data name="DSA020AnalyzerTitle" xml:space="preserve">
+    <value>Remove redundant async/await on Task.FromResult</value>
+  </data>
 </root>

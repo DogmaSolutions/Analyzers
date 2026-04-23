@@ -562,5 +562,32 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA019AnalyzerTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to An async lambda that only awaits Task.FromResult is redundant....
+        /// </summary>
+        internal static string DSA020AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA020AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Redundant async/await on Task.FromResult. Remove the async modifier and the await keyword; the Task is already completed..
+        /// </summary>
+        internal static string DSA020AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA020AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Remove redundant async/await on Task.FromResult.
+        /// </summary>
+        internal static string DSA020AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA020AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }
