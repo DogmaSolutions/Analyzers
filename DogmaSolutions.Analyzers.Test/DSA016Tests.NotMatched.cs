@@ -185,6 +185,38 @@ public partial class DSA016Tests
                 }
             }"
         ],
+        [
+            "Static method call: File.Exists called twice (not an enumeration method)",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public void Process(string path)
+                    {
+                        var a = File.Exists(path);
+                        var b = File.Exists(path);
+                    }
+                }
+            }"
+        ],
+        [
+            "Static method call: Directory.Exists called twice",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public void Process(string path)
+                    {
+                        var a = Directory.Exists(path);
+                        var b = Directory.Exists(path);
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]
