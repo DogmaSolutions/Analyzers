@@ -49,18 +49,18 @@ public partial class DSA019Tests
         // MemberAccess diagnostics: doc.Sections[s].Details (depth 3)
         test.ExpectedDiagnostics.Add(
             CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("doc.Sections[s].Details"));
+                .WithLocation(0).WithArguments("doc.Sections[s].Details", 2));
         test.ExpectedDiagnostics.Add(
             CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("doc.Sections[s].Details"));
+                .WithLocation(1).WithArguments("doc.Sections[s].Details", 2));
 
         // ElementAccess diagnostics: doc.Sections[s].Details[d] (depth 4)
         test.ExpectedDiagnostics.Add(
             CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithSpan(11, 36, 11, 62).WithArguments("doc.Sections[s].Details[d]"));
+                .WithSpan(11, 36, 11, 62).WithArguments("doc.Sections[s].Details[d]", 2));
         test.ExpectedDiagnostics.Add(
             CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithSpan(12, 37, 12, 63).WithArguments("doc.Sections[s].Details[d]"));
+                .WithSpan(12, 37, 12, 63).WithArguments("doc.Sections[s].Details[d]", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }

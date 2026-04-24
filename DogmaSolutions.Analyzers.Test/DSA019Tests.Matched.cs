@@ -318,7 +318,7 @@ public partial class DSA019Tests
             test.ExpectedDiagnostics.Add(
                 CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
                     .WithLocation(i)
-                    .WithArguments(chainText));
+                    .WithArguments(chainText, expectedCount));
         }
 
         await test.RunAsync().ConfigureAwait(false);

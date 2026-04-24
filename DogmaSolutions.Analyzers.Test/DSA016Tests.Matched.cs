@@ -368,7 +368,7 @@ public partial class DSA016Tests
             test.ExpectedDiagnostics.Add(
                 CSharpAnalyzerVerifier<DSA016Analyzer>.Diagnostic(DSA016Analyzer.DiagnosticId)
                     .WithLocation(i)
-                    .WithArguments(methodName));
+                    .WithArguments(methodName, expectedCount));
         }
 
         await test.RunAsync().ConfigureAwait(false);

@@ -93,7 +93,8 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         if (scope == null)
             return;
 
-        // Check if any other invocation in the same scope has the same key
+        // Count how many invocations in the same scope have the same key (including self)
+        var count = 1; // count self
         foreach (var sibling in GetInvocationsInScope(scope))
         {
             if (ReferenceEquals(sibling, invocation))
@@ -109,17 +110,20 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
                 continue;
 
             if (BuildKey(sibReceiver, sibMethod, sibArgs) == key)
-            {
-                var diagnostic = Diagnostic.Create(
-                    descriptor: _rule,
-                    location: invocation.GetLocation(),
-                    effectiveSeverity: context.GetDiagnosticSeverity(_rule),
-                    additionalLocations: null,
-                    properties: null,
-                    methodName);
-                context.ReportDiagnostic(diagnostic);
-                return;
-            }
+                count++;
+        }
+
+        if (count > 1)
+        {
+            var diagnostic = Diagnostic.Create(
+                descriptor: _rule,
+                location: invocation.GetLocation(),
+                effectiveSeverity: context.GetDiagnosticSeverity(_rule),
+                additionalLocations: null,
+                properties: null,
+                methodName,
+                count);
+            context.ReportDiagnostic(diagnostic);
         }
     }
 

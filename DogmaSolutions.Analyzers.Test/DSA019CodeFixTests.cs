@@ -59,10 +59,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("home.Rooms.Bathroom.Lights"));
+                .WithLocation(0).WithArguments("home.Rooms.Bathroom.Lights", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("home.Rooms.Bathroom.Lights"));
+                .WithLocation(1).WithArguments("home.Rooms.Bathroom.Lights", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -111,10 +111,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("config.Settings.Infrastructure.Database"));
+                .WithLocation(0).WithArguments("config.Settings.Infrastructure.Database", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("config.Settings.Infrastructure.Database"));
+                .WithLocation(1).WithArguments("config.Settings.Infrastructure.Database", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -165,13 +165,13 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("customer.Contact.Profile.Address"));
+                .WithLocation(0).WithArguments("customer.Contact.Profile.Address", 3));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("customer.Contact.Profile.Address"));
+                .WithLocation(1).WithArguments("customer.Contact.Profile.Address", 3));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(2).WithArguments("customer.Contact.Profile.Address"));
+                .WithLocation(2).WithArguments("customer.Contact.Profile.Address", 3));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -222,10 +222,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -284,10 +284,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("e.Category.Spec.Detail"));
+                .WithLocation(0).WithArguments("e.Category.Spec.Detail", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("e.Category.Spec.Detail"));
+                .WithLocation(1).WithArguments("e.Category.Spec.Detail", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -336,10 +336,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("this._field.Inner.Deep"));
+                .WithLocation(0).WithArguments("this._field.Inner.Deep", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("this._field.Inner.Deep"));
+                .WithLocation(1).WithArguments("this._field.Inner.Deep", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -392,10 +392,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -441,16 +441,16 @@ namespace TestApp
         // Diagnostics sorted by span: ElementAccess before MemberAccess on each line
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments(@"dt.Rows[0][""COL_A""]"));
+                .WithLocation(0).WithArguments(@"dt.Rows[0][""COL_A""]", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(2).WithArguments(@"dt.Rows[0][""COL_A""].ToString"));
+                .WithLocation(2).WithArguments(@"dt.Rows[0][""COL_A""].ToString", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments(@"dt.Rows[0][""COL_A""]"));
+                .WithLocation(1).WithArguments(@"dt.Rows[0][""COL_A""]", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(3).WithArguments(@"dt.Rows[0][""COL_A""].ToString"));
+                .WithLocation(3).WithArguments(@"dt.Rows[0][""COL_A""].ToString", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -497,10 +497,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("config.Options.Formatter.Format"));
+                .WithLocation(0).WithArguments("config.Options.Formatter.Format", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("config.Options.Formatter.Format"));
+                .WithLocation(1).WithArguments("config.Options.Formatter.Format", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -549,10 +549,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -601,10 +601,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -661,10 +661,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep"));
+                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -714,16 +714,16 @@ namespace TestApp
         // Diagnostics sorted by span: ElementAccess before MemberAccess on each line
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments(@"dt.Rows[0][""TheKey""]"));
+                .WithLocation(0).WithArguments(@"dt.Rows[0][""TheKey""]", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(2).WithArguments(@"dt.Rows[0][""TheKey""].ToValue"));
+                .WithLocation(2).WithArguments(@"dt.Rows[0][""TheKey""].ToValue", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments(@"dt.Rows[0][""TheKey""]"));
+                .WithLocation(1).WithArguments(@"dt.Rows[0][""TheKey""]", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(3).WithArguments(@"dt.Rows[0][""TheKey""].ToValue"));
+                .WithLocation(3).WithArguments(@"dt.Rows[0][""TheKey""].ToValue", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -772,10 +772,10 @@ namespace TestApp
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(0).WithArguments(@"dt.Rows[0][""TheKey""]"));
+                .WithLocation(0).WithArguments(@"dt.Rows[0][""TheKey""]", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithLocation(1).WithArguments(@"dt.Rows[0][""TheKey""]"));
+                .WithLocation(1).WithArguments(@"dt.Rows[0][""TheKey""]", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }

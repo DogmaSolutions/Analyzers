@@ -484,11 +484,11 @@ dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth = 1
         test.ExpectedDiagnostics.Add(
             CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
                 .WithLocation(0)
-                .WithArguments("outer.Inner"));
+                .WithArguments("outer.Inner", 2));
         test.ExpectedDiagnostics.Add(
             CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
                 .WithLocation(1)
-                .WithArguments("outer.Inner"));
+                .WithArguments("outer.Inner", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }

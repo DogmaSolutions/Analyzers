@@ -82,6 +82,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         if (scope == null)
             return;
 
+        var count = 1; // count self
         foreach (var sibling in GetMemberAccessesInScope(scope))
         {
             if (ReferenceEquals(sibling, memberAccess))
@@ -100,17 +101,20 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
             var sibKey = NormalizeWhitespace(sibling.ToString());
             if (sibKey == key)
-            {
-                var diagnostic = Diagnostic.Create(
-                    descriptor: _rule,
-                    location: memberAccess.GetLocation(),
-                    effectiveSeverity: context.GetDiagnosticSeverity(_rule),
-                    additionalLocations: null,
-                    properties: null,
-                    memberAccess.ToString());
-                context.ReportDiagnostic(diagnostic);
-                return;
-            }
+                count++;
+        }
+
+        if (count > 1)
+        {
+            var diagnostic = Diagnostic.Create(
+                descriptor: _rule,
+                location: memberAccess.GetLocation(),
+                effectiveSeverity: context.GetDiagnosticSeverity(_rule),
+                additionalLocations: null,
+                properties: null,
+                memberAccess.ToString(),
+                count);
+            context.ReportDiagnostic(diagnostic);
         }
     }
 
@@ -137,6 +141,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         if (scope == null)
             return;
 
+        var count = 1; // count self
         foreach (var sibling in GetElementAccessesInScope(scope))
         {
             if (ReferenceEquals(sibling, elementAccess))
@@ -155,17 +160,20 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
             var sibKey = NormalizeWhitespace(sibling.ToString());
             if (sibKey == key)
-            {
-                var diagnostic = Diagnostic.Create(
-                    descriptor: _rule,
-                    location: elementAccess.GetLocation(),
-                    effectiveSeverity: context.GetDiagnosticSeverity(_rule),
-                    additionalLocations: null,
-                    properties: null,
-                    elementAccess.ToString());
-                context.ReportDiagnostic(diagnostic);
-                return;
-            }
+                count++;
+        }
+
+        if (count > 1)
+        {
+            var diagnostic = Diagnostic.Create(
+                descriptor: _rule,
+                location: elementAccess.GetLocation(),
+                effectiveSeverity: context.GetDiagnosticSeverity(_rule),
+                additionalLocations: null,
+                properties: null,
+                elementAccess.ToString(),
+                count);
+            context.ReportDiagnostic(diagnostic);
         }
     }
 
