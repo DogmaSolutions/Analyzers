@@ -84,7 +84,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
             return document;
 
         // Find all duplicate occurrences in the same scope (MemberAccess or ElementAccess)
-        var allOccurrences = FindMatchingExpressionsInScope(scope, targetExpression, targetKey, threshold);
+        var allOccurrences = FindMatchingExpressionsInScope(scope, targetExpression, targetKey, threshold, semanticModel);
         if (allOccurrences.Count < 2)
             return document;
 
@@ -281,13 +281,17 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         SyntaxNode scope,
         ExpressionSyntax targetExpression,
         string targetKey,
-        int threshold)
+        int threshold,
+        SemanticModel semanticModel)
     {
         if (targetExpression is MemberAccessExpressionSyntax)
         {
             return GetMemberAccessesInScope(scope)
                 .Where(ma => DSA019Analyzer.ComputeChainDepth(ma) >= threshold &&
-                             NormalizeWhitespace(ma.ToString()) == targetKey)
+                             NormalizeWhitespace(ma.ToString()) == targetKey &&
+                             (ReferenceEquals(ma, targetExpression) ||
+                              semanticModel == null ||
+                              DSA019Analyzer.AreSemanticallySame(targetExpression, ma, semanticModel)))
                 .Cast<ExpressionSyntax>()
                 .ToList();
         }
@@ -296,7 +300,10 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         {
             return DSA019Analyzer.GetElementAccessesInScope(scope)
                 .Where(ea => DSA019Analyzer.ComputeChainDepth(ea) >= threshold &&
-                             NormalizeWhitespace(ea.ToString()) == targetKey)
+                             NormalizeWhitespace(ea.ToString()) == targetKey &&
+                             (ReferenceEquals(ea, targetExpression) ||
+                              semanticModel == null ||
+                              DSA019Analyzer.AreSemanticallySame(targetExpression, ea, semanticModel)))
                 .Cast<ExpressionSyntax>()
                 .ToList();
         }

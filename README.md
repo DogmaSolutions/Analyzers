@@ -1608,6 +1608,16 @@ The threshold is configurable via `.editorconfig`:
 dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth = 3
 ```
 
+**Excluded prefixes**: certain APIs use deeply nested fluent chains as part of their design (e.g., NUnit's `Is.Not.Null.And`, FluentAssertions' `Should().Be`, LINQ builder patterns). These chains are intentional and should not be extracted into variables. To exclude specific prefixes from the analysis, use the `excluded_prefixes` option:
+
+```
+# Comma-separated list of chain prefixes to exclude from analysis.
+# Any member access chain starting with one of these prefixes will not be flagged.
+dotnet_diagnostic.DSA019.excluded_prefixes = Is.Not, Has.No, Does.Not, Should
+```
+
+This is particularly useful in test projects where fluent assertion frameworks produce deep chains by design.
+
 ## See also
 
 Security-wise, repeated deep member access chains can expose code to non-deterministic behavior if any intermediate property getter has side effects, performs lazy initialization, or reads from a volatile source. In security-sensitive code paths (e.g., authorization checks, input validation), evaluating the same chain multiple times could yield different values, leading to time-of-check to time-of-use vulnerabilities.
@@ -1658,6 +1668,11 @@ var v2 = a2.B.C.D.Value;  // ✅ different root identifiers
 var lights = home.Rooms.Bathroom.Lights;
 var primary = lights[0].IsOn();
 var secondary = lights[1].IsOn();  // ✅ no deep chain repeated
+
+// Excluded prefix (configured via excluded_prefixes in .editorconfig)
+// With: dotnet_diagnostic.DSA019.excluded_prefixes = Is.Not
+var a = Is.Not.Null.And.GreaterThan(0);
+var b = Is.Not.Null.And.GreaterThanOrEqualTo(0);  // ✅ excluded by prefix
 ```
 
 ## Fix / Mitigation

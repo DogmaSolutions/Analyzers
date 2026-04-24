@@ -310,7 +310,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   </data>
 
     <data name="DSA019AnalyzerDescription" xml:space="preserve">
-    <value>A deeply nested member access chain is repeated multiple times in the same scope. Repeated deep dereferencing reduces readability and may incur unnecessary overhead if the intermediate accesses involve computation, virtual dispatch, or property getters with side effects. Extract the common chain into a local variable and reuse it. The depth threshold is configurable via the .editorconfig option 'dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth' (default: 3) (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa019).</value>
+    <value>A deeply nested member access chain is repeated multiple times in the same scope. Repeated deep dereferencing reduces readability and may incur unnecessary overhead if the intermediate accesses involve computation, virtual dispatch, or property getters with side effects. Extract the common chain into a local variable and reuse it. The depth threshold is configurable via 'dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth' (default: 3). Fluent API prefixes can be excluded via 'dotnet_diagnostic.DSA019.excluded_prefixes' (comma-separated, e.g., 'Is.Not, Has.No') (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#dsa019).</value>
   </data>
     <data name="DSA019AnalyzerMessageFormat" xml:space="preserve">
     <value>The member access chain '{0}' is repeated {1} times in the same scope. Extract it into a local variable.</value>

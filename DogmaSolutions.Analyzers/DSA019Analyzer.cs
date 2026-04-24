@@ -24,6 +24,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
     internal const int DefaultMaxDepth = 3;
     internal const string MaxDepthOptionKey = "dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth";
+    internal const string ExcludedPrefixesOptionKey = "dotnet_diagnostic.DSA019.excluded_prefixes";
 
     private static readonly LocalizableString _title =
         new LocalizableResourceString(nameof(Resources.DSA019AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
@@ -78,6 +79,10 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
         var key = NormalizeWhitespace(memberAccess.ToString());
 
+        // Check if the chain starts with an excluded prefix
+        if (MatchesExcludedPrefix(key, context))
+            return;
+
         var scope = GetContainingScope(memberAccess);
         if (scope == null)
             return;
@@ -100,7 +105,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
                 continue;
 
             var sibKey = NormalizeWhitespace(sibling.ToString());
-            if (sibKey == key)
+            if (sibKey == key && AreSemanticallySame(memberAccess, sibling, context.SemanticModel))
                 count++;
         }
 
@@ -137,6 +142,10 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
         var key = NormalizeWhitespace(elementAccess.ToString());
 
+        // Check if the chain starts with an excluded prefix
+        if (MatchesExcludedPrefix(key, context))
+            return;
+
         var scope = GetContainingScope(elementAccess);
         if (scope == null)
             return;
@@ -159,7 +168,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
                 continue;
 
             var sibKey = NormalizeWhitespace(sibling.ToString());
-            if (sibKey == key)
+            if (sibKey == key && AreSemanticallySame(elementAccess, sibling, context.SemanticModel))
                 count++;
         }
 
@@ -305,6 +314,68 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         }
 
         return depth;
+    }
+
+    private static bool MatchesExcludedPrefix(string normalizedKey, SyntaxNodeAnalysisContext context)
+    {
+        var prefixes = GetExcludedPrefixes(context);
+        if (prefixes.Length == 0)
+            return false;
+
+        foreach (var prefix in prefixes)
+        {
+            if (normalizedKey.StartsWith(prefix, System.StringComparison.Ordinal) &&
+                normalizedKey.Length > prefix.Length &&
+                (normalizedKey[prefix.Length] == '.' || normalizedKey[prefix.Length] == '['))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static string[] GetExcludedPrefixes(SyntaxNodeAnalysisContext context)
+    {
+        var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
+        if (config.TryGetValue(ExcludedPrefixesOptionKey, out var configValue) &&
+            !string.IsNullOrWhiteSpace(configValue))
+        {
+            return configValue.Split(',')
+                .Select(p => p.Trim())
+                .Where(p => p.Length > 0)
+                .ToArray();
+        }
+
+        return System.Array.Empty<string>();
+    }
+
+    /// <summary>
+    /// Verifies that two expressions with identical text are semantically equivalent by
+    /// checking that all identifiers resolve to the same symbols. This prevents false
+    /// positives when same-named variables from different scopes (e.g., foreach loop
+    /// variables) make expressions look identical textually but reference different data.
+    /// </summary>
+    internal static bool AreSemanticallySame(ExpressionSyntax expr1, ExpressionSyntax expr2, SemanticModel semanticModel)
+    {
+        var ids1 = expr1.DescendantNodes().OfType<IdentifierNameSyntax>().ToArray();
+        var ids2 = expr2.DescendantNodes().OfType<IdentifierNameSyntax>().ToArray();
+
+        if (ids1.Length != ids2.Length)
+            return false;
+
+        for (var i = 0; i < ids1.Length; i++)
+        {
+            var sym1 = semanticModel.GetSymbolInfo(ids1[i]).Symbol;
+            var sym2 = semanticModel.GetSymbolInfo(ids2[i]).Symbol;
+
+            // If either can't be resolved, skip (e.g., lambda parameters)
+            if (sym1 == null || sym2 == null)
+                continue;
+
+            if (!SymbolEqualityComparer.Default.Equals(sym1, sym2))
+                return false;
+        }
+
+        return true;
     }
 
     private static bool IsInsideNameof(SyntaxNode node)

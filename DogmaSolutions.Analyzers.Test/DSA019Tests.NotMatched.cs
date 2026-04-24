@@ -374,6 +374,61 @@ public partial class DSA019Tests
             }"
         ],
         [
+            "Same text but different foreach variables (different semantic identity)",
+            @"
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Info { public string Name; }
+                public class Container { public Info[] Items; }
+                public class MyService
+                {
+                    public void Process(Container container, string[] sourceNames, string[] targetNames)
+                    {
+                        foreach (var entry in sourceNames)
+                        {
+                            if (container.Items.Select(x => x.Name).Any(n => n == entry))
+                                System.Console.WriteLine(entry);
+                        }
+                        foreach (var entry in targetNames)
+                        {
+                            if (container.Items.Select(x => x.Name).Any(n => n == entry))
+                                System.Console.WriteLine(entry);
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Same expression text in two foreach loops referencing different loop variables",
+            @"
+            using System;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Record { public string Key; }
+                public class DataSet { public Record[] Records; }
+                public class Processor
+                {
+                    private DataSet _data;
+                    public void Merge(string[] primaryKeys, string[] secondaryKeys)
+                    {
+                        foreach (var key in primaryKeys)
+                        {
+                            if (_data.Records.Select(r => r.Key).Contains(key))
+                                Process(key);
+                        }
+                        foreach (var key in secondaryKeys)
+                        {
+                            if (_data.Records.Select(r => r.Key).Contains(key))
+                                Process(key);
+                        }
+                    }
+                    private void Process(string key) { }
+                }
+            }"
+        ],
+        [
             "Conditional access chain (not detected, different syntax kind)",
             @"
             namespace TestApp
@@ -418,6 +473,113 @@ public partial class DSA019Tests
         var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
         test.TestCode = sourceCode;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExcludedPrefix_SingleEntry_SuppressesChain()
+    {
+        var sourceCode = @"
+            namespace TestApp
+            {
+                public class NullConstraint { public int And; }
+                public class NotConstraint { public NullConstraint Null; }
+                public static class Is { public static NotConstraint Not; }
+                public class MyTests
+                {
+                    public void Verify()
+                    {
+                        var a = Is.Not.Null.And;
+                        var b = Is.Not.Null.And;
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA019.excluded_prefixes = Is.Not
+"));
+
+        // No diagnostics expected — Is.Not prefix is excluded
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExcludedPrefix_MultipleEntries_SuppressesAll()
+    {
+        var sourceCode = @"
+            namespace TestApp
+            {
+                public class Result { public int Value; }
+                public class NotConstraint { public Result Null; }
+                public static class Is { public static NotConstraint Not; }
+                public static class Has { public static NotConstraint No; }
+                public class MyTests
+                {
+                    public void Verify()
+                    {
+                        var a = Is.Not.Null.Value;
+                        var b = Is.Not.Null.Value;
+                        var c = Has.No.Null.Value;
+                        var d = Has.No.Null.Value;
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA019.excluded_prefixes = Is.Not, Has.No
+"));
+
+        // No diagnostics — both prefixes excluded
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExcludedPrefix_NonMatchingPrefix_StillFlags()
+    {
+        var sourceCode = @"
+            namespace TestApp
+            {
+                public class Deep { public int X; public int Y; }
+                public class Inner { public Deep Deep; }
+                public class Middle { public Inner Inner; }
+                public class Outer { public Middle Middle; }
+                public class MyService
+                {
+                    public void Process(Outer outer)
+                    {
+                        var x = {|#0:outer.Middle.Inner.Deep|}.X;
+                        var y = {|#1:outer.Middle.Inner.Deep|}.Y;
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA019.excluded_prefixes = Is.Not, Has.No
+"));
+
+        // outer.Middle.Inner.Deep does NOT match any excluded prefix — still flagged
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("outer.Middle.Inner.Deep", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("outer.Middle.Inner.Deep", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
