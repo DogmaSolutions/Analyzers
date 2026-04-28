@@ -43,6 +43,7 @@ namespace Microsoft.EntityFrameworkCore
         public static Task<T> FirstOrDefaultAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default) => null;
         public static Task<int> CountAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default) => null;
         public static Task<bool> AnyAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default) => null;
+        public static Task<bool> AllAsync<T>(this IQueryable<T> source, Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) => null;
         public static IQueryable<T> TagWith<T>(this IQueryable<T> source, string tag) => source;
         public static IQueryable<T> TagWithCallSite<T>(this IQueryable<T> source, [CallerFilePath] string filePath = """", [CallerLineNumber] int lineNumber = 0) => source;
         public static IQueryable<T> AsNoTracking<T>(this IQueryable<T> source) where T : class => source;
@@ -203,6 +204,224 @@ namespace TestApp
             var result = await _context.Users.TagWithCallSite().ToListAsync();
             return result;
         }");
+
+        var test = new CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.CodeActionEquivalenceKey = DSA021CodeFixProvider.TagWithCallSiteEquivalenceKey;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>
+                .Diagnostic(DSA021Analyzer.DiagnosticId).WithLocation(0).WithArguments("ToListAsync"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixesSyncToList_WithTagWithCallSite()
+    {
+        var source = BuildSource(@"
+        public object Test()
+        {
+            var result = {|#0:_context.Users.Where(u => u.IsActive).ToList()|};
+            return result;
+        }");
+
+        var fixedSource = BuildSource(@"
+        public object Test()
+        {
+            var result = _context.Users.Where(u => u.IsActive).TagWithCallSite().ToList();
+            return result;
+        }");
+
+        var test = new CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.CodeActionEquivalenceKey = DSA021CodeFixProvider.TagWithCallSiteEquivalenceKey;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>
+                .Diagnostic(DSA021Analyzer.DiagnosticId).WithLocation(0).WithArguments("ToList"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixesSyncToList_WithTagWith()
+    {
+        var source = BuildSource(@"
+        public object Test()
+        {
+            var result = {|#0:_context.Users.Where(u => u.IsActive).ToList()|};
+            return result;
+        }");
+
+        var fixedSource = BuildSource(@"
+        public object Test()
+        {
+            var result = _context.Users.Where(u => u.IsActive).TagWith(""TODO: describe this query"").ToList();
+            return result;
+        }");
+
+        var test = new CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.CodeActionEquivalenceKey = DSA021CodeFixProvider.TagWithEquivalenceKey;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>
+                .Diagnostic(DSA021Analyzer.DiagnosticId).WithLocation(0).WithArguments("ToList"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixesAsNoTrackingQuery_WithTagWithCallSite()
+    {
+        var source = BuildSource(@"
+        public async Task<object> Test()
+        {
+            var result = await {|#0:_context.Users.AsNoTracking().Where(u => u.IsActive).ToListAsync()|};
+            return result;
+        }");
+
+        var fixedSource = BuildSource(@"
+        public async Task<object> Test()
+        {
+            var result = await _context.Users.AsNoTracking().Where(u => u.IsActive).TagWithCallSite().ToListAsync();
+            return result;
+        }");
+
+        var test = new CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.CodeActionEquivalenceKey = DSA021CodeFixProvider.TagWithCallSiteEquivalenceKey;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>
+                .Diagnostic(DSA021Analyzer.DiagnosticId).WithLocation(0).WithArguments("ToListAsync"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixesAnyAsync_WithTagWithCallSite()
+    {
+        var source = BuildSource(@"
+        public async Task<object> Test()
+        {
+            var result = await {|#0:_context.Users.Where(u => u.IsActive).AnyAsync()|};
+            return result;
+        }");
+
+        var fixedSource = BuildSource(@"
+        public async Task<object> Test()
+        {
+            var result = await _context.Users.Where(u => u.IsActive).TagWithCallSite().AnyAsync();
+            return result;
+        }");
+
+        var test = new CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.CodeActionEquivalenceKey = DSA021CodeFixProvider.TagWithCallSiteEquivalenceKey;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>
+                .Diagnostic(DSA021Analyzer.DiagnosticId).WithLocation(0).WithArguments("AnyAsync"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixesVariableQuery_WithTagWithCallSite()
+    {
+        var source = BuildSource(@"
+        public async Task<object> Test()
+        {
+            var query = _context.Users.Where(u => u.IsActive);
+            var result = await {|#0:query.ToListAsync()|};
+            return result;
+        }");
+
+        var fixedSource = BuildSource(@"
+        public async Task<object> Test()
+        {
+            var query = _context.Users.Where(u => u.IsActive);
+            var result = await query.TagWithCallSite().ToListAsync();
+            return result;
+        }");
+
+        var test = new CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.CodeActionEquivalenceKey = DSA021CodeFixProvider.TagWithCallSiteEquivalenceKey;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>
+                .Diagnostic(DSA021Analyzer.DiagnosticId).WithLocation(0).WithArguments("ToListAsync"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixesParameterQuery_WithTagWithCallSite()
+    {
+        var source = EfCoreStubs + @"
+namespace TestApp
+{
+    public class User
+    {
+        public bool IsActive { get; set; }
+    }
+
+    public class MyDbContext : DbContext
+    {
+        public DbSet<User> Users { get; set; }
+    }
+
+    public class MyService
+    {
+        private readonly MyDbContext _context;
+        public MyService(MyDbContext context) { _context = context; }
+
+        public async Task<object> Caller()
+        {
+            var result = await Execute(_context.Users.Where(u => u.IsActive));
+            return result;
+        }
+
+        public async Task<List<User>> Execute(IQueryable<User> query)
+        {
+            return await {|#0:query.ToListAsync()|};
+        }
+    }
+}";
+
+        var fixedSource = EfCoreStubs + @"
+namespace TestApp
+{
+    public class User
+    {
+        public bool IsActive { get; set; }
+    }
+
+    public class MyDbContext : DbContext
+    {
+        public DbSet<User> Users { get; set; }
+    }
+
+    public class MyService
+    {
+        private readonly MyDbContext _context;
+        public MyService(MyDbContext context) { _context = context; }
+
+        public async Task<object> Caller()
+        {
+            var result = await Execute(_context.Users.Where(u => u.IsActive));
+            return result;
+        }
+
+        public async Task<List<User>> Execute(IQueryable<User> query)
+        {
+            return await query.TagWithCallSite().ToListAsync();
+        }
+    }
+}";
 
         var test = new CSharpCodeFixVerifier<DSA021Analyzer, DSA021CodeFixProvider>.Test();
         test.TestCode = source;

@@ -116,7 +116,7 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
     private static bool IsEntityFrameworkChain(InvocationExpressionSyntax terminalInvocation, SemanticModel semanticModel)
     {
         var terminalSymbol = semanticModel.GetSymbolInfo(terminalInvocation).Symbol as IMethodSymbol;
-        if (terminalSymbol != null && IsFromEntityFramework(terminalSymbol))
+        if (terminalSymbol != null && IsEntityFrameworkExtensionMethod(terminalSymbol))
             return true;
 
         ExpressionSyntax current = GetReceiver(terminalInvocation);
@@ -128,9 +128,6 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
 
             if (current is InvocationExpressionSyntax invocation)
             {
-                var methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-                if (methodSymbol != null && IsFromEntityFramework(methodSymbol))
-                    return true;
                 current = GetReceiver(invocation);
             }
             else
@@ -350,6 +347,14 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
     }
 
     private static bool IsTagMethod(string methodName) => Array.IndexOf(TagMethods, methodName) >= 0;
+
+    private static bool IsEntityFrameworkExtensionMethod(IMethodSymbol method)
+    {
+        if (!method.IsExtensionMethod && method.ReducedFrom == null)
+            return false;
+
+        return IsFromEntityFramework(method);
+    }
 
     private static bool IsFromEntityFramework(IMethodSymbol method)
     {
