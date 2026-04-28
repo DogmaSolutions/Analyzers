@@ -40,6 +40,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA019](#dsa019) | Code Smells   | Avoid repeated deeply nested member access chains                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
 | [DSA020](#dsa020) | Code Smells   | Remove redundant async/await on Task.FromResult                                                                                                                                                             | ⚠ Warning        | ✅          | ✅        |
 | [DSA021](#dsa021) | Best Practice | Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
+| [DSA022](#dsa022) | Performance | Hoist loop-invariant expression out of inner loop                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
 
 ---
 
@@ -2034,6 +2035,190 @@ public class UserService
             .OrderBy(u => u.Name)
             .TagWith("UserService.GetActiveUsers: active users sorted by name")
             .ToListAsync();
+    }
+}
+```
+
+---
+
+# DSA022
+
+Hoist loop-invariant expression out of inner loop.
+
+- **Category**: Performance
+- **Severity**: Warning ⚠
+- **Related rules**: none
+
+## Description
+
+This rule fires when an arithmetic or bitwise expression inside a loop body references only variables that are not modified within that loop iteration, making the expression loop-invariant. The expression is redundantly recomputed on every iteration, wasting CPU cycles on identical results.
+
+While modern compilers perform Loop-Invariant Code Motion (LICM) as a JIT optimization, this transformation is not guaranteed across all .NET runtimes, JIT tiers, and platforms. Explicitly hoisting the computation to a variable declared before the loop ensures deterministic performance regardless of optimizer quality.
+
+### Performance and Cache Locality
+
+In tight numerical loops, redundant multiplications and additions inside the innermost loop can degrade throughput by orders of magnitude, particularly when the loop operates over large data sets where the redundant operations compound into millions of wasted cycles. Hoisting invariant sub-expressions also improves cache locality by reducing the instruction footprint of the hot loop body, allowing the CPU instruction cache to retain the performance-critical path more effectively.
+
+### CWE-405 Mitigation: Asymmetric Resource Consumption
+
+In the context of cybersecurity, this relates to **CWE-405 (Asymmetric Resource Consumption / Amplification)**: an attacker who can influence the iteration count of a loop containing unnecessarily repeated computations can amplify the cost of each request, turning a linear-time operation into a practical denial-of-service vector.
+
+### IEC 62443 Certification: Resource Availability
+
+In the context of **IEC 62443 certification**, computational efficiency in control loops directly supports **FR 7 (Resource Availability)** by ensuring that processing resources are not wasted on redundant computations that could be avoided with straightforward code restructuring.
+
+## See also
+
+- [MITRE, CWE-405: Asymmetric Resource Consumption (Amplification)](https://cwe.mitre.org/data/definitions/405.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 7 (Resource Availability)
+- [Wikipedia: Loop-invariant code motion](https://en.wikipedia.org/wiki/Loop-invariant_code_motion)
+
+## Matched patterns
+
+```cs
+// Simple invariant multiplication inside a for loop:
+for (int i = 0; i < arr.Length; i++)
+{
+    arr[i] = a * b + i;  // 'a * b' is flagged — neither a nor b changes within the loop
+}
+
+// Nested loops — outer variable computation in inner loop:
+for (int y = 0; y < height; y++)
+{
+    for (int x = 0; x < width; x++)
+    {
+        output[y * width + x] = 0;  // 'y * width' is flagged in the inner (x) loop
+    }
+}
+
+// While loop with invariant expression:
+while (i < 100)
+{
+    result = a + b;  // flagged
+    i++;
+}
+
+// Do-while loop:
+do
+{
+    result = a * b;  // flagged
+    i++;
+} while (i < 100);
+```
+
+## Not matched patterns
+
+```cs
+// Expression uses the loop variable:
+for (int i = 0; i < n; i++)
+{
+    arr[i] = i * 2;  // NOT flagged — 'i' is modified each iteration
+}
+
+// Variable assigned inside the loop:
+for (int i = 0; i < n; i++)
+{
+    x = i + 1;
+    val = x * a;  // NOT flagged — 'x' is modified inside the loop
+}
+
+// Expression in loop condition or incrementor:
+for (int i = 0; i < a * b; i++) { }  // NOT flagged — condition expressions are excluded
+
+// Expression contains a method call:
+for (int i = 0; i < n; i++)
+{
+    arr[i] = (int)(Math.Sin(a) + i);  // NOT flagged — method calls may have side effects
+}
+
+// Expression contains array or indexer access:
+for (int i = 0; i < n; i++)
+{
+    val = data[0] + a;  // NOT flagged — array access may depend on mutable state
+}
+
+// ForEach iteration variable in expression:
+foreach (var x in list)
+{
+    total = x * 2;  // NOT flagged — 'x' changes each iteration
+}
+```
+
+## Fix / Mitigation
+
+The code fix extracts the loop-invariant expression into a local variable declared immediately before the loop and replaces all occurrences within the loop body with the new variable.
+
+```cs
+// Before:
+for (int y = 0; y < height; y++)
+{
+    for (int x = 0; x < width; x++)
+    {
+        output[y * width + x] = 0;
+    }
+}
+
+// After:
+for (int y = 0; y < height; y++)
+{
+    var hoisted_y_width = y * width;
+    for (int x = 0; x < width; x++)
+    {
+        output[hoisted_y_width + x] = 0;
+    }
+}
+```
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA022: Hoist loop-invariant expression out of inner loop
+dotnet_diagnostic.DSA022.severity = error
+```
+
+## Code sample
+
+```csharp
+public class ImageProcessor
+{
+    public void Process_NotOk(int outC, int outH, int outW, float[] conv, float[] output, int inW)
+    {
+        for (int oc = 0; oc < outC; oc++)
+        {
+            int oBase = oc * outH * outW;
+            for (int py = 0; py < outH; py++)
+            {
+                int y0 = py * 2;
+                for (int px = 0; px < outW; px++)
+                {
+                    // 'y0 * inW' and 'oBase + py * outW' are both
+                    // loop-invariant within the px loop — DSA022 fires
+                    int i00 = y0 * inW + px * 2;
+                    output[oBase + py * outW + px] = conv[i00];
+                }
+            }
+        }
+    }
+
+    public void Process_Ok(int outC, int outH, int outW, float[] conv, float[] output, int inW)
+    {
+        for (int oc = 0; oc < outC; oc++)
+        {
+            int oBase = oc * outH * outW;
+            for (int py = 0; py < outH; py++)
+            {
+                int y0 = py * 2;
+                var row0Start = y0 * inW;        // hoisted before the px loop
+                var pyOffset = oBase + py * outW; // hoisted before the px loop
+                for (int px = 0; px < outW; px++)
+                {
+                    int i00 = row0Start + px * 2;
+                    output[pyOffset + px] = conv[i00];
+                }
+            }
+        }
     }
 }
 ```

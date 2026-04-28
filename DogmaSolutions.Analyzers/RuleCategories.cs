@@ -7,5 +7,6 @@
         public const string BestPractice = "Best Practice";
         public const string Bug = "Bug";
         public const string Security = "Security";
+        public const string Performance = "Performance";
     }
 }

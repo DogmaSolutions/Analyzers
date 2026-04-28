@@ -616,5 +616,32 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA021AnalyzerTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to An arithmetic or bitwise expression inside a loop body references only variables that are not modified within that loop iteration....
+        /// </summary>
+        internal static string DSA022AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA022AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The expression &apos;{0}&apos; is loop-invariant and can be hoisted before the loop to avoid redundant computation on every iteration..
+        /// </summary>
+        internal static string DSA022AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA022AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Hoist loop-invariant expression out of inner loop.
+        /// </summary>
+        internal static string DSA022AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA022AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

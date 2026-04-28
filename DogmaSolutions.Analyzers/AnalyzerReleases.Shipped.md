@@ -24,3 +24,4 @@ DSA018  | Design        | Warning  | DSA018Analyzer
 DSA019  | Code Smells   | Warning  | DSA019Analyzer
 DSA020  | Code Smells   | Warning  | DSA020Analyzer
 DSA021  | Best Practice | Warning  | DSA021Analyzer
+DSA022  | Performance   | Warning  | DSA022Analyzer

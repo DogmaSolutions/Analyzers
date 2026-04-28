@@ -337,4 +337,13 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA021AnalyzerTitle" xml:space="preserve">
     <value>Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability</value>
   </data>
+    <data name="DSA022AnalyzerDescription" xml:space="preserve">
+    <value>An arithmetic or bitwise expression inside a loop body references only variables that are not modified within that loop iteration, making it loop-invariant. The expression is redundantly recomputed on every iteration, wasting CPU cycles on identical results. While modern compilers perform Loop-Invariant Code Motion (LICM) as a JIT optimization, this transformation is not guaranteed across all .NET runtimes, JIT tiers, and platforms; explicitly hoisting the computation to a variable declared before the loop ensures deterministic performance regardless of optimizer quality. In tight numerical loops, redundant multiplications and additions inside the innermost loop can degrade throughput by orders of magnitude, particularly when the loop operates over large data sets where the redundant operations compound into millions of wasted cycles. Additionally, hoisting invariant sub-expressions improves cache locality by reducing the instruction footprint of the hot loop body, allowing the CPU instruction cache to retain the performance-critical path more effectively. In the context of cybersecurity, this relates to CWE-405 (Asymmetric Resource Consumption / Amplification): an attacker who can influence the iteration count of a loop containing unnecessarily repeated computations can amplify the cost of each request, turning a linear-time operation into a practical denial-of-service vector. In the context of IEC 62443 certification, computational efficiency in control loops directly supports FR 7 (Resource Availability) by ensuring that processing resources are not wasted on redundant computations that could be avoided with straightforward code restructuring (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA022).</value>
+  </data>
+    <data name="DSA022AnalyzerMessageFormat" xml:space="preserve">
+    <value>The expression '{0}' is loop-invariant and can be hoisted before the loop to avoid redundant computation on every iteration.</value>
+  </data>
+    <data name="DSA022AnalyzerTitle" xml:space="preserve">
+    <value>Hoist loop-invariant expression out of inner loop</value>
+  </data>
 </root>
