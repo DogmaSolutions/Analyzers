@@ -328,4 +328,13 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA020AnalyzerTitle" xml:space="preserve">
     <value>Remove redundant async/await on Task.FromResult</value>
   </data>
+    <data name="DSA021AnalyzerDescription" xml:space="preserve">
+    <value>Entity Framework queries that do not include a TagWith() or TagWithCallSite() call lack the traceability markers required for rapid root cause analysis during security incidents and operational failures. When an anomalous, slow, or malicious query pattern is detected in production database logs, monitoring dashboards, or intrusion detection systems, the absence of a source-identifying tag forces incident responders to manually reverse-engineer the generated SQL back to application source code — a process that is error-prone, time-consuming, and potentially catastrophic under the time pressure of an active incident or attack. TagWithCallSite() automatically embeds the source file path, line number, and calling method name into the generated SQL as a comment, enabling immediate identification of the originating code path. TagWith() allows developers to add a custom descriptive label for contextual traceability. In the context of cybersecurity, this directly supports mitigation of CWE-400 (Uncontrolled Resource Consumption): when a resource-exhaustion attack targets the database layer, tagged queries enable rapid identification and surgical isolation of the offending code path without requiring a full application shutdown. In the context of IEC 62443 certification, query tagging is vital for the Traceability requirements under FR 2 (Use Control) and the Integrity verification requirements under FR 3 (System Integrity), enabling auditable, tamper-evident chains from observed database activity back to the originating application code and the identity context in which it executed (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA021).</value>
+  </data>
+    <data name="DSA021AnalyzerMessageFormat" xml:space="preserve">
+    <value>The Entity Framework query materialized by '{0}' does not include a call to TagWith() or TagWithCallSite(). Untagged queries hinder root cause analysis and incident response traceability.</value>
+  </data>
+    <data name="DSA021AnalyzerTitle" xml:space="preserve">
+    <value>Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability</value>
+  </data>
 </root>

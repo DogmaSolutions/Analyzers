@@ -589,5 +589,32 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA020AnalyzerTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Entity Framework queries that do not include a TagWith() or TagWithCallSite() call lack the traceability markers required for rapid root cause analysis....
+        /// </summary>
+        internal static string DSA021AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA021AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The Entity Framework query materialized by &apos;{0}&apos; does not include a call to TagWith() or TagWithCallSite()....
+        /// </summary>
+        internal static string DSA021AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA021AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability.
+        /// </summary>
+        internal static string DSA021AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA021AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }

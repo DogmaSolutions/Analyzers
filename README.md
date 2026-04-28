@@ -18,27 +18,28 @@ Every rule is accompanied by the following information and clues:
 
 # Rules list
 
-| Id                | Category    | Description                                                                                                                                                                                                | Default severity | Is enabled | Code fix |
-|-------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|------------|----------|
-| [DSA001](#dsa001) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. | ⚠ Warning        | ✅          | ❌        |
-| [DSA002](#dsa002) | Design      | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.     | ⚠ Warning        | ✅          | ❌        |
-| [DSA003](#dsa003) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
-| [DSA004](#dsa004) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                            | ⚠ Warning        | ✅          | ✅        |
-| [DSA005](#dsa005) | Code Smells | Potential non-deterministic point-in-time execution                                                                                                                                                        | ⛔ Error          | ✅          | ❌        |
-| [DSA006](#dsa006) | Code Smells | General exceptions should not be thrown by user code                                                                                                                                                       | ⛔ Error          | ✅          | ❌        |
-| [DSA007](#dsa007) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")                                                                                         | ⚠ Warning        | ✅          | ❌        |
-| [DSA008](#dsa008) | Bug         | The Required Attribute has no impact on a not-nullable DateTime                                                                                                                                            | ⛔ Error          | ✅          | ❌        |
-| [DSA009](#dsa009) | Bug         | The Required Attribute has no impact on a not-nullable DateTimeOffset                                                                                                                                      | ⛔ Error          | ✅          | ❌        |
-| [DSA011](#dsa011) | Design      | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                      | ⚠ Warning        | ✅          | ❌        |
-| [DSA012](#dsa012) | Design      | Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU)                                                                                                               | ⚠ Warning        | ✅          | ❌        |
-| [DSA013](#dsa013) | Security    | Minimal API endpoints should have an explicit authorization configuration                                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
-| [DSA014](#dsa014) | Security    | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                   | ⚠ Warning        | ✅          | ✅        |
-| [DSA015](#dsa015) | Security    | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                   | ⚠ Warning        | ✅          | ✅        |
-| [DSA016](#dsa016) | Code Smells | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
-| [DSA017](#dsa017) | Design      | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
-| [DSA018](#dsa018) | Design      | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                         | ⚠ Warning        | ✅          | ❌        |
-| [DSA019](#dsa019) | Code Smells | Avoid repeated deeply nested member access chains                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
-| [DSA020](#dsa020) | Code Smells | Remove redundant async/await on Task.FromResult                                                                                                                                                             | ⚠ Warning        | ✅          | ✅        |
+| Id                | Category      | Description                                                                                                                                                                                                | Default severity | Is enabled | Code fix |
+|-------------------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|------------|----------|
+| [DSA001](#dsa001) | Design        | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. | ⚠ Warning        | ✅          | ❌        |
+| [DSA002](#dsa002) | Design        | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.     | ⚠ Warning        | ✅          | ❌        |
+| [DSA003](#dsa003) | Code Smells   | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
+| [DSA004](#dsa004) | Code Smells   | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                            | ⚠ Warning        | ✅          | ✅        |
+| [DSA005](#dsa005) | Code Smells   | Potential non-deterministic point-in-time execution                                                                                                                                                        | ⛔ Error          | ✅          | ❌        |
+| [DSA006](#dsa006) | Code Smells   | General exceptions should not be thrown by user code                                                                                                                                                       | ⛔ Error          | ✅          | ❌        |
+| [DSA007](#dsa007) | Code Smells   | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")                                                                                         | ⚠ Warning        | ✅          | ❌        |
+| [DSA008](#dsa008) | Bug           | The Required Attribute has no impact on a not-nullable DateTime                                                                                                                                            | ⛔ Error          | ✅          | ❌        |
+| [DSA009](#dsa009) | Bug           | The Required Attribute has no impact on a not-nullable DateTimeOffset                                                                                                                                      | ⛔ Error          | ✅          | ❌        |
+| [DSA011](#dsa011) | Design        | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                      | ⚠ Warning        | ✅          | ❌        |
+| [DSA012](#dsa012) | Design        | Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU)                                                                                                               | ⚠ Warning        | ✅          | ❌        |
+| [DSA013](#dsa013) | Security      | Minimal API endpoints should have an explicit authorization configuration                                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
+| [DSA014](#dsa014) | Security      | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                   | ⚠ Warning        | ✅          | ✅        |
+| [DSA015](#dsa015) | Security      | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                   | ⚠ Warning        | ✅          | ✅        |
+| [DSA016](#dsa016) | Code Smells   | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
+| [DSA017](#dsa017) | Design        | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
+| [DSA018](#dsa018) | Design        | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                         | ⚠ Warning        | ✅          | ❌        |
+| [DSA019](#dsa019) | Code Smells   | Avoid repeated deeply nested member access chains                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
+| [DSA020](#dsa020) | Code Smells   | Remove redundant async/await on Task.FromResult                                                                                                                                                             | ⚠ Warning        | ✅          | ✅        |
+| [DSA021](#dsa021) | Best Practice | Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
 
 ---
 
@@ -66,6 +67,7 @@ Security-wise, mixing data access logic directly into the presentation layer wea
 
 - [MITRE, CWE-653: Improper Isolation or Compartmentalization](https://cwe.mitre.org/data/definitions/653.html)
 - [MITRE, CWE-1057: Data Access Operations Outside of Expected Data Manager Component](https://cwe.mitre.org/data/definitions/1057.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 5 (Restricted Data Flow): enforcing proper separation between presentation and data access layers aligns with the zones and conduits model, where each zone has clearly defined data flow boundaries
 
 ## Fix / Mitigation
 
@@ -139,6 +141,7 @@ Security-wise, mixing data access logic directly into the presentation layer wea
 
 - [MITRE, CWE-653: Improper Isolation or Compartmentalization](https://cwe.mitre.org/data/definitions/653.html)
 - [MITRE, CWE-1057: Data Access Operations Outside of Expected Data Manager Component](https://cwe.mitre.org/data/definitions/1057.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 5 (Restricted Data Flow): enforcing proper separation between presentation and data access layers aligns with the zones and conduits model, where each zone has clearly defined data flow boundaries
 
 ## Fix / Mitigation
 
@@ -207,6 +210,7 @@ Security-wise, using `IsNullOrEmpty` instead of `IsNullOrWhiteSpace` can allow w
 ## See also
 
 - [MITRE, CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): robust input validation is a prerequisite for maintaining system integrity; whitespace-only strings bypassing validation can lead to unauthorized state changes
 
 ## Fix / Mitigation
 
@@ -263,13 +267,15 @@ Using `DateTime.Now` into business logics potentially leads to many different pr
 
 Security-wise, this is correlated to the CWE category “7PK” ([CWE-361](https://cwe.mitre.org/data/definitions/361.html))  
 Cit:
-*"This category represents one of the phyla in the Seven Pernicious Kingdoms vulnerability classification. It includes weaknesses related to the improper management of time and state in an environment
-that supports simultaneous or near-simultaneous computation by multiple systems, processes, or threads. According to the authors of the Seven Pernicious Kingdoms, "Distributed computation is about
+*”This category represents one of the phyla in the Seven Pernicious Kingdoms vulnerability classification. It includes weaknesses related to the improper management of time and state in an environment
+that supports simultaneous or near-simultaneous computation by multiple systems, processes, or threads. According to the authors of the Seven Pernicious Kingdoms, “Distributed computation is about
 time and state. That is, in order for more than one component to communicate, state must be shared, and all that takes time. Most programmers anthropomorphize their work. They think about one thread
 of control carrying out the entire program in the same way they would if they had to do the job themselves. Modern computers, however, switch between tasks very quickly, and in multi-core, multi-CPU,
 or distributed systems, two events may take place at exactly the same time. Defects rush to fill the gap between the programmer's model of how a program executes and what happens in reality. These
 defects are related to unexpected interactions between threads, processes, time, and information. These interactions happen through shared state: semaphores, variables, the file system, and,
-basically, anything that can store information."*
+basically, anything that can store information.”*
+
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity) and FR 6 (Timely Response to Events): consistent UTC timestamps are essential for reliable audit trails, event correlation across distributed nodes, and forensic analysis during incident response
 
 ## Fix / Mitigation
 
@@ -329,13 +335,15 @@ This is particularly impacting in:
 
 Security-wise, this is correlated to the CWE category “7PK” ([CWE-361](https://cwe.mitre.org/data/definitions/361.html))  
 Cit:
-*"This category represents one of the phyla in the Seven Pernicious Kingdoms vulnerability classification. It includes weaknesses related to the improper management of time and state in an environment
-that supports simultaneous or near-simultaneous computation by multiple systems, processes, or threads. According to the authors of the Seven Pernicious Kingdoms, "Distributed computation is about
+*”This category represents one of the phyla in the Seven Pernicious Kingdoms vulnerability classification. It includes weaknesses related to the improper management of time and state in an environment
+that supports simultaneous or near-simultaneous computation by multiple systems, processes, or threads. According to the authors of the Seven Pernicious Kingdoms, “Distributed computation is about
 time and state. That is, in order for more than one component to communicate, state must be shared, and all that takes time. Most programmers anthropomorphize their work. They think about one thread
 of control carrying out the entire program in the same way they would if they had to do the job themselves. Modern computers, however, switch between tasks very quickly, and in multi-core, multi-CPU,
 or distributed systems, two events may take place at exactly the same time. Defects rush to fill the gap between the programmer's model of how a program executes and what happens in reality. These
 defects are related to unexpected interactions between threads, processes, time, and information. These interactions happen through shared state: semaphores, variables, the file system, and,
-basically, anything that can store information."*
+basically, anything that can store information.”*
+
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity) and FR 6 (Timely Response to Events): a sliding time reference within a single execution flow undermines the determinism required for reliable audit logs, security event correlation, and time-bound access control decisions
 
 ## Fix/Mitigation
 
@@ -412,6 +420,8 @@ General exceptions that trigger this rule are:
 
 Security-wise, this is correlated to [MITRE, CWE-397 - Declaration of Throws for Generic Exception](https://cwe.mitre.org/data/definitions/397)
 
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): generic exceptions prevent callers from distinguishing between operational errors and security-relevant failures, undermining the ability to implement targeted error handling and maintain system integrity under fault conditions
+
 ## Fix/Mitigation
 
 Use scenario-specific exceptions, i.e. `ArgumentException`, `ArgumentNullException`, `InvalidOperationException`, etc.
@@ -470,6 +480,7 @@ Lazy initialization avoids initializing a value until the first time it is acces
 - [Microsoft Documentation: Managed Threading Best Practices](https://docs.microsoft.com/en-us/dotnet/standard/threading/managed-threading-best-practices)
 - [MITRE, CWE-667: Improper Locking (4.16)](https://cwe.mitre.org/data/definitions/667.html)
 - [MITRE, CWE-413: Improper Resource Locking (4.16)](https://cwe.mitre.org/data/definitions/413.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): improper locking during lazy initialization can lead to race conditions that corrupt shared state, violating the integrity guarantees required for security-critical components
 
 ## Fix/Mitigation
 
@@ -570,6 +581,7 @@ If a "valid date"-like validation is needed, use [Range Attribute](https://learn
 - [Range Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute)
 - [DateTime](https://learn.microsoft.com/it-it/dotnet/api/system.datetime)
 - [MITRE, CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): a silently ineffective validation attribute creates a false sense of security; unvalidated input reaching business logic or persistence layers can compromise data integrity
 
 ## Rule configuration
 
@@ -609,6 +621,7 @@ If a "valid date"-like validation is needed, use [Range Attribute](https://learn
 - [Range Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute)
 - [DateTimeOffset](https://learn.microsoft.com/it-it/dotnet/api/system.DateTimeOffset)
 - [MITRE, CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): a silently ineffective validation attribute creates a false sense of security; unvalidated input reaching business logic or persistence layers can compromise data integrity
 
 ## Rule configuration
 
@@ -711,6 +724,7 @@ Use an IoC/DI framework instead, or at least use proper locking when initializin
 - [Singleton Pattern](https://en.wikipedia.org/wiki/Singleton_pattern)
 - [MITRE, CWE-543: Use of Singleton Pattern Without Proper Synchronization in a Multithreaded Context](https://cwe.mitre.org/data/definitions/543.html)
 - [MITRE, CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization](https://cwe.mitre.org/data/definitions/362.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): unsynchronized lazy initialization of shared state can produce partially constructed or duplicate instances, violating the integrity invariants that security-critical services depend on
 
 ## Rule configuration
 
@@ -784,6 +798,7 @@ Variants using `Count(...) == 0`, `FirstOrDefault(...) == null`, `Contains(...)`
 - [MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition](https://cwe.mitre.org/data/definitions/367.html)
 - [EAFP - Easier to Ask for Forgiveness than Permission](https://devblogs.microsoft.com/python/idiomatic-python-eafp-versus-lbyl/)
 - [OWASP: Race Conditions](https://owasp.org/www-community/vulnerabilities/Race_condition)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): non-atomic check-then-act on database types can lead to duplicate records or data corruption under concurrent access, violating the data integrity guarantees required by the standard
 
 ## When to ignore this rule
 If the `if` in the code is **ONLY** a precaution you added to proactively handle errors (e.g. to show a more user-friendly message), **AND** the database is protected by a `UNIQUE` constraint or other mechanisms that guarantee data consistency and uniqueness, then you can explicitly ignore this warning with `#pragma warning disable DSA012`.
@@ -879,6 +894,7 @@ The following collection types and their suggested alternatives are covered:
 - [DSA012: Check-then-act on database types](#dsa012)
 - [DSA018: Check-then-act on collections without atomic alternatives](#dsa018)
 - [MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition](https://cwe.mitre.org/data/definitions/367.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): using the collection's atomic operation eliminates a class of race conditions that could corrupt shared state or bypass deduplication logic in security-critical data structures
 
 ## Matched patterns
 
@@ -995,6 +1011,7 @@ Between the existence check and the insert, another thread could modify the coll
 - [DSA017: Check-then-act on collections with atomic alternatives](#dsa017)
 - [MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition](https://cwe.mitre.org/data/definitions/367.html)
 - [MITRE, CWE-667: Improper Locking](https://cwe.mitre.org/data/definitions/667.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): on collection types without atomic alternatives, the check-then-act sequence must be externally synchronized to prevent race conditions that corrupt shared state or introduce duplicate entries in security-relevant data structures
 
 ## Matched patterns
 
@@ -1124,6 +1141,7 @@ For endpoints on `IEndpointRouteBuilder` received as a method parameter, see [DS
 - [MITRE, CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)
 - [ASP.NET Core Minimal APIs - Authorization](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security)
 - [OWASP: Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 1 (Identification and Authentication Control) and FR 2 (Use Control): every endpoint must enforce an explicit, reviewable authorization decision to satisfy the identification, authentication, and use control requirements
 
 ## Matched patterns
 
@@ -1211,6 +1229,7 @@ The analyzer checks multiple levels:
 - [MITRE, CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)
 - [ASP.NET Core Minimal APIs - Authorization](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security)
 - [OWASP: Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 1 (Identification and Authentication Control) and FR 2 (Use Control): route groups that silently default to anonymous access violate the principle that all access paths must carry an explicit, auditable authorization policy
 
 ## Matched patterns
 
@@ -1315,6 +1334,7 @@ If authorization cannot be confirmed at every call site, the endpoint is flagged
 - [MITRE, CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)
 - [ASP.NET Core Minimal APIs - Authorization](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security)
 - [OWASP: Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 1 (Identification and Authentication Control) and FR 2 (Use Control): when authorization responsibility is distributed across call sites, cross-method tracing is essential to verify that every access path enforces the required authentication and use control policies
 
 ## Matched patterns
 
@@ -1858,6 +1878,163 @@ public class EventHandlerSetup
 
     private void Register(Func<CancellationToken, Task<int>> handler) { }
     private int GetDefaultValue() => 42;
+}
+```
+
+---
+
+# DSA021
+
+Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability.
+
+- **Category**: Best Practice
+- **Severity**: Warning ⚠
+- **Related rules**: none
+
+## Description
+
+This rule fires when an Entity Framework Core LINQ query is materialized (via `ToListAsync`, `FirstOrDefaultAsync`, `CountAsync`, `ToList`, and similar terminal operations) without a preceding call to `TagWith()` or `TagWithCallSite()` anywhere in the query chain. The analyzer also traces queries received as `IQueryable<T>` parameters, performing a best-effort cross-method analysis to determine whether callers have already applied a tag before passing the query.
+
+**What TagWithCallSite and TagWith do**: Entity Framework Core translates LINQ queries into SQL. By default, there is no link in the generated SQL that identifies which line of application code produced it. `TagWithCallSite()` (introduced in EF Core 6.0) automatically embeds the source file path, line number, and calling method name into the generated SQL as a comment; `TagWith("label")` allows adding a custom descriptive label. Database monitoring tools, query profilers, and log aggregators then surface these tags alongside query performance metrics and error reports, creating a direct traceable link from database activity back to the responsible code path.
+
+### Rapid Root Cause Analysis and Incident Response
+
+In production environments, when a slow, failing, or malicious query pattern is detected in database logs, monitoring dashboards, or intrusion detection systems, the absence of a source-identifying tag forces incident responders to manually reverse-engineer the generated SQL back to application source code. This reverse-engineering process is error-prone, time-consuming, and potentially catastrophic under the time pressure of an active security incident or a cascading production failure. Tagged queries eliminate this bottleneck entirely: the responder reads the tag from the database log entry and immediately identifies the originating code path, reducing mean time to resolution from hours to seconds.
+
+### CWE-400 Mitigation: Uncontrolled Resource Consumption
+
+In the context of cybersecurity, query tagging directly supports mitigation of **CWE-400 (Uncontrolled Resource Consumption)**. When a resource-exhaustion attack targets the database layer — through deliberately expensive queries, parameter manipulation that disables indexing, or amplification patterns that multiply query volume — tagged queries enable rapid identification and surgical isolation of the offending code path. Without tags, the only recourse during such an attack may be to throttle or shut down the entire application; with tags, responders can isolate and block the specific query origin while the rest of the application continues operating.
+
+### IEC 62443 Certification: Traceability and Integrity
+
+In the context of **IEC 62443 certification**, query tagging is vital for two foundational requirements:
+
+- **FR 2 — Use Control (Traceability)**: tagged queries create auditable chains from observed database activity back to the originating application code and the identity context in which it executed. This traceability is essential for demonstrating that all data access operations are attributable to specific software components and, transitively, to specific user actions or automated processes.
+- **FR 3 — System Integrity**: tagged queries enable integrity verification of the database access layer by making it possible to detect unauthorized or unexpected query patterns. When every legitimate query carries a known tag, the absence of a tag (or the presence of an unknown tag) becomes a detectable anomaly, supporting both real-time integrity monitoring and post-incident forensic analysis.
+
+## See also
+
+- [MITRE, CWE-400: Uncontrolled Resource Consumption](https://cwe.mitre.org/data/definitions/400.html)
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 2 (Use Control), FR 3 (System Integrity)
+- [Microsoft: Query tags in Entity Framework Core](https://learn.microsoft.com/en-us/ef/core/querying/tags)
+- [Microsoft: TagWithCallSite](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.entityframeworkqueryableextensions.tagwithcallsite)
+
+## Matched patterns
+
+```cs
+// All of these are flagged:
+_context.Users.ToListAsync()
+_context.Users.Where(u => u.IsActive).ToListAsync()
+_context.Users.Where(u => u.IsActive).OrderBy(u => u.Name).FirstOrDefaultAsync()
+_context.Users.AsNoTracking().Where(u => u.IsActive).CountAsync()
+_context.Users.Where(u => u.IsActive).ToList()
+
+// Variable without tag:
+var query = _context.Users.Where(u => u.IsActive);
+await query.ToListAsync();  // flagged
+
+// Parameter without tag at any caller:
+async Task<List<User>> Execute(IQueryable<User> query) {
+    return await query.ToListAsync();  // flagged if callers don't tag
+}
+```
+
+## Not matched patterns
+
+```cs
+// Tagged with TagWithCallSite:
+_context.Users.TagWithCallSite().Where(u => u.IsActive).ToListAsync()  // not flagged
+
+// Tagged with TagWith:
+_context.Users.Where(u => u.IsActive).TagWith("GetActiveUsers").ToListAsync()  // not flagged
+
+// Tag before filter:
+_context.Users.TagWithCallSite().Where(u => u.IsActive).OrderBy(u => u.Name).ToListAsync()  // not flagged
+
+// In-memory collection (not Entity Framework):
+users.Where(u => u.IsActive).ToList()  // not flagged
+
+// Variable with tagged initializer:
+var query = _context.Users.TagWithCallSite().Where(u => u.IsActive);
+await query.ToListAsync();  // not flagged
+
+// Parameter tagged at all call sites:
+async Task<List<User>> Execute(IQueryable<User> query) {
+    return await query.ToListAsync();  // not flagged if all callers tag before passing
+}
+Execute(_context.Users.TagWithCallSite().Where(u => u.IsActive));
+```
+
+## Fix / Mitigation
+
+Two code fixes are available:
+
+**Add TagWithCallSite()**: Inserts `.TagWithCallSite()` immediately before the terminal materialization method. This is the recommended fix for most cases, as it automatically embeds the file path, line number, and calling method name — no manual labeling required.
+
+```cs
+// Before:
+await _context.Users.Where(u => u.IsActive).ToListAsync();
+
+// After:
+await _context.Users.Where(u => u.IsActive).TagWithCallSite().ToListAsync();
+```
+
+**Add TagWith("...")**: Inserts `.TagWith("TODO: describe this query")` immediately before the terminal method, with a placeholder string for the developer to replace with a meaningful label. This is useful when a custom label is preferred over automatic call-site information.
+
+```cs
+// Before:
+await _context.Users.Where(u => u.IsActive).ToListAsync();
+
+// After:
+await _context.Users.Where(u => u.IsActive).TagWith("TODO: describe this query").ToListAsync();
+```
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA021: Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability
+dotnet_diagnostic.DSA021.severity = error
+```
+
+## Code sample
+
+```csharp
+public class UserService
+{
+    private readonly MyDbContext _context;
+
+    public UserService(MyDbContext context) { _context = context; }
+
+    public async Task<List<User>> GetActiveUsers_NotOk()
+    {
+        // this WILL trigger the rule — no tag
+        return await _context.Users
+            .Where(u => u.IsActive)
+            .OrderBy(u => u.Name)
+            .ToListAsync();
+    }
+
+    public async Task<List<User>> GetActiveUsers_Ok_CallSite()
+    {
+        // this WILL NOT trigger the rule — TagWithCallSite embeds file/line/method
+        return await _context.Users
+            .TagWithCallSite()
+            .Where(u => u.IsActive)
+            .OrderBy(u => u.Name)
+            .ToListAsync();
+    }
+
+    public async Task<List<User>> GetActiveUsers_Ok_CustomTag()
+    {
+        // this WILL NOT trigger the rule — TagWith provides a custom label
+        return await _context.Users
+            .Where(u => u.IsActive)
+            .OrderBy(u => u.Name)
+            .TagWith("UserService.GetActiveUsers: active users sorted by name")
+            .ToListAsync();
+    }
 }
 ```
 
