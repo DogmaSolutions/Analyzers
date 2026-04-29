@@ -58,8 +58,8 @@ namespace DogmaSolutions.Analyzers
                     m => m.Expression is IdentifierNameSyntax { Identifier.ValueText: "DateTime" or "DateTimeOffset" } &&
                          m.Name?.Identifier.ValueText is "Now" or "UtcNow");
 
-            // Check if there are multiple occurrences
-            if (dateTimeNowInvocations.Count() > 1)
+            // Check if any specific property (Now or UtcNow) has multiple occurrences
+            if (dateTimeNowInvocations.GroupBy(m => m.Name.Identifier.ValueText).Any(g => g.Count() > 1))
             {
                 var diagnostic = Diagnostic.Create(
                     _rule,
