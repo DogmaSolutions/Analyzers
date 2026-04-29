@@ -1044,6 +1044,44 @@ namespace TestApp
     // ── Entry/Reference/Collection navigation not-matched ─────────────
 
     [TestMethod]
+    public async Task MaterializedArray_LinqToObjects_NotFlagged()
+    {
+        var source = BuildSource(@"
+        public async Task Test()
+        {
+            var users = await {|#0:_context.Users.ToArrayAsync()|};
+            var first = users.FirstOrDefault();
+            var any = users.Any();
+        }");
+
+        var test = new CSharpAnalyzerVerifier<DSA021Analyzer>.Test();
+        test.TestCode = source;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA021Analyzer>.Diagnostic(DSA021Analyzer.DiagnosticId).WithLocation(0).WithArguments("ToArrayAsync"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task MaterializedList_LinqToObjects_NotFlagged()
+    {
+        var source = BuildSource(@"
+        public async Task Test()
+        {
+            var users = await {|#0:_context.Users.ToListAsync()|};
+            var count = users.Count();
+            var first = users.First();
+        }");
+
+        var test = new CSharpAnalyzerVerifier<DSA021Analyzer>.Test();
+        test.TestCode = source;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA021Analyzer>.Diagnostic(DSA021Analyzer.DiagnosticId).WithLocation(0).WithArguments("ToListAsync"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
     public async Task EntryReferenceLoadAsync_NotFlagged()
     {
         var source = EfCoreStubs + @"

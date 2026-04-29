@@ -144,7 +144,11 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
 
             var symbolInfo = semanticModel.GetSymbolInfo(current);
             if (symbolInfo.Symbol is ILocalSymbol localSymbol)
+            {
+                if (typeInfo.Type != null && !ImplementsIQueryable(typeInfo.Type))
+                    return false;
                 return LocalInitializerInvolvesEf(localSymbol, semanticModel);
+            }
         }
 
         return false;
@@ -342,6 +346,20 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
 
         if (symbolInfo.Symbol is ILocalSymbol localSymbol)
             return LocalHasTagInInitializer(localSymbol);
+
+        return false;
+    }
+
+    private static bool ImplementsIQueryable(ITypeSymbol type)
+    {
+        if (type.Name == "IQueryable" && type.ContainingNamespace?.ToDisplayString() == "System.Linq")
+            return true;
+
+        foreach (var iface in type.AllInterfaces)
+        {
+            if (iface.Name == "IQueryable" && iface.ContainingNamespace?.ToDisplayString() == "System.Linq")
+                return true;
+        }
 
         return false;
     }
