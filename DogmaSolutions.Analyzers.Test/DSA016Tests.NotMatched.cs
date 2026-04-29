@@ -202,6 +202,34 @@ public partial class DSA016Tests
             }"
         ],
         [
+            "Same-named variables in sibling scopes: not the same receiver",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Patch { public float Label; }
+                public class MyService
+                {
+                    public void Process(List<Patch> allPatches, bool useMicro)
+                    {
+                        if (useMicro)
+                        {
+                            var patches = allPatches.Where(p => p.Label > 0).ToList();
+                            var pos = patches.Count(p => p.Label > 0.5f);
+                            var neg = patches.Count(p => p.Label < 0.5f);
+                        }
+                        else
+                        {
+                            var patches = allPatches.Where(p => p.Label < 0).ToList();
+                            var pos = patches.Count(p => p.Label > 0.5f);
+                            var neg = patches.Count(p => p.Label < 0.5f);
+                        }
+                    }
+                }
+            }"
+        ],
+        [
             "Static method call: Directory.Exists called twice",
             @"
             using System.IO;

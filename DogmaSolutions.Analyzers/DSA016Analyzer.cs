@@ -87,7 +87,8 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         if (IsStaticMethodCall(invocation, context.SemanticModel))
             return;
 
-        var key = BuildKey(receiverText, methodName, argsText);
+        var symbolKey = GetReceiverSymbolKey(invocation, context.SemanticModel);
+        var key = BuildKey(receiverText, methodName, argsText, symbolKey);
 
         var scope = GetContainingScope(invocation);
         if (scope == null)
@@ -109,7 +110,8 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
             if (IsStaticMethodCall(sibling, context.SemanticModel))
                 continue;
 
-            if (BuildKey(sibReceiver, sibMethod, sibArgs) == key)
+            var sibSymbolKey = GetReceiverSymbolKey(sibling, context.SemanticModel);
+            if (BuildKey(sibReceiver, sibMethod, sibArgs, sibSymbolKey) == key)
                 count++;
         }
 
@@ -169,9 +171,46 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static string BuildKey(string receiverText, string methodName, string argsText)
+    private static string BuildKey(string receiverText, string methodName, string argsText, string symbolKey)
     {
-        return $"{NormalizeWhitespace(receiverText)}|{methodName}|{NormalizeWhitespace(argsText)}";
+        var receiver = symbolKey ?? NormalizeWhitespace(receiverText);
+        return $"{receiver}|{methodName}|{NormalizeWhitespace(argsText)}";
+    }
+
+    private static string GetReceiverSymbolKey(InvocationExpressionSyntax invocation, SemanticModel model)
+    {
+        ExpressionSyntax receiverExpr = null;
+        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            receiverExpr = memberAccess.Expression;
+        }
+        else if (invocation.Expression is MemberBindingExpressionSyntax)
+        {
+            var ancestor = invocation.Parent;
+            while (ancestor != null)
+            {
+                if (ancestor is ConditionalAccessExpressionSyntax ca)
+                {
+                    receiverExpr = ca.Expression;
+                    break;
+                }
+
+                ancestor = ancestor.Parent;
+            }
+        }
+
+        if (receiverExpr == null)
+            return null;
+
+        var symbol = model.GetSymbolInfo(receiverExpr).Symbol;
+        if (symbol == null)
+            return null;
+
+        var refs = symbol.DeclaringSyntaxReferences;
+        if (refs.Length > 0)
+            return $"{symbol.Name}@{refs[0].Span.Start}";
+
+        return null;
     }
 
     /// <summary>
