@@ -367,6 +367,41 @@ public partial class DSA022Tests
             }"
         ],
         [
+            "String concatenation with literal in loop: not flagged",
+            @"
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string script)
+                    {
+                        for (int i = 0; i < 10; i++)
+                        {
+                            if (i == 0)
+                                throw new System.Exception(""Error: "" + script);
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "String concatenation with two string variables in loop: not flagged",
+            @"
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string prefix, string suffix)
+                    {
+                        for (int i = 0; i < 10; i++)
+                        {
+                            var msg = prefix + suffix;
+                        }
+                    }
+                }
+            }"
+        ],
+        [
             "Right shift expression: a >> b inside for loop is not flagged when using loop variable",
             @"
             namespace TestApp

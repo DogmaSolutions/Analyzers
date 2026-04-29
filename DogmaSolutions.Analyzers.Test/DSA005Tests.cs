@@ -93,30 +93,6 @@ namespace WebApplication1
             10, 9, 18, 10
         ],
         [
-            "DateTime.UtcNow mixed with DateTime.Now", @"
-using System;
-namespace WebApplication1
-{      
-    public class MyClass
-    {
-        private void DoSomething(DateTime now){}
-        private void DoOtherThings(DateTime now){}
-
-        public void IsNotOk(string s)
-        {   
-         DoSomething(DateTime.Now); // this WILL trigger the rule
-         
-         for(int i = 0; i < 10; i++)
-         {
-           DoOtherThings(DateTime.UtcNow);  // this WILL trigger the rule
-         }
-        }
-    }
-}
-",
-            10, 9, 18, 10
-        ],
-        [
             "DateTime.Now", @"
 using System;
 namespace WebApplication1
@@ -172,6 +148,58 @@ namespace WebApplication1
 
         test.ExpectedDiagnostics.Add(CSharpAnalyzerVerifier<DSA005Analyzer>.Diagnostic(DSA005Analyzer.DiagnosticId).WithSpan(startLine, startColumn, endLine, endColumn));
 
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task MixedNowAndUtcNow_NotMatched()
+    {
+        var sourceCode = @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+        public TimeSpan GetExpiration(DateTime expiration)
+        {
+            var expirationTimeSpan = expiration.Kind == DateTimeKind.Utc
+                ? expiration - DateTime.UtcNow
+                : expiration - DateTime.Now;
+            return expirationTimeSpan;
+        }
+    }
+}
+";
+        var test = new CSharpAnalyzerVerifier<DSA005Analyzer>.Test();
+        test.TestCode = sourceCode;
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task MixedNowAndUtcNow_InSeparateStatements_NotMatched()
+    {
+        var sourceCode = @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+        private void DoSomething(DateTime now){}
+        private void DoOtherThings(DateTime now){}
+
+        public void Test(string s)
+        {
+            DoSomething(DateTime.Now);
+            for(int i = 0; i < 10; i++)
+            {
+                DoOtherThings(DateTime.UtcNow);
+            }
+        }
+    }
+}
+";
+        var test = new CSharpAnalyzerVerifier<DSA005Analyzer>.Test();
+        test.TestCode = sourceCode;
         await test.RunAsync().ConfigureAwait(false);
     }
 }

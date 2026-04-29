@@ -79,6 +79,9 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
             if (Array.IndexOf(ArithmeticAndBitwiseKinds, binExpr.Kind()) < 0)
                 continue;
 
+            if (binExpr.IsKind(SyntaxKind.AddExpression) && IsStringConcatenation(binExpr, context.SemanticModel))
+                continue;
+
             if (IsLoopControlExpression(binExpr, loopNode))
                 continue;
 
@@ -283,6 +286,12 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool IsStringConcatenation(BinaryExpressionSyntax expr, SemanticModel model)
+    {
+        var typeInfo = model.GetTypeInfo(expr);
+        return typeInfo.Type?.SpecialType == SpecialType.System_String;
     }
 
     private static List<BinaryExpressionSyntax> FilterToOutermost(List<BinaryExpressionSyntax> candidates)
