@@ -1639,6 +1639,31 @@ dotnet_diagnostic.DSA019.excluded_prefixes = Is.Not, Has.No, Does.Not, Should
 
 This is particularly useful in test projects where fluent assertion frameworks produce deep chains by design.
 
+**Ignored intermediate members**: some methods in a chain add syntactic depth but no semantic complexity — they configure behavior without changing the data shape. These methods contribute zero to the effective chain depth. The option accepts a comma-separated list of member names:
+
+```
+# Comma-separated list of member names whose depth contribution is zero.
+# When specified, this list REPLACES the built-in defaults entirely.
+dotnet_diagnostic.DSA019.ignored_intermediate_members = TagWithCallSite, TagWith, AsNoTracking, MyCustomMethod
+```
+
+When this option is **not specified**, the following defaults apply:
+
+| Member name | Purpose |
+|---|---|
+| `TagWithCallSite` | EF Core query tagging |
+| `TagWith` | EF Core query tagging |
+| `AsNoTracking` | EF Core tracking behavior |
+| `AsNoTrackingWithIdentityResolution` | EF Core tracking behavior |
+| `AsTracking` | EF Core tracking behavior |
+| `AsSplitQuery` | EF Core query splitting |
+| `AsSingleQuery` | EF Core query splitting |
+| `IgnoreAutoIncludes` | EF Core auto-include behavior |
+| `IgnoreQueryFilters` | EF Core global query filter bypass |
+| `ConfigureAwait` | Async task configuration |
+
+**Expression tree lambdas**: chains inside lambda arguments on `IQueryable` receivers (e.g., EF Core `Select` projections, `Where` predicates) are automatically suppressed regardless of depth. Inside an expression tree, extracting sub-expressions into local variables is impossible.
+
 ## See also
 
 Security-wise, repeated deep member access chains can expose code to non-deterministic behavior if any intermediate property getter has side effects, performs lazy initialization, or reads from a volatile source. In security-sensitive code paths (e.g., authorization checks, input validation), evaluating the same chain multiple times could yield different values, leading to time-of-check to time-of-use vulnerabilities.
@@ -1694,6 +1719,17 @@ var secondary = lights[1].IsOn();  // ✅ no deep chain repeated
 // With: dotnet_diagnostic.DSA019.excluded_prefixes = Is.Not
 var a = Is.Not.Null.And.GreaterThan(0);
 var b = Is.Not.Null.And.GreaterThanOrEqualTo(0);  // ✅ excluded by prefix
+
+// Ignored intermediate member (TagWithCallSite is in defaults)
+var a = context.Items.TagWithCallSite().FirstOrDefault(x => x.Id == 1);
+var b = context.Items.TagWithCallSite().FirstOrDefault(x => x.Id == 2);  // ✅ effective depth 2
+
+// Expression tree lambda (IQueryable Select projection)
+var result = queryable.Select(e => new
+{
+    Name = e.Category.Spec.Detail.Name,
+    Price = e.Category.Spec.Detail.Price,   // ✅ inside expression tree
+});
 ```
 
 ## Fix / Mitigation
@@ -1964,6 +2000,19 @@ async Task<List<User>> Execute(IQueryable<User> query) {
     return await query.ToListAsync();  // not flagged if all callers tag before passing
 }
 Execute(_context.Users.TagWithCallSite().Where(u => u.IsActive));
+
+// Materialized collection — LINQ-to-Objects on the result is not an EF query:
+var users = await _context.Users.ToArrayAsync();
+var first = users.FirstOrDefault();  // not flagged (array, not IQueryable)
+
+// Subquery inside a Where/Select lambda — part of the outer query's expression tree:
+_context.Reports
+    .Where(r => !_context.Traces.Any(t => t.Key == r.Key))  // Any() not flagged (subquery)
+    .TagWithCallSite()
+    .FirstOrDefaultAsync();
+
+// Entry/Reference/Collection navigation loading:
+await _context.Entry(entity).Reference(e => e.Navigation).LoadAsync();  // not flagged
 ```
 
 ## Fix / Mitigation

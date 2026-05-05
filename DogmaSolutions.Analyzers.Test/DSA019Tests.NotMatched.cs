@@ -447,6 +447,49 @@ public partial class DSA019Tests
             }"
         ],
         [
+            "Repeated deep chain inside IQueryable Select projection (expression tree lambda)",
+            @"
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Detail { public string Name; public decimal Price; }
+                public class Spec { public Detail Detail; }
+                public class Category { public Spec Spec; }
+                public class Entry { public Category Category; }
+                public class MyService
+                {
+                    public void Process(IQueryable<Entry> entries)
+                    {
+                        var result = entries.Select(e => new
+                        {
+                            Name = e.Category.Spec.Detail.Name,
+                            Price = e.Category.Spec.Detail.Price,
+                        });
+                    }
+                }
+            }"
+        ],
+        [
+            "Repeated deep chain inside IQueryable Where predicate (expression tree lambda)",
+            @"
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Address { public string City; public string Zip; }
+                public class Profile { public Address Address; }
+                public class Contact { public Profile Profile; }
+                public class User { public Contact Contact; }
+                public class MyService
+                {
+                    public void Process(IQueryable<User> users)
+                    {
+                        var result = users.Where(u => u.Contact.Profile.Address.City == ""X"" ||
+                                                      u.Contact.Profile.Address.Zip == ""Y"");
+                    }
+                }
+            }"
+        ],
+        [
             "Simple repeated property access (no deep chain)",
             @"
             namespace TestApp
@@ -685,6 +728,153 @@ dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth = 5
 "));
 
         // No diagnostics expected — depth 4 is below threshold of 5
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task IgnoredIntermediateMembers_DefaultsApplyWithoutConfig()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Item { public int Id; }
+                public class MyContext { public IEnumerable<Item> Items; }
+                public static class Extensions
+                {
+                    public static IEnumerable<T> TagWithCallSite<T>(this IEnumerable<T> source) => source;
+                }
+                public class MyService
+                {
+                    public void Process(MyContext context)
+                    {
+                        var a = context.Items.TagWithCallSite().First(x => x.Id == 1);
+                        var b = context.Items.TagWithCallSite().First(x => x.Id == 2);
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task IgnoredIntermediateMembers_SingleEntry_SuppressesChain()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Item { public int Id; }
+                public class MyContext { public IEnumerable<Item> Items; }
+                public static class Extensions
+                {
+                    public static IEnumerable<T> TagWithCallSite<T>(this IEnumerable<T> source) => source;
+                }
+                public class MyService
+                {
+                    public void Process(MyContext context)
+                    {
+                        var a = context.Items.TagWithCallSite().First(x => x.Id == 1);
+                        var b = context.Items.TagWithCallSite().First(x => x.Id == 2);
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA019.ignored_intermediate_members = TagWithCallSite
+"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task IgnoredIntermediateMembers_MultipleEntries_SuppressesChain()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Item { public int Id; }
+                public class MyContext { public IEnumerable<Item> Items; }
+                public static class Extensions
+                {
+                    public static IEnumerable<T> TagWithCallSite<T>(this IEnumerable<T> source) => source;
+                    public static IEnumerable<T> AsNoTracking<T>(this IEnumerable<T> source) => source;
+                }
+                public class MyService
+                {
+                    public void Process(MyContext context)
+                    {
+                        var a = context.Items.AsNoTracking().TagWithCallSite().First(x => x.Id == 1);
+                        var b = context.Items.AsNoTracking().TagWithCallSite().First(x => x.Id == 2);
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA019.ignored_intermediate_members = TagWithCallSite, AsNoTracking
+"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task IgnoredIntermediateMembers_NonMatchingEntry_StillFlags()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Item { public int Id; }
+                public class MyContext { public IEnumerable<Item> Items; }
+                public static class Extensions
+                {
+                    public static IEnumerable<T> TagWithCallSite<T>(this IEnumerable<T> source) => source;
+                }
+                public class MyService
+                {
+                    public void Process(MyContext context)
+                    {
+                        var a = {|#0:context.Items.TagWithCallSite().First|}(x => x.Id == 1);
+                        var b = {|#1:context.Items.TagWithCallSite().First|}(x => x.Id == 2);
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA019.ignored_intermediate_members = SomeOtherMethod
+"));
+
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("context.Items.TagWithCallSite().First", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("context.Items.TagWithCallSite().First", 2));
+
         await test.RunAsync().ConfigureAwait(false);
     }
 }

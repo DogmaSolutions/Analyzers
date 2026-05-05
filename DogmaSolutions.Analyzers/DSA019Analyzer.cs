@@ -25,6 +25,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
     internal const int DefaultMaxDepth = 3;
     internal const string MaxDepthOptionKey = "dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth";
     internal const string ExcludedPrefixesOptionKey = "dotnet_diagnostic.DSA019.excluded_prefixes";
+    internal const string IgnoredIntermediateMembersOptionKey = "dotnet_diagnostic.DSA019.ignored_intermediate_members";
 
     private static readonly LocalizableString _title =
         new LocalizableResourceString(nameof(Resources.DSA019AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
@@ -66,6 +67,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
             return;
 
         var threshold = GetThreshold(context);
+        var ignoredMembers = GetIgnoredIntermediateMembers(context);
 
         // Quick syntactic pre-filter (cheaper than semantic analysis)
         var syntacticDepth = ComputeChainDepth(memberAccess);
@@ -73,8 +75,11 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
             return;
 
         // Semantic effective depth: excludes namespace qualifications from the count
-        var effectiveDepth = ComputeEffectiveChainDepth(memberAccess, context.SemanticModel);
+        var effectiveDepth = ComputeEffectiveChainDepth(memberAccess, context.SemanticModel, ignoredMembers);
         if (effectiveDepth < threshold)
+            return;
+
+        if (IsInsideExpressionTreeLambda(memberAccess, context.SemanticModel))
             return;
 
         var key = NormalizeWhitespace(memberAccess.ToString());
@@ -100,7 +105,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
             if (sibSyntacticDepth < threshold)
                 continue;
 
-            var sibEffectiveDepth = ComputeEffectiveChainDepth(sibling, context.SemanticModel);
+            var sibEffectiveDepth = ComputeEffectiveChainDepth(sibling, context.SemanticModel, ignoredMembers);
             if (sibEffectiveDepth < threshold)
                 continue;
 
@@ -131,13 +136,17 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
             return;
 
         var threshold = GetThreshold(context);
+        var ignoredMembers = GetIgnoredIntermediateMembers(context);
 
         var syntacticDepth = ComputeChainDepth(elementAccess);
         if (syntacticDepth < threshold)
             return;
 
-        var effectiveDepth = ComputeEffectiveChainDepth(elementAccess, context.SemanticModel);
+        var effectiveDepth = ComputeEffectiveChainDepth(elementAccess, context.SemanticModel, ignoredMembers);
         if (effectiveDepth < threshold)
+            return;
+
+        if (IsInsideExpressionTreeLambda(elementAccess, context.SemanticModel))
             return;
 
         var key = NormalizeWhitespace(elementAccess.ToString());
@@ -163,7 +172,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
             if (sibSyntacticDepth < threshold)
                 continue;
 
-            var sibEffectiveDepth = ComputeEffectiveChainDepth(sibling, context.SemanticModel);
+            var sibEffectiveDepth = ComputeEffectiveChainDepth(sibling, context.SemanticModel, ignoredMembers);
             if (sibEffectiveDepth < threshold)
                 continue;
 
@@ -253,7 +262,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
     /// accesses do not count as runtime dereferences. Static and instance member accesses
     /// (fields, properties, methods) do count.
     /// </summary>
-    internal static int ComputeEffectiveChainDepth(ExpressionSyntax expression, SemanticModel semanticModel)
+    internal static int ComputeEffectiveChainDepth(ExpressionSyntax expression, SemanticModel semanticModel, HashSet<string> ignoredIntermediateMembers = null)
     {
         var depth = 0;
         ExpressionSyntax current = expression;
@@ -278,6 +287,13 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
                 // Constant fields and enum members — compile-time inlined, not a dereference
                 if (accessSymbol is IFieldSymbol field && field.IsConst)
+                {
+                    current = ma.Expression;
+                    continue;
+                }
+
+                if (ignoredIntermediateMembers != null &&
+                    ignoredIntermediateMembers.Contains(ma.Name.Identifier.ValueText))
                 {
                     current = ma.Expression;
                     continue;
@@ -348,6 +364,40 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         return System.Array.Empty<string>();
     }
 
+    private static readonly HashSet<string> DefaultIgnoredIntermediateMembers = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "TagWithCallSite",
+        "TagWith",
+        "AsNoTracking",
+        "AsNoTrackingWithIdentityResolution",
+        "AsTracking",
+        "AsSplitQuery",
+        "AsSingleQuery",
+        "IgnoreAutoIncludes",
+        "IgnoreQueryFilters",
+        "ConfigureAwait",
+    };
+
+    private static HashSet<string> GetIgnoredIntermediateMembers(SyntaxNodeAnalysisContext context)
+    {
+        var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
+        if (config.TryGetValue(IgnoredIntermediateMembersOptionKey, out var configValue) &&
+            !string.IsNullOrWhiteSpace(configValue))
+        {
+            var set = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var name in configValue.Split(','))
+            {
+                var trimmed = name.Trim();
+                if (trimmed.Length > 0)
+                    set.Add(trimmed);
+            }
+
+            return set;
+        }
+
+        return DefaultIgnoredIntermediateMembers;
+    }
+
     /// <summary>
     /// Verifies that two expressions with identical text are semantically equivalent by
     /// checking that all identifiers resolve to the same symbols. This prevents false
@@ -376,6 +426,42 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         }
 
         return true;
+    }
+
+    private static bool IsInsideExpressionTreeLambda(SyntaxNode node, SemanticModel semanticModel)
+    {
+        var current = node.Parent;
+        while (current != null)
+        {
+            if (current is LambdaExpressionSyntax &&
+                current.Parent is ArgumentSyntax &&
+                current.Parent.Parent is ArgumentListSyntax &&
+                current.Parent.Parent.Parent is InvocationExpressionSyntax outerInvocation &&
+                outerInvocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            {
+                var receiverType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
+                if (receiverType != null && ImplementsIQueryable(receiverType))
+                    return true;
+            }
+
+            current = current.Parent;
+        }
+
+        return false;
+    }
+
+    private static bool ImplementsIQueryable(ITypeSymbol type)
+    {
+        if (type.Name == "IQueryable" && type.ContainingNamespace?.ToDisplayString() == "System.Linq")
+            return true;
+
+        foreach (var iface in type.AllInterfaces)
+        {
+            if (iface.Name == "IQueryable" && iface.ContainingNamespace?.ToDisplayString() == "System.Linq")
+                return true;
+        }
+
+        return false;
     }
 
     private static bool IsInsideNameof(SyntaxNode node)
