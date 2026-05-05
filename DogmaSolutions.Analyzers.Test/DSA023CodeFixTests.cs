@@ -523,4 +523,202 @@ public class DSA023CodeFixTests
                 .Diagnostic(DSA023Analyzer.DiagnosticId).WithLocation(0).WithArguments("File.Exists"));
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    [TestMethod]
+    public async Task FourSegmentConcatenation()
+    {
+        var source = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string root, string sub)
+                    {
+                        File.Exists({|#0:root + ""\\"" + sub + ""\\file.xml""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string root, string sub)
+                    {
+                        File.Exists(Path.Combine(root, sub, ""file.xml""));
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>
+                .Diagnostic(DSA023Analyzer.DiagnosticId).WithLocation(0).WithArguments("File.Exists"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task VerbatimStringLiteral()
+    {
+        var source = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        File.Exists({|#0:basePath + @""\file.xml""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        File.Exists(Path.Combine(basePath, ""file.xml""));
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>
+                .Diagnostic(DSA023Analyzer.DiagnosticId).WithLocation(0).WithArguments("File.Exists"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FileCopyBothArgs()
+    {
+        var source = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        File.Copy({|#0:basePath + ""\\src.txt""|}, {|#1:basePath + ""\\dst.txt""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        File.Copy(Path.Combine(basePath, ""src.txt""), Path.Combine(basePath, ""dst.txt""));
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>
+                .Diagnostic(DSA023Analyzer.DiagnosticId).WithLocation(0).WithArguments("File.Copy"));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>
+                .Diagnostic(DSA023Analyzer.DiagnosticId).WithLocation(1).WithArguments("File.Copy"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixesNewStreamWriter()
+    {
+        var source = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        using var sw = new StreamWriter({|#0:basePath + ""\\output.log""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        using var sw = new StreamWriter(Path.Combine(basePath, ""output.log""));
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>
+                .Diagnostic(DSA023Analyzer.DiagnosticId).WithLocation(0).WithArguments("new StreamWriter"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixesNewFileStreamConstructor()
+    {
+        var source = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        using var fs = new FileStream({|#0:basePath + ""\\file.bin""|}, FileMode.Open);
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        using var fs = new FileStream(Path.Combine(basePath, ""file.bin""), FileMode.Open);
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA023Analyzer, DSA023CodeFixProvider>
+                .Diagnostic(DSA023Analyzer.DiagnosticId).WithLocation(0).WithArguments("new FileStream"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }

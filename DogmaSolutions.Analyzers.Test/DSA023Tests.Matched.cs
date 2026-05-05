@@ -333,6 +333,119 @@ public partial class DSA023Tests
             }",
             "new FileStream"
         ],
+        [
+            "new StreamWriter with concatenation",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        using var sw = new StreamWriter({|#0:basePath + ""\\output.log""|});
+                    }
+                }
+            }",
+            "new StreamWriter"
+        ],
+        [
+            "Implicit object creation (FileInfo fi = new(...))",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        FileInfo fi = new({|#0:basePath + ""\\file.txt""|});
+                    }
+                }
+            }",
+            "new FileInfo"
+        ],
+        [
+            "Verbatim string literal with backslash",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        File.Exists({|#0:basePath + @""\file.xml""|});
+                    }
+                }
+            }",
+            "File.Exists"
+        ],
+        [
+            "Named argument with concatenation",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        File.Exists(path: {|#0:basePath + ""\\file.xml""|});
+                    }
+                }
+            }",
+            "File.Exists"
+        ],
+        [
+            "Parenthesized concatenation expression",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        File.Exists(({|#0:basePath + ""\\file.xml""|}));
+                    }
+                }
+            }",
+            "File.Exists"
+        ],
+        [
+            "Four-segment concatenation",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string root, string sub)
+                    {
+                        File.Exists({|#0:root + ""\\"" + sub + ""\\file.xml""|});
+                    }
+                }
+            }",
+            "File.Exists"
+        ],
+        [
+            "Instance method: DirectoryInfo.GetFiles with concatenation in path parameter",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        var di = new DirectoryInfo(""C:\\temp"");
+                        di.MoveTo({|#0:basePath + ""\\archive""|});
+                    }
+                }
+            }",
+            "DirectoryInfo.MoveTo"
+        ],
     ];
 
     [TestMethod]

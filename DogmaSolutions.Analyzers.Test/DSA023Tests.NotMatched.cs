@@ -194,6 +194,51 @@ public partial class DSA023Tests
                 }
             }"
         ],
+        [
+            "String interpolation instead of concatenation",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        File.Exists($""{basePath}\\file.xml"");
+                    }
+                }
+            }"
+        ],
+        [
+            "string.Concat call instead of + operator",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath)
+                    {
+                        File.Exists(string.Concat(basePath, ""\\file.xml""));
+                    }
+                }
+            }"
+        ],
+        [
+            "Directory.GetFiles searchPattern parameter is not a path",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string path, string ext)
+                    {
+                        Directory.GetFiles(path, ""*."" + ext);
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]
