@@ -41,6 +41,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA020](#dsa020) | Code Smells   | Remove redundant async/await on Task.FromResult                                                                                                                                                             | ⚠ Warning        | ✅          | ✅        |
 | [DSA021](#dsa021) | Best Practice | Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
 | [DSA022](#dsa022) | Performance | Hoist loop-invariant expression out of inner loop                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
+| [DSA023](#dsa023) | Best Practice | Use Path.Combine instead of string concatenation to build file system paths                                                                                                                                 | ⚠ Warning        | ✅          | ✅        |
 
 ---
 
@@ -2270,6 +2271,117 @@ public class ImageProcessor
         }
     }
 }
+```
+
+---
+
+# DSA023
+
+Use `Path.Combine` instead of string concatenation to build file system paths.
+
+- **Category**: Best Practice
+- **Severity**: ⚠ Warning
+- **Has code fix**: ✅ Yes
+
+## Description
+
+Using string concatenation (`+` operator) to build file or directory paths is error-prone and can lead to subtle bugs: missing or duplicated separators, platform-dependent behavior (backslash on Windows vs. forward slash on Unix), and potential path traversal vulnerabilities when user-controlled segments are not properly normalized. `Path.Combine` handles all of these concerns correctly by normalizing separators and joining path segments in a platform-independent manner.
+
+The analyzer detects string concatenation in arguments to well-known file, directory, and path manipulation methods in `System.IO`:
+- **Static methods**: `File.*`, `Directory.*`, `Path.*` (excluding `Path.Combine` and `Path.Join`)
+- **Constructors**: `new FileInfo(...)`, `new DirectoryInfo(...)`, `new StreamReader(...)`, `new StreamWriter(...)`, `new FileStream(...)`
+- **Instance methods**: on the above types, when the parameter name indicates a path argument
+
+The analyzer only flags parameters whose name contains "path", "file", "dir", or "folder", preventing false positives on non-path string parameters (e.g., the `contents` parameter of `File.WriteAllText`).
+
+## See also
+
+- [CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')](https://cwe.mitre.org/data/definitions/22.html)
+- [Path.Combine documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.path.combine)
+- IEC 62443 — FR 3 (System Integrity)
+
+## Severity override
+
+```ini
+# DSA023: Use Path.Combine instead of string concatenation to build file system paths
+dotnet_diagnostic.DSA023.severity = error
+```
+
+## Matched patterns
+
+```csharp
+// Literal with embedded separator — split into multiple Path.Combine segments
+File.Exists(basePath + "subfolder\\file.xml");
+
+// Leading separator stripped
+File.Exists(basePath + "\\subfolder\\file.xml");
+
+// Forward slashes handled identically
+File.Exists(basePath + "/subfolder/file.xml");
+
+// Simple filename concatenation
+File.Exists(basePath + "file.xml");
+
+// Separator-only segments removed
+File.Exists("folder" + "\\" + "file.xml");
+File.Exists("folder" + "/" + "file.xml");
+
+// Trailing separator stripped from literal
+File.Exists("folder\\" + fileName);
+File.Exists("folder/" + fileName);
+
+// Constructors
+var fi = new FileInfo(basePath + "\\file.txt");
+var di = new DirectoryInfo(basePath + "\\subfolder");
+
+// Directory methods
+Directory.CreateDirectory(basePath + "\\subfolder");
+
+// Static member access
+File.Exists(MyFiles.BasePath + "\\file.xml");
+
+// File.Copy: both path arguments flagged
+File.Copy(basePath + "\\src.txt", basePath + "\\dst.txt");
+```
+
+## Not matched patterns
+
+```csharp
+// No concatenation
+File.Exists(path);
+File.Exists("C:\\folder\\file.xml");
+
+// Already using Path.Combine or Path.Join
+File.Exists(Path.Combine(basePath, "file.xml"));
+File.Exists(Path.Join(basePath, "file.xml"));
+
+// Non-IO method — not in System.IO
+SomeHelper.Process(basePath + "\\file.xml");
+
+// Non-path parameter (contents, not path)
+File.WriteAllText(path, prefix + suffix);
+
+// Protocol prefix — URL construction, not file path
+File.Exists("file://" + basePath + "\\file.xml");
+File.Exists("https://" + host + "/path");
+
+// Indirect usage — concatenation in variable, not in method argument
+var p = basePath + "\\file.xml";
+File.Exists(p);
+```
+
+## Code fix
+
+The code fix replaces the string concatenation with `Path.Combine(...)`. String literal segments are split by `\` and `/` separators, empty segments (pure separators) are removed, and leading/trailing separators are stripped:
+
+**Before:**
+```csharp
+File.Exists(basePath + "\\subfolder\\file.xml");
+```
+
+**After:**
+```csharp
+File.Exists(Path.Combine(basePath, "subfolder", "file.xml"));
 ```
 
 ---

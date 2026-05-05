@@ -346,4 +346,13 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA022AnalyzerTitle" xml:space="preserve">
     <value>Hoist loop-invariant expression out of inner loop</value>
   </data>
+    <data name="DSA023AnalyzerDescription" xml:space="preserve">
+    <value>Using string concatenation to build file or directory paths is error-prone and can lead to subtle bugs: missing or duplicated separators, platform-dependent behavior (backslash on Windows vs. forward slash on Unix), and potential path traversal vulnerabilities when user-controlled segments are not properly normalized. Path.Combine handles all of these concerns correctly by normalizing separators and joining path segments in a platform-independent manner. Security-wise, this is correlated to CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') (https://cwe.mitre.org/data/definitions/22.html). In the context of IEC 62443, proper path handling supports FR 3 (System Integrity) by ensuring that file system operations target the intended paths and are not susceptible to manipulation through separator injection or normalization inconsistencies (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA023).</value>
+  </data>
+    <data name="DSA023AnalyzerMessageFormat" xml:space="preserve">
+    <value>Use 'Path.Combine' instead of string concatenation to build the file path argument for '{0}'. Manual path concatenation is error-prone and platform-dependent.</value>
+  </data>
+    <data name="DSA023AnalyzerTitle" xml:space="preserve">
+    <value>Use Path.Combine instead of string concatenation to build file system paths</value>
+  </data>
 </root>

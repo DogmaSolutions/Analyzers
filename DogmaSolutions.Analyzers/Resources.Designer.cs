@@ -643,5 +643,32 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA022AnalyzerTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Using string concatenation to build file or directory paths is error-prone and can lead to subtle bugs....
+        /// </summary>
+        internal static string DSA023AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA023AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Use &apos;Path.Combine&apos; instead of string concatenation to build the file path argument for &apos;{0}&apos;....
+        /// </summary>
+        internal static string DSA023AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA023AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Use Path.Combine instead of string concatenation to build file system paths.
+        /// </summary>
+        internal static string DSA023AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA023AnalyzerTitle", resourceCulture);
+            }
+        }
     }
 }
