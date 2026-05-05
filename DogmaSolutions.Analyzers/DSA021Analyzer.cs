@@ -83,6 +83,9 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
         if (!IsEntityFrameworkChain(invocation, context.SemanticModel))
             return;
 
+        if (IsInsideSubquery(invocation, context.SemanticModel))
+            return;
+
         if (HasTagInChain(invocation, context.SemanticModel, context.SemanticModel.Compilation))
             return;
 
@@ -346,6 +349,26 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
 
         if (symbolInfo.Symbol is ILocalSymbol localSymbol)
             return LocalHasTagInInitializer(localSymbol);
+
+        return false;
+    }
+
+    private static bool IsInsideSubquery(SyntaxNode node, SemanticModel semanticModel)
+    {
+        var current = node.Parent;
+        while (current != null)
+        {
+            if (current is LambdaExpressionSyntax &&
+                current.Parent is ArgumentSyntax &&
+                current.Parent.Parent is ArgumentListSyntax &&
+                current.Parent.Parent.Parent is InvocationExpressionSyntax outerInvocation &&
+                IsEntityFrameworkChain(outerInvocation, semanticModel))
+            {
+                return true;
+            }
+
+            current = current.Parent;
+        }
 
         return false;
     }

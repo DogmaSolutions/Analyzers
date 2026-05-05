@@ -1082,6 +1082,101 @@ namespace TestApp
     }
 
     [TestMethod]
+    public async Task SubqueryInsideWhereLambda_NotFlagged()
+    {
+        var source = EfCoreStubs + @"
+namespace TestApp
+{
+    public class Report
+    {
+        public int Id { get; set; }
+        public string CommandKey { get; set; }
+        public string CorrelationId { get; set; }
+        public DateTime CreatedOn { get; set; }
+    }
+
+    public class Trace
+    {
+        public string CommandKey { get; set; }
+        public string CorrelationId { get; set; }
+    }
+
+    public class MyDbContext : DbContext
+    {
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<Trace> Traces { get; set; }
+    }
+
+    public class MyService
+    {
+        private readonly MyDbContext _context;
+        public MyService(MyDbContext context) { _context = context; }
+
+        public async Task<long?> Test(DateTime olderThan, CancellationToken ct)
+        {
+            var reportId = await _context.Reports
+                .Where(r => r.CreatedOn < olderThan &&
+                            !_context.Traces.Any(t => t.CommandKey == r.CommandKey &&
+                                                      t.CorrelationId == r.CorrelationId))
+                .Select(r => (long?)r.Id)
+                .TagWithCallSite()
+                .FirstOrDefaultAsync(ct);
+            return reportId;
+        }
+    }
+}";
+
+        var test = new CSharpAnalyzerVerifier<DSA021Analyzer>.Test();
+        test.TestCode = source;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task SubqueryInsideSelectLambda_NotFlagged()
+    {
+        var source = EfCoreStubs + @"
+namespace TestApp
+{
+    public class Order
+    {
+        public int Id { get; set; }
+    }
+
+    public class OrderLine
+    {
+        public int OrderId { get; set; }
+    }
+
+    public class MyDbContext : DbContext
+    {
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderLine> OrderLines { get; set; }
+    }
+
+    public class MyService
+    {
+        private readonly MyDbContext _context;
+        public MyService(MyDbContext context) { _context = context; }
+
+        public async Task<object> Test(CancellationToken ct)
+        {
+            var result = await _context.Orders
+                .Select(o => new { o.Id, LineCount = _context.OrderLines.Count(l => l.OrderId == o.Id) })
+                .TagWithCallSite()
+                .ToListAsync(ct);
+            return result;
+        }
+    }
+}";
+
+        var test = new CSharpAnalyzerVerifier<DSA021Analyzer>.Test();
+        test.TestCode = source;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
     public async Task EntryReferenceLoadAsync_NotFlagged()
     {
         var source = EfCoreStubs + @"
