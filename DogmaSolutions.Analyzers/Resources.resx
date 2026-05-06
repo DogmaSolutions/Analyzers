@@ -355,4 +355,13 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA023AnalyzerTitle" xml:space="preserve">
     <value>Use Path.Combine instead of string concatenation to build file system paths</value>
   </data>
+    <data name="DSA024AnalyzerDescription" xml:space="preserve">
+    <value>A string concatenation is used to compose a value passed to a parameter whose name indicates it represents a file system path or file name. Manual path concatenation is error-prone: missing or duplicated separators, platform-dependent behavior (backslash on Windows vs. forward slash on Unix), and potential path traversal vulnerabilities when user-controlled segments are not properly normalized. Path.Combine handles all of these concerns correctly by normalizing separators and joining path segments in a platform-independent manner. This rule complements DSA023 by covering methods outside the well-known System.IO types, detecting path-like parameters by name. The set of recognized parameter names is configurable via .editorconfig options dotnet_diagnostic.DSA024.exact_parameter_names and dotnet_diagnostic.DSA024.prefix_suffix_parameter_names. Security-wise, this is correlated to CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') (https://cwe.mitre.org/data/definitions/22.html). In the context of IEC 62443, proper path handling supports FR 3 (System Integrity) by ensuring that file system operations target the intended paths and are not susceptible to manipulation through separator injection or normalization inconsistencies (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA024).</value>
+  </data>
+    <data name="DSA024AnalyzerMessageFormat" xml:space="preserve">
+    <value>Use 'Path.Combine' instead of string concatenation to build the path-like argument for '{0}'. Manual path concatenation is error-prone and platform-dependent.</value>
+  </data>
+    <data name="DSA024AnalyzerTitle" xml:space="preserve">
+    <value>Use Path.Combine instead of string concatenation for path-like parameters</value>
+  </data>
 </root>

@@ -42,6 +42,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA021](#dsa021) | Best Practice | Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
 | [DSA022](#dsa022) | Performance | Hoist loop-invariant expression out of inner loop                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
 | [DSA023](#dsa023) | Best Practice | Use Path.Combine instead of string concatenation to build file system paths                                                                                                                                 | ⚠ Warning        | ✅          | ✅        |
+| [DSA024](#dsa024) | Best Practice | Use Path.Combine instead of string concatenation for path-like parameters                                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
 
 ---
 
@@ -2382,6 +2383,138 @@ File.Exists(basePath + "\\subfolder\\file.xml");
 **After:**
 ```csharp
 File.Exists(Path.Combine(basePath, "subfolder", "file.xml"));
+```
+
+---
+
+# DSA024
+
+Use `Path.Combine` instead of string concatenation for path-like parameters in non-System.IO methods.
+
+- **Category**: Best Practice
+- **Severity**: Warning
+- **Has code fix**: Yes
+
+## Description
+
+This rule complements [DSA023](#dsa023) by detecting string concatenation (`+` operator) in arguments to methods that are **not** among the well-known `System.IO` types (`File`, `Directory`, `Path`, `FileInfo`, `DirectoryInfo`, `StreamReader`, `StreamWriter`, `FileStream`). Instead, DSA024 identifies path-like parameters by their name, using two configurable matching strategies:
+
+- **Exact match** (case-insensitive): the parameter name equals one of the configured values.
+- **Prefix or suffix match** (case-insensitive): the parameter name starts or ends with one of the configured values.
+
+### Default parameter names
+
+| Name | Match type |
+|------|-----------|
+| `path` | Exact |
+| `filePath` | Prefix/Suffix |
+| `fileName` | Prefix/Suffix |
+| `directoryPath` | Prefix/Suffix |
+| `directoryName` | Prefix/Suffix |
+| `folderPath` | Prefix/Suffix |
+| `folderName` | Prefix/Suffix |
+| `fileFullPath` | Prefix/Suffix |
+| `directoryFullPath` | Prefix/Suffix |
+| `fileFullName` | Prefix/Suffix |
+| `directoryFullName` | Prefix/Suffix |
+| `xmlFile` | Prefix/Suffix |
+| `xmlFilePath` | Prefix/Suffix |
+| `xmlFileName` | Prefix/Suffix |
+| `jsonFile` | Prefix/Suffix |
+| `jsonFileName` | Prefix/Suffix |
+| `jsonFilePath` | Prefix/Suffix |
+
+### Configuration
+
+Both lists can be overridden via `.editorconfig`:
+
+```ini
+[*.cs]
+# Comma-separated list of parameter names that must match exactly (case-insensitive)
+dotnet_diagnostic.DSA024.exact_parameter_names = path
+
+# Comma-separated list of parameter names used as prefix or suffix match (case-insensitive)
+dotnet_diagnostic.DSA024.prefix_suffix_parameter_names = filePath, fileName, directoryPath, directoryName, folderPath, folderName, fileFullPath, directoryFullPath, fileFullName, directoryFullName, xmlFile, xmlFilePath, xmlFileName, jsonFile, jsonFileName, jsonFilePath
+```
+
+When a configuration value is provided, it **replaces** the defaults entirely.
+
+## See also
+
+- [DSA023](#dsa023) — companion rule for well-known `System.IO` methods
+- [CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')](https://cwe.mitre.org/data/definitions/22.html)
+- [Path.Combine documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.path.combine)
+- IEC 62443 — FR 3 (System Integrity)
+
+## Severity override
+
+```ini
+# DSA024: Use Path.Combine instead of string concatenation for path-like parameters
+dotnet_diagnostic.DSA024.severity = error
+```
+
+## Matched patterns
+
+```csharp
+// Exact match: parameter named "path"
+Helper.Process(basePath + "\\file.xml");
+
+// Prefix match: parameter named "filePath" or "filePathOverride"
+Helper.Process(basePath + "\\file.xml");
+
+// Suffix match: parameter named "outputFilePath"
+Helper.Process(basePath + "\\file.xml");
+
+// Constructor with path-like parameter
+var c = new Config(basePath + "\\config.json");
+
+// Implicit object creation
+Config c = new(basePath + "\\config.json");
+
+// Instance method
+processor.Save(basePath + "\\output.dat");
+
+// Case-insensitive: parameter named "PATH" or "FILEPATH"
+Helper.Process(basePath + "\\file.xml");
+```
+
+## Not matched patterns
+
+```csharp
+// No concatenation
+Helper.Process(path);
+Helper.Process("C:\\folder\\file.xml");
+
+// Parameter name does not match any configured name
+Helper.Process(data + "\\file.xml");  // "data" not in list
+
+// Well-known System.IO types (handled by DSA023)
+File.Exists(basePath + "\\file.xml");
+new FileInfo(basePath + "\\file.txt");
+
+// Protocol prefix — URL construction
+Helper.Process("file://" + basePath + "\\file.xml");
+
+// String interpolation (not + operator)
+Helper.Process($"{basePath}\\file.xml");
+
+// Indirect usage
+var p = basePath + "\\file.xml";
+Helper.Process(p);
+```
+
+## Code fix
+
+The code fix replaces the string concatenation with `Path.Combine(...)`. String literal segments are split by `\` and `/` separators, empty segments (pure separators) are removed, and leading/trailing separators are stripped:
+
+**Before:**
+```csharp
+Helper.Process(basePath + "\\subfolder\\file.xml");
+```
+
+**After:**
+```csharp
+Helper.Process(Path.Combine(basePath, "subfolder", "file.xml"));
 ```
 
 ---
