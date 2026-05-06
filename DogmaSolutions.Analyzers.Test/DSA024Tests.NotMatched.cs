@@ -299,6 +299,81 @@ public partial class DSA024Tests
                 }
             }"
         ],
+        [
+            "System.Management.ManagementObject: path parameter is a WMI path, not a file path",
+            @"
+            namespace System.Management
+            {
+                public class ManagementObject
+                {
+                    public ManagementObject(string path) {}
+                }
+            }
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string server)
+                    {
+                        var mo = new System.Management.ManagementObject(server + ""\\root\\cimv2"");
+                    }
+                }
+            }"
+        ],
+        [
+            "Extension appending: filename + .log",
+            @"
+            namespace TestApp
+            {
+                public static class Helper
+                {
+                    public static void Process(string path) {}
+                }
+                public class MyClass
+                {
+                    public void Test(string filename)
+                    {
+                        Helper.Process(filename + "".log"");
+                    }
+                }
+            }"
+        ],
+        [
+            "Extension appending: filename + .txt",
+            @"
+            namespace TestApp
+            {
+                public static class Helper
+                {
+                    public static void Process(string path) {}
+                }
+                public class MyClass
+                {
+                    public void Test(string filename)
+                    {
+                        Helper.Process(filename + "".txt"");
+                    }
+                }
+            }"
+        ],
+        [
+            "Extension appending: multi-segment name + .json with no path separators",
+            @"
+            namespace TestApp
+            {
+                public static class Helper
+                {
+                    public static void Process(string path) {}
+                }
+                public class MyClass
+                {
+                    public void Test(string prefix, string name)
+                    {
+                        Helper.Process(prefix + name + "".json"");
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

@@ -239,6 +239,66 @@ public partial class DSA023Tests
                 }
             }"
         ],
+        [
+            "Path.ChangeExtension: concatenation in path parameter is excluded",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string baseName)
+                    {
+                        Path.ChangeExtension(baseName + "".bak"", "".txt"");
+                    }
+                }
+            }"
+        ],
+        [
+            "Extension appending: filename + .log in File.CreateText",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string filename)
+                    {
+                        File.CreateText(filename + "".log"");
+                    }
+                }
+            }"
+        ],
+        [
+            "Extension appending: filename + .txt in File.Exists",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string filename)
+                    {
+                        File.Exists(filename + "".txt"");
+                    }
+                }
+            }"
+        ],
+        [
+            "Extension appending: multi-segment name + .json with no path separators",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string prefix, string name)
+                    {
+                        File.ReadAllText(prefix + name + "".json"");
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

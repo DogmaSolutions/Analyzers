@@ -542,6 +542,25 @@ public partial class DSA024Tests
             }",
             "Helper.Process"
         ],
+        [
+            "Extension with path separators in chain: basePath + separator + name + .log is still flagged",
+            @"
+            namespace TestApp
+            {
+                public static class Helper
+                {
+                    public static void Process(string path) {}
+                }
+                public class MyClass
+                {
+                    public void Test(string basePath, string name)
+                    {
+                        Helper.Process({|#0:basePath + ""\\"" + name + "".log""|});
+                    }
+                }
+            }",
+            "Helper.Process"
+        ],
     ];
 
     [TestMethod]

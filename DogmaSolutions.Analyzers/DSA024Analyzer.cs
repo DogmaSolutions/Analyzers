@@ -53,6 +53,8 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
     private static readonly string[] DSA023StaticTypeNames = { "File", "Directory", "Path" };
     private static readonly string[] DSA023InstanceTypeNames = { "FileInfo", "DirectoryInfo", "StreamReader", "StreamWriter", "FileStream" };
 
+    private static readonly string[] ExcludedNamespaces = { "System.Management" };
+
     public override void Initialize(AnalysisContext context)
     {
         if (context == null) throw new ArgumentNullException(nameof(context));
@@ -70,7 +72,7 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
         if (methodSymbol == null)
             return;
 
-        if (IsDSA023TargetType(methodSymbol.ContainingType))
+        if (IsExcludedType(methodSymbol.ContainingType))
             return;
 
         CheckArguments(context, invocation.ArgumentList, methodSymbol);
@@ -83,7 +85,7 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
         if (ctorSymbol == null)
             return;
 
-        if (IsDSA023TargetType(ctorSymbol.ContainingType))
+        if (IsExcludedType(ctorSymbol.ContainingType))
             return;
 
         if (creation.ArgumentList == null)
@@ -99,23 +101,27 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
         if (ctorSymbol == null)
             return;
 
-        if (IsDSA023TargetType(ctorSymbol.ContainingType))
+        if (IsExcludedType(ctorSymbol.ContainingType))
             return;
 
         CheckArguments(context, creation.ArgumentList, ctorSymbol);
     }
 
-    private static bool IsDSA023TargetType(INamedTypeSymbol type)
+    private static bool IsExcludedType(INamedTypeSymbol type)
     {
         if (type == null)
             return false;
 
         var ns = type.ContainingNamespace?.ToDisplayString();
-        if (ns != "System.IO")
+        if (ns == null)
             return false;
 
-        return Array.IndexOf(DSA023StaticTypeNames, type.Name) >= 0 ||
-               Array.IndexOf(DSA023InstanceTypeNames, type.Name) >= 0;
+        if (ns == "System.IO" &&
+            (Array.IndexOf(DSA023StaticTypeNames, type.Name) >= 0 ||
+             Array.IndexOf(DSA023InstanceTypeNames, type.Name) >= 0))
+            return true;
+
+        return Array.IndexOf(ExcludedNamespaces, ns) >= 0;
     }
 
     private static void CheckArguments(
@@ -148,6 +154,9 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
                 continue;
 
             if (ContainsProtocolPrefix(binary))
+                continue;
+
+            if (IsExtensionAppending(binary))
                 continue;
 
             var methodDisplay = method.MethodKind == MethodKind.Constructor
@@ -205,6 +214,36 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
         while (expr is ParenthesizedExpressionSyntax paren)
             expr = paren.Expression;
         return expr;
+    }
+
+    private static bool IsExtensionAppending(BinaryExpressionSyntax binary)
+    {
+        var right = binary.Right;
+        while (right is ParenthesizedExpressionSyntax paren)
+            right = paren.Expression;
+
+        if (!(right is LiteralExpressionSyntax rightLiteral) ||
+            !rightLiteral.IsKind(SyntaxKind.StringLiteralExpression))
+            return false;
+
+        var rightValue = rightLiteral.Token.ValueText;
+        if (!rightValue.StartsWith(".", StringComparison.Ordinal) ||
+            rightValue.IndexOf('\\') >= 0 ||
+            rightValue.IndexOf('/') >= 0)
+            return false;
+
+        foreach (var node in binary.Left.DescendantNodesAndSelf())
+        {
+            if (node is LiteralExpressionSyntax literal &&
+                literal.IsKind(SyntaxKind.StringLiteralExpression))
+            {
+                var value = literal.Token.ValueText;
+                if (value.IndexOf('\\') >= 0 || value.IndexOf('/') >= 0)
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool ContainsProtocolPrefix(BinaryExpressionSyntax binary)

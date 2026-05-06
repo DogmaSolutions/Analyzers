@@ -45,7 +45,7 @@ public sealed class DSA023Analyzer : DiagnosticAnalyzer
         "StreamReader", "StreamWriter", "FileStream",
     };
 
-    private static readonly string[] ExcludedPathMethods = { "Combine", "Join" };
+    private static readonly string[] ExcludedPathMethods = { "Combine", "Join", "ChangeExtension" };
 
     public override void Initialize(AnalysisContext context)
     {
@@ -157,6 +157,9 @@ public sealed class DSA023Analyzer : DiagnosticAnalyzer
             if (ContainsProtocolPrefix(binary))
                 continue;
 
+            if (IsExtensionAppending(binary))
+                continue;
+
             var methodDisplay = method.MethodKind == MethodKind.Constructor
                 ? "new " + method.ContainingType.Name
                 : method.ContainingType.Name + "." + method.Name;
@@ -203,6 +206,36 @@ public sealed class DSA023Analyzer : DiagnosticAnalyzer
         while (expr is ParenthesizedExpressionSyntax paren)
             expr = paren.Expression;
         return expr;
+    }
+
+    private static bool IsExtensionAppending(BinaryExpressionSyntax binary)
+    {
+        var right = binary.Right;
+        while (right is ParenthesizedExpressionSyntax paren)
+            right = paren.Expression;
+
+        if (!(right is LiteralExpressionSyntax rightLiteral) ||
+            !rightLiteral.IsKind(SyntaxKind.StringLiteralExpression))
+            return false;
+
+        var rightValue = rightLiteral.Token.ValueText;
+        if (!rightValue.StartsWith(".", StringComparison.Ordinal) ||
+            rightValue.IndexOf('\\') >= 0 ||
+            rightValue.IndexOf('/') >= 0)
+            return false;
+
+        foreach (var node in binary.Left.DescendantNodesAndSelf())
+        {
+            if (node is LiteralExpressionSyntax literal &&
+                literal.IsKind(SyntaxKind.StringLiteralExpression))
+            {
+                var value = literal.Token.ValueText;
+                if (value.IndexOf('\\') >= 0 || value.IndexOf('/') >= 0)
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool ContainsProtocolPrefix(BinaryExpressionSyntax binary)

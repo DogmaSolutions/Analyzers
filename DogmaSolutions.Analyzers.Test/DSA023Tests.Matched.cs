@@ -446,6 +446,22 @@ public partial class DSA023Tests
             }",
             "DirectoryInfo.MoveTo"
         ],
+        [
+            "Extension with path separators in chain: basePath + separator + name + .log is still flagged",
+            @"
+            using System.IO;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(string basePath, string name)
+                    {
+                        File.Exists({|#0:basePath + ""\\"" + name + "".log""|});
+                    }
+                }
+            }",
+            "File.Exists"
+        ],
     ];
 
     [TestMethod]
