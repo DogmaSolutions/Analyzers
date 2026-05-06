@@ -53,12 +53,10 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         if (targetExpression == null)
             return;
 
-        var variableName = GenerateVariableName(targetExpression);
-
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: $"Extract into local variable '{variableName}'",
-                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, variableName, ct),
+                title: "Extract into local variable",
+                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct),
                 equivalenceKey: DSA019Analyzer.DiagnosticId),
             diagnostic);
     }
@@ -66,7 +64,6 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
     private static async Task<Document> ExtractToVariableAsync(
         Document document,
         ExpressionSyntax targetExpression,
-        string variableName,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -90,6 +87,8 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
 
         // Determine what to extract and what to replace
         var (nodesToReplace, expressionToExtract) = DetermineExtractionTarget(allOccurrences, targetExpression);
+
+        var variableName = GenerateVariableName(expressionToExtract);
 
         // Check if the scope is an expression-body lambda that needs conversion to block
         var lambdaParent = FindExpressionBodyLambda(targetExpression);
@@ -224,7 +223,14 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
     {
         string name = null;
 
-        if (expression is MemberAccessExpressionSyntax memberAccess)
+        if (expression is InvocationExpressionSyntax invocation)
+        {
+            if (invocation.Expression is MemberAccessExpressionSyntax invokedMember)
+                name = invokedMember.Name.Identifier.ValueText;
+            else if (invocation.Expression is IdentifierNameSyntax invokedId)
+                name = invokedId.Identifier.ValueText;
+        }
+        else if (expression is MemberAccessExpressionSyntax memberAccess)
         {
             name = memberAccess.Name.Identifier.ValueText;
         }

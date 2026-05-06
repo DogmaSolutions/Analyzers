@@ -779,4 +779,60 @@ namespace TestApp
 
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    [TestMethod]
+    public async Task DifferentMethodArguments_VariableNamedAfterReceiver()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Folder { public void SetReadOnly(string a, string b, bool c) {} }
+    public class MyHandler
+    {
+        public static MyHandler Instance;
+        public Folder CommonFolder;
+    }
+    public class MyService
+    {
+        public void Process(string fileName)
+        {
+            {|#0:MyHandler.Instance.CommonFolder.SetReadOnly|}(string.Empty, fileName, false);
+            {|#1:MyHandler.Instance.CommonFolder.SetReadOnly|}(string.Empty, fileName, true);
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class Folder { public void SetReadOnly(string a, string b, bool c) {} }
+    public class MyHandler
+    {
+        public static MyHandler Instance;
+        public Folder CommonFolder;
+    }
+    public class MyService
+    {
+        public void Process(string fileName)
+        {
+            var commonFolder = MyHandler.Instance.CommonFolder;
+            commonFolder.SetReadOnly(string.Empty, fileName, false);
+            commonFolder.SetReadOnly(string.Empty, fileName, true);
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("MyHandler.Instance.CommonFolder.SetReadOnly", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("MyHandler.Instance.CommonFolder.SetReadOnly", 2));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }
