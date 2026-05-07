@@ -245,6 +245,122 @@ public partial class DSA016Tests
                 }
             }"
         ],
+        [
+            "Same call in different case branches of a switch statement",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public enum Mode { Preview, Detail }
+                public class Item { public int Id; public string Name; public string FullName; }
+                public class MyService
+                {
+                    public string Process(IEnumerable<Item> items, int id, Mode mode)
+                    {
+                        switch (mode)
+                        {
+                            case Mode.Preview:
+                                return items.FirstOrDefault(x => x.Id == id)?.Name;
+                            case Mode.Detail:
+                                return items.FirstOrDefault(x => x.Id == id)?.FullName;
+                            default:
+                                return null;
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Same call in if/else branches",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Item { public int Id; public string Name; }
+                public class MyService
+                {
+                    public void Process(IEnumerable<Item> items, int id, bool verbose)
+                    {
+                        if (verbose)
+                        {
+                            var x = items.FirstOrDefault(x => x.Id == id)?.Name;
+                            System.Console.WriteLine(x);
+                        }
+                        else
+                        {
+                            var x = items.FirstOrDefault(x => x.Id == id)?.Id;
+                            System.Console.WriteLine(x);
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Same call in if/else if/else chain",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Item { public int Id; public string Name; public string Code; }
+                public class MyService
+                {
+                    public string Process(IEnumerable<Item> items, int id, int mode)
+                    {
+                        if (mode == 0)
+                            return items.FirstOrDefault(x => x.Id == id)?.Name;
+                        else if (mode == 1)
+                            return items.FirstOrDefault(x => x.Id == id)?.Code;
+                        else
+                            return items.FirstOrDefault(x => x.Id == id)?.ToString();
+                    }
+                }
+            }"
+        ],
+        [
+            "Same call in different arms of a switch expression",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public enum Mode { Preview, Detail }
+                public class Item { public int Id; public string Name; public string FullName; }
+                public class MyService
+                {
+                    public string Process(IEnumerable<Item> items, int id, Mode mode)
+                    {
+                        return mode switch
+                        {
+                            Mode.Preview => items.FirstOrDefault(x => x.Id == id)?.Name,
+                            Mode.Detail => items.FirstOrDefault(x => x.Id == id)?.FullName,
+                            _ => null,
+                        };
+                    }
+                }
+            }"
+        ],
+        [
+            "Same call in both branches of a ternary operator",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Item { public int Id; public string Name; }
+                public class MyService
+                {
+                    public object Process(IEnumerable<Item> items, int id, bool verbose)
+                    {
+                        return verbose
+                            ? items.FirstOrDefault(x => x.Id == id)?.Name
+                            : items.FirstOrDefault(x => x.Id == id)?.Id;
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

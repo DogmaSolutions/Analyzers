@@ -289,7 +289,7 @@ Using `DateTime.Now` into business logics potentially leads to many different pr
 
 ## See also
 
-Security-wise, this is correlated to the CWE category “7PK” ([CWE-361](https://cwe.mitre.org/data/definitions/361.html))  
+- Security-wise, this is correlated to the CWE category “7PK” ([CWE-361](https://cwe.mitre.org/data/definitions/361.html))  
 Cit:
 *”This category represents one of the phyla in the Seven Pernicious Kingdoms vulnerability classification. It includes weaknesses related to the improper management of time and state in an environment
 that supports simultaneous or near-simultaneous computation by multiple systems, processes, or threads. According to the authors of the Seven Pernicious Kingdoms, “Distributed computation is about
@@ -1646,6 +1646,15 @@ var b = File.Exists(path);  // ✅ static method on a type, not enumeration
 
 // Called only once
 var item = items.FirstOrDefault(x => x.Id == id);  // ✅ single invocation
+
+// Same call in mutually exclusive branches (switch/case, if/else, ternary, switch expression)
+switch (mode)
+{
+    case Mode.Preview:
+        return items.FirstOrDefault(x => x.Id == id)?.Name;      // ✅ only one branch executes
+    case Mode.Detail:
+        return items.FirstOrDefault(x => x.Id == id)?.FullName;   // ✅ mutually exclusive
+}
 ```
 
 ## Fix / Mitigation

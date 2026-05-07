@@ -348,6 +348,55 @@ public partial class DSA016Tests
             "Exists",
             2
         ],
+        [
+            "Same call twice within the same switch case branch",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public enum Mode { A, B }
+                public class Item { public int Id; public string Name; }
+                public class MyService
+                {
+                    public void Process(IEnumerable<Item> items, int id, Mode mode)
+                    {
+                        switch (mode)
+                        {
+                            case Mode.A:
+                                var x = {|#0:items.FirstOrDefault(i => i.Id == id)|}?.Name;
+                                var y = {|#1:items.FirstOrDefault(i => i.Id == id)|}?.Id;
+                                break;
+                        }
+                    }
+                }
+            }",
+            "FirstOrDefault",
+            2
+        ],
+        [
+            "Same call in a branch AND after the branching construct (both can execute)",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Item { public int Id; }
+                public class MyService
+                {
+                    public void Process(IEnumerable<Item> items, int id, bool flag)
+                    {
+                        if (flag)
+                        {
+                            var a = {|#0:items.FirstOrDefault(x => x.Id == id)|};
+                        }
+                        var b = {|#1:items.FirstOrDefault(x => x.Id == id)|};
+                    }
+                }
+            }",
+            "FirstOrDefault",
+            2
+        ],
     ];
 
     [TestMethod]

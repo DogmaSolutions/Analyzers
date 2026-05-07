@@ -111,7 +111,8 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
                 continue;
 
             var sibSymbolKey = GetReceiverSymbolKey(sibling, context.SemanticModel);
-            if (BuildKey(sibReceiver, sibMethod, sibArgs, sibSymbolKey) == key)
+            if (BuildKey(sibReceiver, sibMethod, sibArgs, sibSymbolKey) == key &&
+                !AreInMutuallyExclusiveBranches(invocation, sibling, scope))
                 count++;
         }
 
@@ -277,6 +278,109 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool AreInMutuallyExclusiveBranches(SyntaxNode a, SyntaxNode b, SyntaxNode scope)
+    {
+        var ancestorsOfA = new HashSet<SyntaxNode>();
+        for (var cur = a; cur != null; cur = cur.Parent)
+        {
+            ancestorsOfA.Add(cur);
+            if (ReferenceEquals(cur, scope))
+                break;
+        }
+
+        for (var cur = b; cur != null; cur = cur.Parent)
+        {
+            if (ancestorsOfA.Contains(cur))
+            {
+                switch (cur)
+                {
+                    case SwitchStatementSyntax switchStmt:
+                    {
+                        var idxA = GetSwitchSectionIndex(switchStmt, a);
+                        var idxB = GetSwitchSectionIndex(switchStmt, b);
+                        if (idxA >= 0 && idxB >= 0 && idxA != idxB)
+                            return true;
+                        break;
+                    }
+
+                    case IfStatementSyntax ifStmt:
+                    {
+                        var branchA = GetIfBranch(ifStmt, a);
+                        var branchB = GetIfBranch(ifStmt, b);
+                        if (branchA >= 0 && branchB >= 0 && branchA != branchB)
+                            return true;
+                        break;
+                    }
+
+                    case SwitchExpressionSyntax switchExpr:
+                    {
+                        var idxA = GetSwitchArmIndex(switchExpr, a);
+                        var idxB = GetSwitchArmIndex(switchExpr, b);
+                        if (idxA >= 0 && idxB >= 0 && idxA != idxB)
+                            return true;
+                        break;
+                    }
+
+                    case ConditionalExpressionSyntax condExpr:
+                    {
+                        var branchA = GetConditionalBranch(condExpr, a);
+                        var branchB = GetConditionalBranch(condExpr, b);
+                        if (branchA >= 0 && branchB >= 0 && branchA != branchB)
+                            return true;
+                        break;
+                    }
+                }
+
+                return false;
+            }
+
+            if (ReferenceEquals(cur, scope))
+                break;
+        }
+
+        return false;
+    }
+
+    private static int GetSwitchSectionIndex(SwitchStatementSyntax switchStmt, SyntaxNode descendant)
+    {
+        for (var i = 0; i < switchStmt.Sections.Count; i++)
+        {
+            if (switchStmt.Sections[i].FullSpan.Contains(descendant.Span))
+                return i;
+        }
+
+        return -1;
+    }
+
+    private static int GetIfBranch(IfStatementSyntax ifStmt, SyntaxNode descendant)
+    {
+        if (ifStmt.Statement != null && ifStmt.Statement.FullSpan.Contains(descendant.Span))
+            return 0;
+        if (ifStmt.Else != null && ifStmt.Else.FullSpan.Contains(descendant.Span))
+            return 1;
+        return -1;
+    }
+
+    private static int GetSwitchArmIndex(SwitchExpressionSyntax switchExpr, SyntaxNode descendant)
+    {
+        for (var i = 0; i < switchExpr.Arms.Count; i++)
+        {
+            if (switchExpr.Arms[i].FullSpan.Contains(descendant.Span))
+                return i;
+        }
+
+        return -1;
+    }
+
+    private static int GetConditionalBranch(ConditionalExpressionSyntax condExpr, SyntaxNode descendant)
+    {
+        if (condExpr.WhenTrue.FullSpan.Contains(descendant.Span))
+            return 0;
+        if (condExpr.WhenFalse.FullSpan.Contains(descendant.Span))
+            return 1;
+        return -1;
     }
 
     private static string NormalizeWhitespace(string text)
