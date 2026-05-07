@@ -357,7 +357,7 @@ This is particularly impacting in:
 
 ## See also
 
-Security-wise, this is correlated to the CWE category “7PK” ([CWE-361](https://cwe.mitre.org/data/definitions/361.html))  
+- Security-wise, this is correlated to the CWE category “7PK” ([CWE-361](https://cwe.mitre.org/data/definitions/361.html))  
 Cit:
 *”This category represents one of the phyla in the Seven Pernicious Kingdoms vulnerability classification. It includes weaknesses related to the improper management of time and state in an environment
 that supports simultaneous or near-simultaneous computation by multiple systems, processes, or threads. According to the authors of the Seven Pernicious Kingdoms, “Distributed computation is about
@@ -442,7 +442,7 @@ General exceptions that trigger this rule are:
 
 ## See also
 
-Security-wise, this is correlated to [MITRE, CWE-397 - Declaration of Throws for Generic Exception](https://cwe.mitre.org/data/definitions/397)
+- Security-wise, this is correlated to [MITRE, CWE-397 - Declaration of Throws for Generic Exception](https://cwe.mitre.org/data/definitions/397)
 
 - [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 3 (System Integrity): generic exceptions prevent callers from distinguishing between operational errors and security-relevant failures, undermining the ability to implement targeted error handling and maintain system integrity under fault conditions
 
@@ -497,6 +497,102 @@ lock hint") before acquiring the lock.
 Locking occurs only if the locking criterion check indicates that locking is required.
 The pattern is typically used to reduce locking overhead when implementing "lazy initialization" in a multi-threaded environment, especially as part of the Singleton pattern.
 Lazy initialization avoids initializing a value until the first time it is accessed.*
+
+## Why does this matter?
+
+When two or more threads try to initialize the same field at the same time, the order in which their instructions execute is unpredictable. The diagrams below show what happens with each pattern when Thread A and Thread B both call the method at nearly the same moment.
+
+### Pattern 1: lock-then-check (correct but slow)
+
+```
+        Thread A                    Thread B
+           |                           |
+      lock(_theLock)  ------->    lock(_theLock)
+           |                      ❌ BLOCKED (waiting)
+      _theField == null? YES           |
+      _theField = Compute(...)         |
+      unlock                           |
+           |                      lock acquired
+           |                      _theField == null? NO
+           |                      unlock
+           |                           |
+```
+
+This is **safe** but **wasteful**: every single call pays the cost of acquiring the lock, even after the field has been initialized. On a hot path, this serializes all threads for no reason.
+
+### Pattern 2: check-then-lock (fast but broken)
+
+```
+        Thread A                    Thread B
+           |                           |
+      _theField == null? YES      _theField == null? YES
+           |                           |
+      lock(_theLock)              lock(_theLock)
+           |                      ❌ BLOCKED (waiting)
+      _theField = Compute(...)         |
+      unlock                           |
+           |                      lock acquired
+           |                      _theField = Compute(...)  ⚠ DUPLICATE!
+           |                      unlock
+           |                           |
+```
+
+Both threads pass the null check **before** either one acquires the lock; the expensive computation runs **twice** (or more), which can corrupt state if initialization has side effects.
+
+### Pattern 3: if-lock-if / double-checked locking (fast and correct) ✅
+
+```
+        Thread A                    Thread B
+           |                           |
+      _theField == null? YES      _theField == null? YES
+           |                           |
+      lock(_theLock)              lock(_theLock)
+           |                      ❌ BLOCKED (waiting)
+      _theField == null? YES           |
+      _theField = Compute(...)         |
+      unlock                           |
+           |                      lock acquired
+           |                      _theField == null? NO  ← second check catches it
+           |                      unlock (skip compute)
+           |                           |
+
+     Any later call:
+           |
+      _theField == null? NO  ← returns immediately, no lock needed
+           |
+```
+
+The **outer** check avoids the lock entirely once the field is initialized (the fast, common path). The **inner** check, protected by the lock, ensures that only the first thread to arrive actually runs the computation. Later calls never touch the lock at all.
+
+
+## Interaction with CA1508 (Avoid dead conditional code)
+
+The .NET analyzer rule [CA1508](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1508) may flag the **inner** null check as dead conditional code, reasoning that the field was already tested in the outer `if` and therefore "must" still be null. This is a **false positive**: CA1508 performs single-threaded data-flow analysis and does not account for the fact that another thread can modify the field between the outer check and the acquisition of the lock -- which is precisely the race condition the inner check exists to prevent.
+
+**Do not remove the inner check to satisfy CA1508.**   
+**DSA007 takes precedence here**; the double-checked pattern is intentional and correct. Suppress the false positive on the inner check:
+
+```cs
+if (_theField == null)
+{
+    lock (_theLock)
+    {
+#pragma warning disable CA1508 // the inner null check is required for thread safety (DSA007)
+        if (_theField == null)
+#pragma warning restore CA1508
+        {
+            _theField = ComputeExpensiveValue(id);
+        }
+    }
+}
+```
+
+Alternatively, suppress it in the `.editorconfig` if you prefer a project-wide policy:
+
+```
+# CA1508 has false positives on double-checked locking patterns (see DSA007)
+dotnet_diagnostic.CA1508.severity = none
+```
 
 ## See also
 
@@ -566,6 +662,7 @@ public class MyClass
   }
 }
 ```
+
 
 ## Rule configuration
 
