@@ -60,6 +60,7 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeLoop,
             SyntaxKind.ForStatement,
             SyntaxKind.ForEachStatement,
+            SyntaxKind.ForEachVariableStatement,
             SyntaxKind.WhileStatement,
             SyntaxKind.DoStatement);
     }
@@ -115,6 +116,7 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
         {
             case ForStatementSyntax forStmt: return forStmt.Statement;
             case ForEachStatementSyntax forEachStmt: return forEachStmt.Statement;
+            case ForEachVariableStatementSyntax forEachVarStmt: return forEachVarStmt.Statement;
             case WhileStatementSyntax whileStmt: return whileStmt.Statement;
             case DoStatementSyntax doStmt: return doStmt.Statement;
             default: return null;
@@ -148,9 +150,26 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
                 modified.Add(symbol);
         }
 
+        if (loopNode is ForEachVariableStatementSyntax forEachVarStmt)
+        {
+            foreach (var designation in forEachVarStmt.Variable.DescendantNodesAndSelf().OfType<SingleVariableDesignationSyntax>())
+            {
+                var symbol = model.GetDeclaredSymbol(designation);
+                if (symbol != null)
+                    modified.Add(symbol);
+            }
+        }
+
         foreach (var localDecl in loopBody.DescendantNodes().OfType<VariableDeclaratorSyntax>())
         {
             var symbol = model.GetDeclaredSymbol(localDecl);
+            if (symbol != null)
+                modified.Add(symbol);
+        }
+
+        foreach (var designation in loopBody.DescendantNodes().OfType<SingleVariableDesignationSyntax>())
+        {
+            var symbol = model.GetDeclaredSymbol(designation);
             if (symbol != null)
                 modified.Add(symbol);
         }
@@ -280,6 +299,7 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
         while (current != null && current != loopBody)
         {
             if (current is ForStatementSyntax || current is ForEachStatementSyntax ||
+                current is ForEachVariableStatementSyntax ||
                 current is WhileStatementSyntax || current is DoStatementSyntax)
                 return true;
             current = current.Parent;

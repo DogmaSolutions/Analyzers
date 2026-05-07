@@ -405,4 +405,95 @@ public partial class DSA022Tests
 
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    [TestMethod]
+    public async Task DeconstructionForeach_InvariantParameterExpression_Flagged()
+    {
+        var source = @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(int p, int q)
+                    {
+                        var tuples = new List<(int X, int Y)> { (1,2) };
+                        foreach (var (x, y) in tuples)
+                        {
+                            int val = {|#0:p * q|};
+                        }
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA022Analyzer>.Test();
+        test.TestCode = source;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA022Analyzer>.Diagnostic(DSA022Analyzer.DiagnosticId)
+                .WithLocation(0)
+                .WithArguments("p * q"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task DeconstructionForeach_InvariantLiteralExpression_Flagged()
+    {
+        var source = @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(int p)
+                    {
+                        var tuples = new List<(int A, int B)> { (1,2) };
+                        foreach (var (a, b) in tuples)
+                        {
+                            int val = {|#0:p + 10|};
+                        }
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA022Analyzer>.Test();
+        test.TestCode = source;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA022Analyzer>.Diagnostic(DSA022Analyzer.DiagnosticId)
+                .WithLocation(0)
+                .WithArguments("p + 10"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task InvariantExpression_WithTupleDeconstructionFromOuterScope_StillFlagged()
+    {
+        var source = @"
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(int a, int b)
+                    {
+                        for (int i = 0; i < 100; i++)
+                        {
+                            int val = {|#0:a * b|};
+                        }
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA022Analyzer>.Test();
+        test.TestCode = source;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA022Analyzer>.Diagnostic(DSA022Analyzer.DiagnosticId)
+                .WithLocation(0)
+                .WithArguments("a * b"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }

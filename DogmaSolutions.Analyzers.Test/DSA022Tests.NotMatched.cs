@@ -418,6 +418,197 @@ public partial class DSA022Tests
                 }
             }"
         ],
+        [
+            "Tuple deconstruction from indexer with loop variable (Pattern 1)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test()
+                    {
+                        var points = new List<(double X, double Y)> { (1,2), (3,4) };
+                        double sx = 10;
+                        for (int i = 0; i < points.Count; i++)
+                        {
+                            var (px, py) = points[i];
+                            double dpx = px - sx;
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Tuple deconstruction from Pop() in while drain loop (Pattern 2)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test()
+                    {
+                        var stack = new Stack<(int Node, int PX, int PY)>();
+                        stack.Push((1, 100, 200));
+                        int minX = 50;
+                        while (stack.Count > 0)
+                        {
+                            var (node, px, py) = stack.Pop();
+                            int x = px - minX;
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Stacked foreach: middle iteration variable in expression before inner loop (Pattern 3)",
+            @"
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test()
+                    {
+                        int[] bandHeights = { 10, 20, 30 };
+                        int[] minConsecs = { 1, 2, 3 };
+                        foreach (int bh in bandHeights)
+                        {
+                            var halfBandHeight = bh / 2;
+                            foreach (int mc in minConsecs)
+                            {
+                                int val = halfBandHeight + mc;
+                            }
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Tuple deconstruction from method call with loop-variant argument (Pattern 4)",
+            @"
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private static (int Cols, int Rows) LoadDimensions(string path) => (100, 200);
+                    public void Test()
+                    {
+                        string[] files = { ""a.json"", ""b.json"" };
+                        foreach (var file in files)
+                        {
+                            var (cols, rows) = LoadDimensions(file);
+                            int totalPixels = cols * rows;
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Tuple variable used before inner loop is not flagged again (Pattern 5)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(int count)
+                    {
+                        var stack = new Stack<(int Curr, int Pred)>();
+                        stack.Push((1, 0));
+                        int stride = 4;
+                        while (stack.Count > 0)
+                        {
+                            var (curr, pred) = stack.Pop();
+                            var baseIdx = curr * stride;
+                            for (var i = 0; i < count; i++)
+                            {
+                                int val = baseIdx + i;
+                            }
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Deconstruction foreach: iteration variable in expression",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(int offset)
+                    {
+                        var points = new List<(int X, int Y)> { (1,2), (3,4) };
+                        foreach (var (x, y) in points)
+                        {
+                            int dx = x - offset;
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Deconstruction foreach: both variables in expression",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test()
+                    {
+                        var points = new List<(int X, int Y)> { (1,2), (3,4) };
+                        foreach (var (x, y) in points)
+                        {
+                            int sum = x + y;
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Deconstruction foreach with discard: variable still changes",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(int scale)
+                    {
+                        var items = new List<(int Value, int Ignored)> { (10, 0), (20, 0) };
+                        foreach (var (v, _) in items)
+                        {
+                            int result = v * scale;
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Expression inside deconstruction foreach is skipped by outer loop analysis",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(int a, int b)
+                    {
+                        var tuples = new List<(int X, int Y)> { (1,2) };
+                        for (int i = 0; i < 10; i++)
+                        {
+                            foreach (var (x, y) in tuples)
+                            {
+                                int val = x + y;
+                            }
+                        }
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]
