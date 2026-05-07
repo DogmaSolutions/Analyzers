@@ -240,6 +240,116 @@ namespace WebApplication1
 "
         ],
         [
+            "if-lock-??= (value from constant) with braces", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      private string _theField;
+      private readonly object _theLock = new object();
+
+      public void IsOk(int id)
+      {
+        if(_theField == null) {
+            lock(_theLock) {
+                _theField ??= ""Test Value"";
+            }
+        }
+      }
+    }
+}
+"
+        ],
+        [
+            "if-lock-??= (value from constant) without braces on if", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      private string _theField;
+      private readonly object _theLock = new object();
+
+      public void IsOk(int id)
+      {
+        if(_theField == null)
+            lock(_theLock) {
+                _theField ??= ""Test Value"";
+            }
+      }
+    }
+}
+"
+        ],
+        [
+            "if-lock-??= (value from constant) without braces on lock", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      private string _theField;
+      private readonly object _theLock = new object();
+
+      public void IsOk(int id)
+      {
+        if(_theField == null) {
+            lock(_theLock)
+                _theField ??= ""Test Value"";
+        }
+      }
+    }
+}
+"
+        ],
+        [
+            "if-lock-??= (value from method)", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      private string _theField;
+      private readonly object _theLock = new object();
+      private string ComputeValue(int id) => id.ToString();
+
+      public void IsOk(int id)
+      {
+        if(_theField == null) {
+            lock(_theLock) {
+                _theField ??= ComputeValue(id);
+            }
+        }
+      }
+    }
+}
+"
+        ],
+        [
+            "if-lock-??= with intermediate if", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      private string _theField;
+      private readonly object _theLock = new object();
+
+      public void IsOk(int id)
+      {
+        if(_theField == null)
+            if(id > 0) {
+                lock(_theLock) {
+                    _theField ??= ""Test Value"";
+                }
+            }
+      }
+    }
+}
+"
+        ],
+        [
             "if-lock-if (value from method) 9", @"
 using System;
 namespace WebApplication1
@@ -544,18 +654,61 @@ namespace WebApplication1
             "if-lock (value from method) 2", @"
 using System;
 namespace WebApplication1
-{      
-    public class MyClass 
-    {    
+{
+    public class MyClass
+    {
       private string _theField;
-      private readonly object _theLock = new object(); 
+      private readonly object _theLock = new object();
       private string ComputeValue(int id) => id.ToString();
- 
+
       public string GetValue(int id)
-      {     
+      {
         if(_theField == null)
-            lock(_theLock)       
-               {|#0:_theField = ComputeValue(id)|};        
+            lock(_theLock)
+               {|#0:_theField = ComputeValue(id)|};
+
+        return _theField;
+      }
+    }
+}
+"
+        ],
+        [
+            "if-??= without lock", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      private string _theField;
+
+      public string GetValue(int id)
+      {
+        if(_theField == null)
+           {|#0:_theField ??= ""Test Value""|};
+
+        return _theField;
+      }
+    }
+}
+"
+        ],
+        [
+            "lock-if-??= without outer guard", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      private string _theField;
+      private readonly object _theLock = new object();
+
+      public string GetValue(int id)
+      {
+        lock(_theLock) {
+            if(_theField == null)
+               {|#0:_theField ??= ""Test Value""|};
+        }
 
         return _theField;
       }

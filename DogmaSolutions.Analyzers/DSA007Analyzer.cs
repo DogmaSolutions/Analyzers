@@ -64,7 +64,8 @@ namespace DogmaSolutions.Analyzers
                     if (!IsWithinGuardedLockStatement(
                             innerIfStatement,
                             assignment,
-                            context.SemanticModel)) // i.e. NOT   if(_theField == null) lock(_theLock) { if(_theField == null) { ... } }
+                            context.SemanticModel) // i.e. NOT   if(_theField == null) lock(_theLock) { if(_theField == null) { ... } }
+                        && !IsCoalesceAssignmentWithinGuardedLock(assignment, context.SemanticModel))
                     {
                         var diagnostic = Diagnostic.Create(
                             _rule,
@@ -142,6 +143,35 @@ namespace DogmaSolutions.Analyzers
             var ancestor = assignment.AncestorsAndSelf().OfType<LockStatementSyntax>().FirstOrDefault();
             return ancestor != null;
         }*/
+
+        private static bool IsCoalesceAssignmentWithinGuardedLock(AssignmentExpressionSyntax assignment, SemanticModel semanticModel)
+        {
+            if (!assignment.IsKind(SyntaxKind.CoalesceAssignmentExpression))
+                return false;
+
+            var lockAncestor = assignment.Ancestors().OfType<LockStatementSyntax>().FirstOrDefault();
+            if (lockAncestor == null)
+                return false;
+
+            var parent = lockAncestor.Parent;
+            while (parent != null)
+            {
+                if (parent is IfStatementSyntax ifStatement &&
+                    ifStatement.Condition is BinaryExpressionSyntax binaryExpression &&
+                    binaryExpression.Kind() == SyntaxKind.EqualsExpression &&
+                    IsFieldAccess(binaryExpression.Left, semanticModel) &&
+                    SymbolEqualityComparer.Default.Equals(GetFieldSymbol(binaryExpression.Left, semanticModel), GetFieldSymbol(assignment.Left, semanticModel)) &&
+                    binaryExpression.Right is LiteralExpressionSyntax literalExpression &&
+                    literalExpression.Token.ValueText == "null")
+                {
+                    return true;
+                }
+
+                parent = parent.Parent;
+            }
+
+            return false;
+        }
 
         private static bool IsWithinGuardedLockStatement(IfStatementSyntax innerIfStatement, AssignmentExpressionSyntax assignment, SemanticModel semanticModel)
         {
