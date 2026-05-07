@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DogmaSolutions.Analyzers.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DogmaSolutions.Analyzers.Vsix", "DogmaSolutions.Analyzers.Vsix\DogmaSolutions.Analyzers.Vsix.csproj", "{23E4E4C3-CE0A-4E66-BE25-ACF55D88AC6C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared files", "Shared files", "{0375A6A6-9FFB-4772-82A3-E72F773CADCB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ROOT", "ROOT", "{0375A6A6-9FFB-4772-82A3-E72F773CADCB}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
@@ -21,9 +21,25 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared files", "Shared file
 		DuplicateCode.Allowed.txt = DuplicateCode.Allowed.txt
 		LICENSE = LICENSE
 		README.md = README.md
+		CODE_OF_CONDUCT.md = CODE_OF_CONDUCT.md
+		CONTRIBUTING.md = CONTRIBUTING.md
+		SECURITY.md = SECURITY.md
+		.gitattributes = .gitattributes
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DogmaSolutions.Analyzers.WorkbenchLibrary", "DogmaSolutions.Analyzers.WorkbenchLibrary\DogmaSolutions.Analyzers.WorkbenchLibrary.csproj", "{D07A472B-B9EB-494F-A770-4971CA64FF05}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{F2CE13F1-444E-42BB-917A-6D394C56E9CA}"
+	ProjectSection(SolutionItems) = preProject
+		.github\PULL_REQUEST_TEMPLATE.md = .github\PULL_REQUEST_TEMPLATE.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ISSUE_TEMPLATE", "ISSUE_TEMPLATE", "{7196CB7B-BEC9-4D40-9B3F-712A29409DB0}"
+	ProjectSection(SolutionItems) = preProject
+		.github\ISSUE_TEMPLATE\bug_report.yml = .github\ISSUE_TEMPLATE\bug_report.yml
+		.github\ISSUE_TEMPLATE\config.yml = .github\ISSUE_TEMPLATE\config.yml
+		.github\ISSUE_TEMPLATE\feature_request.yml = .github\ISSUE_TEMPLATE\feature_request.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,5 +73,8 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E4F1BBA-0DF9-490C-9DD1-DACA1BF4E0A3}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7196CB7B-BEC9-4D40-9B3F-712A29409DB0} = {F2CE13F1-444E-42BB-917A-6D394C56E9CA}
 	EndGlobalSection
 EndGlobal

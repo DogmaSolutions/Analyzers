@@ -1,0 +1,65 @@
+name: Feature Request
+description: Suggest a new analyzer rule or an improvement to an existing one
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Request Type
+      options:
+        - New analyzer rule
+        - Improvement to existing rule
+        - New code fix
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: rule
+    attributes:
+      label: Related Rule
+      description: If this relates to an existing rule, which one?
+      placeholder: DSAxxx
+    validations:
+      required: false
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: What code pattern should be detected, or what improvement do you want?
+    validations:
+      required: true
+
+  - type: textarea
+    id: example-bad
+    attributes:
+      label: Example Code (should trigger)
+      description: C# code that the analyzer should flag.
+      render: csharp
+    validations:
+      required: false
+
+  - type: textarea
+    id: example-good
+    attributes:
+      label: Example Code (should not trigger)
+      description: C# code that is correct and should be left alone.
+      render: csharp
+    validations:
+      required: false
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Suggested Category
+      options:
+        - Design
+        - Security
+        - Performance
+        - Code Smells
+        - Bug
+        - Best Practice
+        - Not sure
+    validations:
+      required: false

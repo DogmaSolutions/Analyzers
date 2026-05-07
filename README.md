@@ -2,7 +2,28 @@
 
 [![DogmaSolutions.Analyzers on NuGet](https://img.shields.io/nuget/v/DogmaSolutions.Analyzers.svg)](https://www.nuget.org/packages/DogmaSolutions.Analyzers/)
 
-A set of Roslyn Analyzers aimed to enforce some design good practices and code quality (QA) rules.
+A set of C# Roslyn analyzers that catch bugs, design flaws, and security pitfalls at compile time -- before they reach code review or production.
+
+The package currently ships 23 rules across six categories (Design, Security, Performance, Code Smells, Bug, Best Practice); most include an automatic code fix.  
+Rules range from straightforward code-smell detection (e.g. `DateTime.Now` instead of `DateTime.UtcNow`) to cross-method semantic analysis (e.g. Entity Framework queries missing `TagWith`, check-then-act race conditions on concurrent collections, or loop-invariant expressions that should be hoisted).
+
+Install via NuGet and every rule is enforced automatically during compilation, with severity levels configurable through `.editorconfig`.
+
+---
+
+# 📒 Versioning criteria
+The NuGet package follows the conventions of [Semantic Versioning 2.0.0](https://semver.org/).  
+Cit.:
+```
+Given a version number MAJOR.MINOR.PATCH, increment the:
+1. MAJOR version when you make incompatible API changes
+2. MINOR version when you add functionality in a backward compatible manner
+3. PATCH version when you make backward compatible bug fixes
+
+Additional labels for pre-release and build metadata are available as extensions to the MAJOR.MINOR.PATCH format.
+```
+
+---
 
 # Rules structure
 
@@ -32,17 +53,17 @@ Every rule is accompanied by the following information and clues:
 | [DSA011](#dsa011) | Design        | Avoid lazily initialized, self-contained, static singleton properties                                                                                                                                      | ⚠ Warning        | ✅          | ❌        |
 | [DSA012](#dsa012) | Design        | Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU)                                                                                                               | ⚠ Warning        | ✅          | ❌        |
 | [DSA013](#dsa013) | Security      | Minimal API endpoints should have an explicit authorization configuration                                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
-| [DSA014](#dsa014) | Security      | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                   | ⚠ Warning        | ✅          | ✅        |
-| [DSA015](#dsa015) | Security      | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                   | ⚠ Warning        | ✅          | ✅        |
-| [DSA016](#dsa016) | Code Smells   | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                           | ⚠ Warning        | ✅          | ❌        |
-| [DSA017](#dsa017) | Design        | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                 | ⚠ Warning        | ✅          | ❌        |
-| [DSA018](#dsa018) | Design        | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                         | ⚠ Warning        | ✅          | ❌        |
-| [DSA019](#dsa019) | Code Smells   | Avoid repeated deeply nested member access chains                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
-| [DSA020](#dsa020) | Code Smells   | Remove redundant async/await on Task.FromResult                                                                                                                                                             | ⚠ Warning        | ✅          | ✅        |
-| [DSA021](#dsa021) | Best Practice | Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
-| [DSA022](#dsa022) | Performance | Hoist loop-invariant expression out of inner loop                                                                                                                                                           | ⚠ Warning        | ✅          | ✅        |
-| [DSA023](#dsa023) | Best Practice | Use Path.Combine instead of string concatenation to build file system paths                                                                                                                                 | ⚠ Warning        | ✅          | ✅        |
-| [DSA024](#dsa024) | Best Practice | Use Path.Combine instead of string concatenation for path-like parameters                                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
+| [DSA014](#dsa014) | Security      | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
+| [DSA015](#dsa015) | Security      | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                  | ⚠ Warning        | ✅          | ✅        |
+| [DSA016](#dsa016) | Code Smells   | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                          | ⚠ Warning        | ✅          | ❌        |
+| [DSA017](#dsa017) | Design        | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                | ⚠ Warning        | ✅          | ❌        |
+| [DSA018](#dsa018) | Design        | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                        | ⚠ Warning        | ✅          | ❌        |
+| [DSA019](#dsa019) | Code Smells   | Avoid repeated deeply nested member access chains                                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
+| [DSA020](#dsa020) | Code Smells   | Remove redundant async/await on `Task.FromResult`                                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
+| [DSA021](#dsa021) | Best Practice | Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability                                                                                                                 | ⚠ Warning        | ✅          | ✅        |
+| [DSA022](#dsa022) | Performance | Hoist loop-invariant expression out of inner loop                                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
+| [DSA023](#dsa023) | Best Practice | Use `Path.Combine` instead of string concatenation to build file system paths                                                                                                                              | ⚠ Warning        | ✅          | ✅        |
+| [DSA024](#dsa024) | Best Practice | Use `Path.Combine` instead of string concatenation for path-like parameters                                                                                                                                | ⚠ Warning        | ✅          | ✅        |
 
 ---
 
@@ -2525,3 +2546,19 @@ Just download and install the NuGet package
 [![DogmaSolutions.Analyzers on NuGet](https://img.shields.io/nuget/v/DogmaSolutions.Analyzers.svg)](https://www.nuget.org/packages/DogmaSolutions.Analyzers/)
 
 [https://www.nuget.org/packages/DogmaSolutions.Analyzers](https://www.nuget.org/packages/DogmaSolutions.Analyzers)
+
+# Contributing
+
+Contributions are welcome! Please read the [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.
+
+# Security
+
+To report a security vulnerability, please follow the instructions in [SECURITY.md](SECURITY.md). Do not open a public issue for security reports.
+
+# Code of Conduct
+
+This project follows the [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/). See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details.
+
+# License
+
+This project is licensed under the [MIT License](LICENSE).
