@@ -361,8 +361,18 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
                 .ToArray();
         }
 
-        return System.Array.Empty<string>();
+        return DefaultExcludedPrefixes;
     }
+
+    private static readonly string[] DefaultExcludedPrefixes =
+    {
+        "Is",
+        "Has",
+        "Does",
+        "Contains",
+        "Throws",
+        "Assert.That",
+    };
 
     private static readonly HashSet<string> DefaultIgnoredIntermediateMembers = new HashSet<string>(StringComparer.Ordinal)
     {

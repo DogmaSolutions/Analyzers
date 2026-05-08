@@ -1763,10 +1763,22 @@ dotnet_diagnostic.DSA019.max_repeated_dereferenciation_depth = 3
 ```
 # Comma-separated list of chain prefixes to exclude from analysis.
 # Any member access chain starting with one of these prefixes will not be flagged.
+# When specified, this list REPLACES the built-in defaults entirely.
 dotnet_diagnostic.DSA019.excluded_prefixes = Is.Not, Has.No, Does.Not, Should
 ```
 
-This is particularly useful in test projects where fluent assertion frameworks produce deep chains by design.
+When this option is **not specified**, the following defaults apply:
+
+| Prefix | Framework |
+|---|---|
+| `Is` | NUnit constraint model (`Is.Not.Null.And.Not.Empty`) |
+| `Has` | NUnit constraint model (`Has.Count.EqualTo(3)`) |
+| `Does` | NUnit constraint model (`Does.Not.Contain("x")`) |
+| `Contains` | NUnit constraint model (`Contains.Substring("x")`) |
+| `Throws` | NUnit constraint model (`Throws.TypeOf<Exception>()`) |
+| `Assert.That` | NUnit / xUnit assertion entry point |
+
+This is particularly useful in test projects where fluent assertion frameworks produce deep chains by design. For additional frameworks, specify the full set in `.editorconfig` (the built-in defaults are replaced when the option is set).
 
 **Ignored intermediate members**: some methods in a chain add syntactic depth but no semantic complexity — they configure behavior without changing the data shape. These methods contribute zero to the effective chain depth. The option accepts a comma-separated list of member names:
 
@@ -1844,10 +1856,9 @@ var lights = home.Rooms.Bathroom.Lights;
 var primary = lights[0].IsOn();
 var secondary = lights[1].IsOn();  // ✅ no deep chain repeated
 
-// Excluded prefix (configured via excluded_prefixes in .editorconfig)
-// With: dotnet_diagnostic.DSA019.excluded_prefixes = Is.Not
-var a = Is.Not.Null.And.GreaterThan(0);
-var b = Is.Not.Null.And.GreaterThanOrEqualTo(0);  // ✅ excluded by prefix
+// Default excluded prefix (NUnit constraint model roots are excluded out of the box)
+Assert.That(result.Trace, Is.Not.Null.And.Not.Empty);
+Assert.That(result.Output, Is.Not.Null.And.Not.Empty);  // ✅ excluded by default prefix "Is"
 
 // Ignored intermediate member (TagWithCallSite is in defaults)
 var a = context.Items.TagWithCallSite().FirstOrDefault(x => x.Id == 1);

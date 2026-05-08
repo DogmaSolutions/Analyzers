@@ -521,6 +521,118 @@ public partial class DSA019Tests
     }
 
     [TestMethod]
+    public async Task ExcludedPrefix_DefaultPrefixes_SuppressNUnitAssertions()
+    {
+        var sourceCode = @"
+            namespace TestApp
+            {
+                public class EmptyConstraint { public int X; }
+                public class AndConstraint { public EmptyConstraint Empty; public EmptyConstraint Not; }
+                public class NullConstraint { public AndConstraint And; }
+                public class NotConstraint { public NullConstraint Null; }
+                public static class Is { public static NotConstraint Not; }
+                public class Result { public string Trace; }
+                public class MyTests
+                {
+                    public void Verify()
+                    {
+                        var a = Is.Not.Null.And.Not;
+                        var b = Is.Not.Null.And.Not;
+                        var c = Is.Not.Null.And.Empty;
+                        var d = Is.Not.Null.And.Empty;
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+
+        // No diagnostics expected — Is is a default excluded prefix (no .editorconfig needed)
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExcludedPrefix_DefaultPrefixes_SuppressAllFrameworkRoots()
+    {
+        var sourceCode = @"
+            namespace TestApp
+            {
+                public class Deep { public int Value; }
+                public class Mid { public Deep Deep; }
+                public class Root { public Mid Mid; }
+                public static class Is { public static Root Root; }
+                public static class Has { public static Root Root; }
+                public static class Does { public static Root Root; }
+                public static class Contains { public static Root Root; }
+                public static class Throws { public static Root Root; }
+                public class MyTests
+                {
+                    public void Verify()
+                    {
+                        var a = Is.Root.Mid.Deep.Value;
+                        var b = Is.Root.Mid.Deep.Value;
+                        var c = Has.Root.Mid.Deep.Value;
+                        var d = Has.Root.Mid.Deep.Value;
+                        var e = Does.Root.Mid.Deep.Value;
+                        var f = Does.Root.Mid.Deep.Value;
+                        var g = Contains.Root.Mid.Deep.Value;
+                        var h = Contains.Root.Mid.Deep.Value;
+                        var i = Throws.Root.Mid.Deep.Value;
+                        var j = Throws.Root.Mid.Deep.Value;
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+
+        // No diagnostics — all roots are default excluded prefixes
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExcludedPrefix_DefaultPrefixes_CanBeOverriddenToEmpty()
+    {
+        var sourceCode = @"
+            namespace TestApp
+            {
+                public class Deep { public int X; public int Y; }
+                public class Mid { public Deep Deep; }
+                public class Root { public Mid Mid; }
+                public static class Is { public static Root Root; }
+                public class MyTests
+                {
+                    public void Verify()
+                    {
+                        var a = {|#0:Is.Root.Mid.Deep|}.X;
+                        var b = {|#1:Is.Root.Mid.Deep|}.Y;
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA019Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA019.excluded_prefixes = none
+"));
+
+        // Setting excluded_prefixes to a non-matching value overrides defaults — Is chain gets flagged
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("Is.Root.Mid.Deep", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA019Analyzer>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("Is.Root.Mid.Deep", 2));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
     public async Task ExcludedPrefix_SingleEntry_SuppressesChain()
     {
         var sourceCode = @"
