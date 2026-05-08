@@ -63,7 +63,11 @@ public sealed class DSA013Analyzer : DiagnosticAnalyzer
             return;
 
         // Skip if receiver type is RouteGroupBuilder (DSA014 handles it)
-        var receiverType = EndpointAuthorizationUtils.GetReceiverType(invocation, context.SemanticModel);
+        // Derive type from symbol when possible to avoid a second semantic model call
+        var receiverType = (receiverSymbol as ILocalSymbol)?.Type
+            ?? (receiverSymbol as IFieldSymbol)?.Type
+            ?? (receiverSymbol as IPropertySymbol)?.Type
+            ?? EndpointAuthorizationUtils.GetReceiverType(invocation, context.SemanticModel);
         if (EndpointAuthorizationUtils.IsRouteGroupBuilder(receiverType))
             return;
 

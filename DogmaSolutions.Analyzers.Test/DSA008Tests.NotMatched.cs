@@ -113,6 +113,45 @@ public partial class DSA008Tests
             }
             """
         ],
+        [
+            "DateTime property without [Required] attribute",
+            """
+            using System;
+            namespace WebApplication1
+            {
+                public class MyClass
+                {
+                    public DateTime MyProperty { get; set; }
+                }
+            }
+            """
+        ],
+        [
+            "[Required] on string property: not DateTime",
+            """
+            using System.ComponentModel.DataAnnotations;
+            namespace WebApplication1
+            {
+                public class MyClass
+                {
+                    [Required] public string MyProperty { get; set; }
+                }
+            }
+            """
+        ],
+        [
+            "[Required] on int property: not DateTime",
+            """
+            using System.ComponentModel.DataAnnotations;
+            namespace WebApplication1
+            {
+                public class MyClass
+                {
+                    [Required] public int MyProperty { get; set; }
+                }
+            }
+            """
+        ],
     ];
 
     [TestMethod]

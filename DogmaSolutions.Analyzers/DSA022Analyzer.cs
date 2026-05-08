@@ -160,54 +160,62 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
             }
         }
 
-        foreach (var localDecl in loopBody.DescendantNodes().OfType<VariableDeclaratorSyntax>())
+        // Handle stacked loops without braces: the body IS the nested loop, not a descendant
+        if (loopBody is ForEachStatementSyntax bodyForEach)
         {
-            var symbol = model.GetDeclaredSymbol(localDecl);
-            if (symbol != null)
-                modified.Add(symbol);
+            var sym = model.GetDeclaredSymbol(bodyForEach);
+            if (sym != null)
+                modified.Add(sym);
         }
 
-        foreach (var designation in loopBody.DescendantNodes().OfType<SingleVariableDesignationSyntax>())
+        foreach (var node in loopBody.DescendantNodes())
         {
-            var symbol = model.GetDeclaredSymbol(designation);
-            if (symbol != null)
-                modified.Add(symbol);
-        }
-
-        foreach (var assignment in loopBody.DescendantNodes().OfType<AssignmentExpressionSyntax>())
-        {
-            var symbol = model.GetSymbolInfo(assignment.Left).Symbol;
-            if (symbol != null)
-                modified.Add(symbol);
-        }
-
-        foreach (var prefix in loopBody.DescendantNodes().OfType<PrefixUnaryExpressionSyntax>())
-        {
-            if (prefix.IsKind(SyntaxKind.PreIncrementExpression) || prefix.IsKind(SyntaxKind.PreDecrementExpression))
+            ISymbol symbol;
+            switch (node)
             {
-                var symbol = model.GetSymbolInfo(prefix.Operand).Symbol;
-                if (symbol != null)
-                    modified.Add(symbol);
-            }
-        }
+                case VariableDeclaratorSyntax localDecl:
+                    symbol = model.GetDeclaredSymbol(localDecl);
+                    if (symbol != null)
+                        modified.Add(symbol);
+                    break;
 
-        foreach (var postfix in loopBody.DescendantNodes().OfType<PostfixUnaryExpressionSyntax>())
-        {
-            if (postfix.IsKind(SyntaxKind.PostIncrementExpression) || postfix.IsKind(SyntaxKind.PostDecrementExpression))
-            {
-                var symbol = model.GetSymbolInfo(postfix.Operand).Symbol;
-                if (symbol != null)
-                    modified.Add(symbol);
-            }
-        }
+                case SingleVariableDesignationSyntax designation:
+                    symbol = model.GetDeclaredSymbol(designation);
+                    if (symbol != null)
+                        modified.Add(symbol);
+                    break;
 
-        foreach (var argument in loopBody.DescendantNodes().OfType<ArgumentSyntax>())
-        {
-            if (!argument.RefOrOutKeyword.IsKind(SyntaxKind.None))
-            {
-                var symbol = model.GetSymbolInfo(argument.Expression).Symbol;
-                if (symbol != null)
-                    modified.Add(symbol);
+                case ForEachStatementSyntax nestedForEach:
+                    symbol = model.GetDeclaredSymbol(nestedForEach);
+                    if (symbol != null)
+                        modified.Add(symbol);
+                    break;
+
+                case AssignmentExpressionSyntax assignment:
+                    symbol = model.GetSymbolInfo(assignment.Left).Symbol;
+                    if (symbol != null)
+                        modified.Add(symbol);
+                    break;
+
+                case PrefixUnaryExpressionSyntax prefix
+                    when prefix.IsKind(SyntaxKind.PreIncrementExpression) || prefix.IsKind(SyntaxKind.PreDecrementExpression):
+                    symbol = model.GetSymbolInfo(prefix.Operand).Symbol;
+                    if (symbol != null)
+                        modified.Add(symbol);
+                    break;
+
+                case PostfixUnaryExpressionSyntax postfix
+                    when postfix.IsKind(SyntaxKind.PostIncrementExpression) || postfix.IsKind(SyntaxKind.PostDecrementExpression):
+                    symbol = model.GetSymbolInfo(postfix.Operand).Symbol;
+                    if (symbol != null)
+                        modified.Add(symbol);
+                    break;
+
+                case ArgumentSyntax argument when !argument.RefOrOutKeyword.IsKind(SyntaxKind.None):
+                    symbol = model.GetSymbolInfo(argument.Expression).Symbol;
+                    if (symbol != null)
+                        modified.Add(symbol);
+                    break;
             }
         }
 
@@ -236,32 +244,29 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
 
     internal static bool IsInvariant(ExpressionSyntax expr, HashSet<ISymbol> modifiedSymbols, SemanticModel model)
     {
-        if (expr.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>().Any())
-            return false;
-
-        if (expr.DescendantNodesAndSelf().OfType<ObjectCreationExpressionSyntax>().Any())
-            return false;
-
-        if (expr.DescendantNodesAndSelf().OfType<ElementAccessExpressionSyntax>().Any())
-            return false;
-
-        if (expr.DescendantNodesAndSelf().OfType<MemberAccessExpressionSyntax>().Any())
-            return false;
-
-        if (expr.DescendantNodesAndSelf().OfType<AwaitExpressionSyntax>().Any())
-            return false;
-
-        foreach (var identifier in expr.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
+        foreach (var node in expr.DescendantNodesAndSelf())
         {
-            var symbol = model.GetSymbolInfo(identifier).Symbol;
-            if (symbol == null)
-                return false;
+            switch (node)
+            {
+                case InvocationExpressionSyntax:
+                case ObjectCreationExpressionSyntax:
+                case ElementAccessExpressionSyntax:
+                case MemberAccessExpressionSyntax:
+                case AwaitExpressionSyntax:
+                    return false;
 
-            if (modifiedSymbols.Contains(symbol))
-                return false;
+                case IdentifierNameSyntax identifier:
+                    var symbol = model.GetSymbolInfo(identifier).Symbol;
+                    if (symbol == null)
+                        return false;
 
-            if (!(symbol is ILocalSymbol) && !(symbol is IParameterSymbol) && !(symbol is IFieldSymbol { IsConst: true }))
-                return false;
+                    if (modifiedSymbols.Contains(symbol))
+                        return false;
+
+                    if (!(symbol is ILocalSymbol) && !(symbol is IParameterSymbol) && !(symbol is IFieldSymbol { IsConst: true }))
+                        return false;
+                    break;
+            }
         }
 
         return true;

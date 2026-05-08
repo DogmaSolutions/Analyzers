@@ -113,6 +113,32 @@ public partial class DSA009Tests
             }
             """
         ],
+        [
+            "DateTimeOffset property without [Required] attribute",
+            """
+            using System;
+            namespace WebApplication1
+            {
+                public class MyClass
+                {
+                    public DateTimeOffset MyProperty { get; set; }
+                }
+            }
+            """
+        ],
+        [
+            "[Required] on string property: not DateTimeOffset",
+            """
+            using System.ComponentModel.DataAnnotations;
+            namespace WebApplication1
+            {
+                public class MyClass
+                {
+                    [Required] public string MyProperty { get; set; }
+                }
+            }
+            """
+        ],
     ];
 
     [TestMethod]

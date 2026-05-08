@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -47,6 +48,67 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: _description,
         helpLinkUri: "https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA019");
+
+    private static readonly ConcurrentDictionary<AnalyzerConfigOptions, ParsedConfig> _configCache =
+        new ConcurrentDictionary<AnalyzerConfigOptions, ParsedConfig>();
+
+    private sealed class ParsedConfig
+    {
+        public readonly int Threshold;
+        public readonly string[] ExcludedPrefixes;
+        public readonly HashSet<string> IgnoredIntermediateMembers;
+
+        public ParsedConfig(AnalyzerConfigOptions config)
+        {
+            if (config.TryGetValue(MaxDepthOptionKey, out var depthValue) &&
+                int.TryParse(depthValue, out var threshold) &&
+                threshold > 0)
+            {
+                Threshold = threshold;
+            }
+            else
+            {
+                Threshold = DefaultMaxDepth;
+            }
+
+            if (config.TryGetValue(ExcludedPrefixesOptionKey, out var prefixValue) &&
+                !string.IsNullOrWhiteSpace(prefixValue))
+            {
+                ExcludedPrefixes = prefixValue.Split(',')
+                    .Select(p => p.Trim())
+                    .Where(p => p.Length > 0)
+                    .ToArray();
+            }
+            else
+            {
+                ExcludedPrefixes = DefaultExcludedPrefixes;
+            }
+
+            if (config.TryGetValue(IgnoredIntermediateMembersOptionKey, out var membersValue) &&
+                !string.IsNullOrWhiteSpace(membersValue))
+            {
+                var set = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var name in membersValue.Split(','))
+                {
+                    var trimmed = name.Trim();
+                    if (trimmed.Length > 0)
+                        set.Add(trimmed);
+                }
+
+                IgnoredIntermediateMembers = set;
+            }
+            else
+            {
+                IgnoredIntermediateMembers = DefaultIgnoredIntermediateMembers;
+            }
+        }
+    }
+
+    private static ParsedConfig GetParsedConfig(SyntaxNodeAnalysisContext context)
+    {
+        var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
+        return _configCache.GetOrAdd(options, o => new ParsedConfig(o));
+    }
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
 
@@ -197,15 +259,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
     private static int GetThreshold(SyntaxNodeAnalysisContext context)
     {
-        var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        if (config.TryGetValue(MaxDepthOptionKey, out var configValue) &&
-            int.TryParse(configValue, out var threshold) &&
-            threshold > 0)
-        {
-            return threshold;
-        }
-
-        return DefaultMaxDepth;
+        return GetParsedConfig(context).Threshold;
     }
 
     /// <summary>
@@ -351,17 +405,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
     private static string[] GetExcludedPrefixes(SyntaxNodeAnalysisContext context)
     {
-        var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        if (config.TryGetValue(ExcludedPrefixesOptionKey, out var configValue) &&
-            !string.IsNullOrWhiteSpace(configValue))
-        {
-            return configValue.Split(',')
-                .Select(p => p.Trim())
-                .Where(p => p.Length > 0)
-                .ToArray();
-        }
-
-        return DefaultExcludedPrefixes;
+        return GetParsedConfig(context).ExcludedPrefixes;
     }
 
     private static readonly string[] DefaultExcludedPrefixes =
@@ -390,22 +434,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
     private static HashSet<string> GetIgnoredIntermediateMembers(SyntaxNodeAnalysisContext context)
     {
-        var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        if (config.TryGetValue(IgnoredIntermediateMembersOptionKey, out var configValue) &&
-            !string.IsNullOrWhiteSpace(configValue))
-        {
-            var set = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var name in configValue.Split(','))
-            {
-                var trimmed = name.Trim();
-                if (trimmed.Length > 0)
-                    set.Add(trimmed);
-            }
-
-            return set;
-        }
-
-        return DefaultIgnoredIntermediateMembers;
+        return GetParsedConfig(context).IgnoredIntermediateMembers;
     }
 
     /// <summary>

@@ -44,7 +44,7 @@ public partial class DSA011Tests
             {
                 private static MyClass _instance;
 
-                {|#0:public static MyClass Instance 
+                {|#0:public static MyClass Instance
                 {
                  get {
 
@@ -60,8 +60,36 @@ return _instance;
 }
                 }|}
             }"
+        ],
+        [
+            "Coalesced assignment with factory method",
+            @"
+            public class MyClass
+            {
+                private static MyClass _instance;
+                private static MyClass CreateInstance() => new MyClass();
+
+                {|#0:public static MyClass Instance => _instance ??= CreateInstance();|}
+            }"
+        ],
+        [
+            "If-null assignment in get body without braces, different formatting",
+            @"
+            public class MyClass
+            {
+                private static MyClass _instance;
+
+                {|#0:public static MyClass Instance
+                {
+                 get
+                 {
+                   if (_instance == null)
+                    _instance = new MyClass();
+                   return _instance;
+                 }
+                }|}
+            }"
         ]
-        
     ];
 
 

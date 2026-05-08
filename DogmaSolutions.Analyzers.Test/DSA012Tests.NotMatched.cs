@@ -179,6 +179,77 @@ public partial class DSA012Tests
                 }
             }"
         ],
+        [
+            "Positive Any on DbSet without any subsequent Add",
+            @"
+            using System.Linq;
+            using Microsoft.EntityFrameworkCore;
+            namespace TestApp
+            {
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
+                {
+                    private readonly MyDbContext _db = null;
+                    public void CheckItem(string name)
+                    {
+                        if (_db.Items.Any(x => x.Name == name))
+                        {
+                            System.Console.WriteLine(""found"");
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Negated Any on DbSet without Add in body",
+            @"
+            using System.Linq;
+            using Microsoft.EntityFrameworkCore;
+            namespace TestApp
+            {
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
+                {
+                    private readonly MyDbContext _db = null;
+                    public void CheckItem(string name)
+                    {
+                        if (!_db.Items.Any(x => x.Name == name))
+                        {
+                            System.Console.WriteLine(""not found"");
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Check and insert on different DbSets",
+            @"
+            using System.Linq;
+            using Microsoft.EntityFrameworkCore;
+            namespace TestApp
+            {
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class Log { public int Id { get; set; } public string Message { get; set; } }
+                public class MyDbContext : DbContext
+                {
+                    public DbSet<Item> Items { get; set; }
+                    public DbSet<Log> Logs { get; set; }
+                }
+                public class MyService
+                {
+                    private readonly MyDbContext _db = null;
+                    public void Process(string name)
+                    {
+                        if (!_db.Items.Any(x => x.Name == name))
+                        {
+                            _db.Logs.Add(new Log { Message = name });
+                        }
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

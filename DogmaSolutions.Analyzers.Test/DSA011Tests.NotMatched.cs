@@ -38,6 +38,49 @@ public partial class DSA011Tests
 
                 public static MyClass Instance => _instance;
             }"
+        ],
+        [
+            "Thread-safe Lazy wrapper",
+            @"
+            using System;
+            public class MyClass
+            {
+                private static readonly Lazy<MyClass> _lazy = new Lazy<MyClass>(() => new MyClass());
+
+                public static MyClass Instance => _lazy.Value;
+            }"
+        ],
+        [
+            "If-null with braces in get body is not detected",
+            @"
+            public class MyClass
+            {
+                private static MyClass _instance;
+
+                public static MyClass Instance
+                {
+                    get
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new MyClass();
+                        }
+                        return _instance;
+                    }
+                }
+            }"
+        ],
+        [
+            "Static property returning field from a different class",
+            @"
+            public class Storage
+            {
+                public static MyClass SharedInstance;
+            }
+            public class MyClass
+            {
+                public static MyClass Instance => Storage.SharedInstance ??= new MyClass();
+            }"
         ]
     ];
 

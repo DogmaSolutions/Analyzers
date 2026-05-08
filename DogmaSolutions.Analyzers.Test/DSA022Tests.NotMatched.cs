@@ -609,6 +609,31 @@ public partial class DSA022Tests
                 }
             }"
         ],
+        [
+            "Stacked foreach without braces: inner iteration variable in expression analyzed from outer loop",
+            @"
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test()
+                    {
+                        float[] thresholds = { 0.6f, 0.7f };
+                        int[] bandHeights = { 20, 30 };
+                        int[] minConsecs = { 2, 3 };
+                        foreach (float et in thresholds)
+                        foreach (int bh in bandHeights)
+                        {
+                            var halfBandHeight = bh / 2;
+                            foreach (int mc in minConsecs)
+                            {
+                                int step = halfBandHeight + mc;
+                            }
+                        }
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

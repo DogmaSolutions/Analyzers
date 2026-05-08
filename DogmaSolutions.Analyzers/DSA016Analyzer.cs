@@ -94,6 +94,8 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         if (scope == null)
             return;
 
+        var normalizedArgs = NormalizeWhitespace(argsText);
+
         // Count how many invocations in the same scope have the same key (including self)
         var count = 1; // count self
         foreach (var sibling in GetInvocationsInScope(scope))
@@ -104,7 +106,10 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
             if (!TryGetInvocationParts(sibling, out var sibReceiver, out var sibMethod, out var sibArgs))
                 continue;
 
-            if (!TrackedMethods.Contains(sibMethod))
+            if (!string.Equals(sibMethod, methodName, StringComparison.Ordinal))
+                continue;
+
+            if (NormalizeWhitespace(sibArgs) != normalizedArgs)
                 continue;
 
             if (IsStaticMethodCall(sibling, context.SemanticModel))

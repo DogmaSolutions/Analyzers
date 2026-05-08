@@ -119,8 +119,14 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
     private static bool IsEntityFrameworkChain(InvocationExpressionSyntax terminalInvocation, SemanticModel semanticModel)
     {
         var terminalSymbol = semanticModel.GetSymbolInfo(terminalInvocation).Symbol as IMethodSymbol;
-        if (terminalSymbol != null && IsEntityFrameworkExtensionMethod(terminalSymbol))
-            return true;
+        if (terminalSymbol != null)
+        {
+            if (IsEntityFrameworkExtensionMethod(terminalSymbol))
+                return true;
+
+            if (!terminalSymbol.IsExtensionMethod && terminalSymbol.ReducedFrom == null)
+                return false;
+        }
 
         ExpressionSyntax current = GetReceiver(terminalInvocation);
         while (current != null)

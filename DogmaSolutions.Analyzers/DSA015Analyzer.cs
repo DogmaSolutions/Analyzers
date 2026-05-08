@@ -57,13 +57,17 @@ public sealed class DSA015Analyzer : DiagnosticAnalyzer
         if (!EndpointAuthorizationUtils.TryGetMapMethodName(invocation, out var mapMethodName))
             return;
 
+        // Extract receiver once to avoid duplicate semantic model queries
+        if (!(invocation.Expression is MemberAccessExpressionSyntax mapAccess))
+            return;
+        var receiverSymbol = context.SemanticModel.GetSymbolInfo(mapAccess.Expression).Symbol;
+
         // Only handle IEndpointRouteBuilder parameters (not RouteGroupBuilder — DSA014 handles those)
-        var receiverSymbol = EndpointAuthorizationUtils.GetReceiverSymbol(invocation, context.SemanticModel);
         if (!(receiverSymbol is IParameterSymbol parameter))
             return;
 
-        var receiverType = EndpointAuthorizationUtils.GetReceiverType(invocation, context.SemanticModel);
-        if (EndpointAuthorizationUtils.IsRouteGroupBuilder(receiverType))
+        // Derive type from parameter symbol directly instead of a second GetTypeInfo call
+        if (EndpointAuthorizationUtils.IsRouteGroupBuilder(parameter.Type))
             return;
 
         // Check the endpoint's own fluent chain for auth

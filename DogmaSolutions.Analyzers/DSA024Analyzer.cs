@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -54,6 +55,9 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
     private static readonly string[] DSA023InstanceTypeNames = { "FileInfo", "DirectoryInfo", "StreamReader", "StreamWriter", "FileStream" };
 
     private static readonly string[] ExcludedNamespaces = { "System.Management" };
+
+    private static readonly ConcurrentDictionary<AnalyzerConfigOptions, string[]> _exactNamesCache = new();
+    private static readonly ConcurrentDictionary<AnalyzerConfigOptions, string[]> _prefixSuffixNamesCache = new();
 
     public override void Initialize(AnalysisContext context)
     {
@@ -264,30 +268,36 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
     internal static string[] GetExactNames(SyntaxNodeAnalysisContext context)
     {
         var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        if (config.TryGetValue(ExactNamesOptionKey, out var configValue) &&
-            !string.IsNullOrWhiteSpace(configValue))
+        return _exactNamesCache.GetOrAdd(config, static c =>
         {
-            return configValue.Split(',')
-                .Select(p => p.Trim())
-                .Where(p => p.Length > 0)
-                .ToArray();
-        }
+            if (c.TryGetValue(ExactNamesOptionKey, out var configValue) &&
+                !string.IsNullOrWhiteSpace(configValue))
+            {
+                return configValue.Split(',')
+                    .Select(p => p.Trim())
+                    .Where(p => p.Length > 0)
+                    .ToArray();
+            }
 
-        return DefaultExactNames;
+            return DefaultExactNames;
+        });
     }
 
     internal static string[] GetPrefixSuffixNames(SyntaxNodeAnalysisContext context)
     {
         var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        if (config.TryGetValue(PrefixSuffixNamesOptionKey, out var configValue) &&
-            !string.IsNullOrWhiteSpace(configValue))
+        return _prefixSuffixNamesCache.GetOrAdd(config, static c =>
         {
-            return configValue.Split(',')
-                .Select(p => p.Trim())
-                .Where(p => p.Length > 0)
-                .ToArray();
-        }
+            if (c.TryGetValue(PrefixSuffixNamesOptionKey, out var configValue) &&
+                !string.IsNullOrWhiteSpace(configValue))
+            {
+                return configValue.Split(',')
+                    .Select(p => p.Trim())
+                    .Where(p => p.Length > 0)
+                    .ToArray();
+            }
 
-        return DefaultPrefixSuffixNames;
+            return DefaultPrefixSuffixNames;
+        });
     }
 }

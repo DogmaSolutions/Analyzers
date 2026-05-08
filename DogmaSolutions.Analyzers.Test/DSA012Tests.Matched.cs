@@ -122,6 +122,94 @@ public partial class DSA012Tests
                 }
             }"
         ],
+        [
+            "Any() == false + Add on DbSet",
+            @"
+            using System.Linq;
+            using Microsoft.EntityFrameworkCore;
+            namespace TestApp
+            {
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
+                {
+                    private readonly MyDbContext _db = null;
+                    public void AddItem(string name)
+                    {
+                        {|#0:if (_db.Items.Any(x => x.Name == name) == false)
+                        {
+                            _db.Items.Add(new Item { Name = name });
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "Contains + Add on DbSet",
+            @"
+            using System.Linq;
+            using Microsoft.EntityFrameworkCore;
+            namespace TestApp
+            {
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
+                {
+                    private readonly MyDbContext _db = null;
+                    public void AddItem(Item item)
+                    {
+                        {|#0:if (!_db.Items.Contains(item))
+                        {
+                            _db.Items.Add(item);
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "Reversed operands: 0 == Count() + Add on DbSet",
+            @"
+            using System.Linq;
+            using Microsoft.EntityFrameworkCore;
+            namespace TestApp
+            {
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
+                {
+                    private readonly MyDbContext _db = null;
+                    public void AddItem(string name)
+                    {
+                        {|#0:if (0 == _db.Items.Count(x => x.Name == name))
+                        {
+                            _db.Items.Add(new Item { Name = name });
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "SingleOrDefault == null + Add on DbSet",
+            @"
+            using System.Linq;
+            using Microsoft.EntityFrameworkCore;
+            namespace TestApp
+            {
+                public class Item { public int Id { get; set; } public string Name { get; set; } }
+                public class MyDbContext : DbContext { public DbSet<Item> Items { get; set; } }
+                public class MyService
+                {
+                    private readonly MyDbContext _db = null;
+                    public void AddItem(string name)
+                    {
+                        {|#0:if (_db.Items.SingleOrDefault(x => x.Name == name) == null)
+                        {
+                            _db.Items.Add(new Item { Name = name });
+                        }|}
+                    }
+                }
+            }"
+        ],
     ];
 
 

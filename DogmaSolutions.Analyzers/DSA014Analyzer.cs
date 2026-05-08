@@ -58,9 +58,14 @@ public sealed class DSA014Analyzer : DiagnosticAnalyzer
         if (!EndpointAuthorizationUtils.TryGetMapMethodName(invocation, out var mapMethodName))
             return;
 
+        // Extract receiver expression once to avoid duplicate semantic model queries
+        if (!(invocation.Expression is MemberAccessExpressionSyntax mapAccess))
+            return;
+        var receiverExpr = mapAccess.Expression;
+
         // Only handle RouteGroupBuilder receivers
-        var receiverType = EndpointAuthorizationUtils.GetReceiverType(invocation, context.SemanticModel);
-        if (!EndpointAuthorizationUtils.IsRouteGroupBuilder(receiverType))
+        var receiverTypeInfo = context.SemanticModel.GetTypeInfo(receiverExpr);
+        if (!EndpointAuthorizationUtils.IsRouteGroupBuilder(receiverTypeInfo.Type))
             return;
 
         // Check the endpoint's own fluent chain for auth
@@ -68,7 +73,7 @@ public sealed class DSA014Analyzer : DiagnosticAnalyzer
             return;
 
         // Check group-level auth (local: declaration chain, separate calls, nested groups)
-        var receiverSymbol = EndpointAuthorizationUtils.GetReceiverSymbol(invocation, context.SemanticModel);
+        var receiverSymbol = context.SemanticModel.GetSymbolInfo(receiverExpr).Symbol;
         if (receiverSymbol != null)
         {
             // Local analysis works for both local variables and parameters

@@ -109,11 +109,11 @@ namespace WebApplication1
             "SystemException", @"
 using System;
 namespace WebApplication1
-{      
-    public class MyClass 
-    {     
+{
+    public class MyClass
+    {
       public void IsNotOk(int id)
-      {     
+      {
         if(id < 0)
           throw new SystemException(""Invalid id"");
       }
@@ -121,6 +121,147 @@ namespace WebApplication1
 }
 ",
             10, 11, 10, 51
+        ],
+        [
+            "ApplicationException", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsNotOk(int id)
+      {
+        if(id < 0)
+          throw new ApplicationException(""Invalid id"");
+      }
+    }
+}
+",
+            10, 11, 10, 56
+        ],
+        [
+            "IndexOutOfRangeException", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsNotOk(int id)
+      {
+        if(id < 0)
+          throw new IndexOutOfRangeException(""Invalid id"");
+      }
+    }
+}
+",
+            10, 11, 10, 60
+        ],
+        [
+            "NullReferenceException", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsNotOk(int id)
+      {
+        if(id < 0)
+          throw new NullReferenceException(""Invalid id"");
+      }
+    }
+}
+",
+            10, 11, 10, 58
+        ],
+        [
+            "OutOfMemoryException", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsNotOk(int id)
+      {
+        if(id < 0)
+          throw new OutOfMemoryException(""Invalid id"");
+      }
+    }
+}
+",
+            10, 11, 10, 56
+        ],
+        [
+            "ExecutionEngineException", @"
+#pragma warning disable CS0618
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsNotOk(int id)
+      {
+        if(id < 0)
+          throw new ExecutionEngineException(""Invalid id"");
+      }
+    }
+}
+",
+            11, 11, 11, 60
+        ],
+        [
+            "Exception without message", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsNotOk(int id)
+      {
+        if(id < 0)
+          throw new Exception();
+      }
+    }
+}
+",
+            10, 11, 10, 33
+        ],
+        [
+            "Exception in lambda body", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsNotOk()
+      {
+        Action a = () =>
+        {
+          throw new Exception(""Invalid"");
+        };
+      }
+    }
+}
+",
+            11, 11, 11, 42
+        ],
+        [
+            "Exception in local function", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsNotOk()
+      {
+        void Validate(int id)
+        {
+          throw new Exception(""Invalid"");
+        }
+      }
+    }
+}
+",
+            11, 11, 11, 42
         ],
     ];
 
@@ -153,6 +294,134 @@ namespace WebApplication1
         ]);
 
         test.ExpectedDiagnostics.Add(CSharpAnalyzerVerifier<DSA006Analyzer>.Diagnostic(DSA006Analyzer.DiagnosticId).WithSpan(startLine, startColumn, endLine, endColumn));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    private static IEnumerable<object[]> GetNotMatchedCases =>
+    [
+        [
+            "ArgumentNullException", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsOk(string name)
+      {
+        if(name == null)
+          throw new ArgumentNullException(nameof(name));
+      }
+    }
+}
+"
+        ],
+        [
+            "InvalidOperationException", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsOk()
+      {
+        throw new InvalidOperationException(""Not allowed"");
+      }
+    }
+}
+"
+        ],
+        [
+            "NotSupportedException", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsOk()
+      {
+        throw new NotSupportedException();
+      }
+    }
+}
+"
+        ],
+        [
+            "FormatException", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsOk(string input)
+      {
+        throw new FormatException(""Bad format"");
+      }
+    }
+}
+"
+        ],
+        [
+            "Re-throw", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsOk()
+      {
+        try { }
+        catch (Exception)
+        {
+          throw;
+        }
+      }
+    }
+}
+"
+        ],
+        [
+            "Throw existing variable", @"
+using System;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsOk()
+      {
+        try { }
+        catch (Exception ex)
+        {
+          throw ex;
+        }
+      }
+    }
+}
+"
+        ],
+    ];
+
+    public static string GetNotMatchedCasesDisplayName(MethodInfo methodInfo, object[] data)
+    {
+        #pragma warning disable CA1062
+        return (string)data[0];
+        #pragma warning restore CA1062
+    }
+
+    [TestMethod]
+    [DynamicData(nameof(GetNotMatchedCases), DynamicDataDisplayName = nameof(GetNotMatchedCasesDisplayName))]
+    public async Task NotMatched(string title, string sourceCode)
+    {
+        var test = new CSharpAnalyzerVerifier<DSA006Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
 
         await test.RunAsync().ConfigureAwait(false);
     }
