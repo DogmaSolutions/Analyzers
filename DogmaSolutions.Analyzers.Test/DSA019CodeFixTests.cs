@@ -837,6 +837,122 @@ namespace TestApp
     }
 
     [TestMethod]
+    public async Task ExtractsInsideForeachWhenExpressionReferencesIterationVariable()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Attr { public string Value; }
+    public class AttrMap
+    {
+        public Attr this[string name] => null;
+    }
+    public class Node { public AttrMap Attributes; }
+    public class MyService
+    {
+        public void Process(Node[] nodes)
+        {
+            foreach (var nod in nodes)
+            {
+                var name = {|#0:nod.Attributes[""name""].Value|};
+                var type = {|#1:nod.Attributes[""name""].Value|};
+            }
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class Attr { public string Value; }
+    public class AttrMap
+    {
+        public Attr this[string name] => null;
+    }
+    public class Node { public AttrMap Attributes; }
+    public class MyService
+    {
+        public void Process(Node[] nodes)
+        {
+            foreach (var nod in nodes)
+            {
+                var value = nod.Attributes[""name""].Value;
+                var name = value;
+                var type = value;
+            }
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments(@"nod.Attributes[""name""].Value", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments(@"nod.Attributes[""name""].Value", 2));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExtractsInsideForLoopWhenExpressionReferencesLoopVariable()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Deep { public string Name; }
+    public class Container { public Deep[] Items; }
+    public class MyService
+    {
+        public void Process(Container container)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                var a = {|#0:container.Items[i].Name|};
+                var b = {|#1:container.Items[i].Name|};
+            }
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class Deep { public string Name; }
+    public class Container { public Deep[] Items; }
+    public class MyService
+    {
+        public void Process(Container container)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                var name = container.Items[i].Name;
+                var a = name;
+                var b = name;
+            }
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("container.Items[i].Name", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("container.Items[i].Name", 2));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
     public async Task ExtractsCommonRootWhenSiblingChainsSharePrefix()
     {
         var source = @"

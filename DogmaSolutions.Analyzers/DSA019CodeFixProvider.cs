@@ -138,6 +138,9 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         if (insertionStatement == null)
             return document;
 
+        insertionStatement = ConstrainInsertionToLoopScope(insertionStatement, expressionToExtract, allOccurrences, semanticModel)
+                             ?? insertionStatement;
+
         // Resolve conflicts with existing variable names
         variableName = ResolveNameConflicts(variableName, scope);
 
@@ -255,6 +258,69 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         }
 
         return earliest;
+    }
+
+    private static StatementSyntax ConstrainInsertionToLoopScope(
+        StatementSyntax insertionStatement,
+        ExpressionSyntax expressionToExtract,
+        List<ExpressionSyntax> occurrences,
+        SemanticModel semanticModel)
+    {
+        while (insertionStatement != null)
+        {
+            BlockSyntax loopBody = null;
+            var referencesLoopVariable = false;
+
+            if (insertionStatement is ForEachStatementSyntax forEach)
+            {
+                loopBody = forEach.Statement as BlockSyntax;
+                var iterVar = semanticModel.GetDeclaredSymbol(forEach);
+                referencesLoopVariable = iterVar != null &&
+                                         ExpressionReferencesSymbol(expressionToExtract, iterVar, semanticModel);
+            }
+            else if (insertionStatement is ForStatementSyntax forStmt && forStmt.Declaration != null)
+            {
+                loopBody = forStmt.Statement as BlockSyntax;
+                foreach (var declarator in forStmt.Declaration.Variables)
+                {
+                    var sym = semanticModel.GetDeclaredSymbol(declarator);
+                    if (sym != null && ExpressionReferencesSymbol(expressionToExtract, sym, semanticModel))
+                    {
+                        referencesLoopVariable = true;
+                        break;
+                    }
+                }
+            }
+
+            if (referencesLoopVariable && loopBody != null)
+            {
+                var innerStatement = FindEarliestContainingStatement(occurrences, loopBody);
+                if (innerStatement != null)
+                {
+                    insertionStatement = innerStatement;
+                    continue;
+                }
+            }
+
+            break;
+        }
+
+        return insertionStatement;
+    }
+
+    private static bool ExpressionReferencesSymbol(
+        ExpressionSyntax expression,
+        ISymbol symbol,
+        SemanticModel semanticModel)
+    {
+        foreach (var id in expression.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
+        {
+            var refSymbol = semanticModel.GetSymbolInfo(id).Symbol;
+            if (SymbolEqualityComparer.Default.Equals(refSymbol, symbol))
+                return true;
+        }
+
+        return false;
     }
 
     private static string GenerateVariableName(ExpressionSyntax expression)
