@@ -1190,7 +1190,7 @@ namespace TestApp
     public class Notification
     {
         public int Id { get; set; }
-        public SystemVersion SenderGuestSystemVersion { get; set; }
+        public SystemVersion SenderMachineVersion { get; set; }
     }
 
     public class MyDbContext : DbContext
@@ -1205,7 +1205,7 @@ namespace TestApp
 
         public async Task Test(Notification entity)
         {
-            await _context.Entry(entity).Reference(n => n.SenderGuestSystemVersion).LoadAsync().ConfigureAwait(false);
+            await _context.Entry(entity).Reference(n => n.SenderMachineVersion).LoadAsync().ConfigureAwait(false);
         }
     }
 }";

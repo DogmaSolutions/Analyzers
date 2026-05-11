@@ -59,12 +59,50 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct),
                 equivalenceKey: DSA019Analyzer.DiagnosticId),
             diagnostic);
+
+        if (targetExpression is MemberAccessExpressionSyntax targetMa &&
+            targetMa.Expression is MemberAccessExpressionSyntax prefixMa)
+        {
+            var scope = GetContainingScope(targetExpression);
+            if (scope != null)
+            {
+                var prefixKey = NormalizeWhitespace(prefixMa.ToString());
+                var targetKey = NormalizeWhitespace(targetExpression.ToString());
+
+                var prefixCount = 0;
+                var targetCount = 0;
+                foreach (var ma in GetMemberAccessesInScope(scope))
+                {
+                    var text = NormalizeWhitespace(ma.ToString());
+                    if (text == prefixKey) prefixCount++;
+                    if (text == targetKey) targetCount++;
+                }
+
+                if (prefixCount > targetCount)
+                {
+                    var rootVarName = GenerateVariableName(prefixMa);
+                    rootVarName = ResolveNameConflicts(rootVarName, scope);
+
+                    var displayChain = prefixMa.ToString();
+                    if (displayChain.Length > 60)
+                        displayChain = displayChain.Substring(0, 57) + "...";
+
+                    context.RegisterCodeFix(
+                        CodeAction.Create(
+                            title: $"Extract {prefixCount} occurrences of '{displayChain}' into local variable '{rootVarName}'",
+                            createChangedDocument: ct => ExtractToVariableAsync(context.Document, prefixMa, ct, 1),
+                            equivalenceKey: DSA019Analyzer.DiagnosticId + "_root"),
+                        diagnostic);
+                }
+            }
+        }
     }
 
     private static async Task<Document> ExtractToVariableAsync(
         Document document,
         ExpressionSyntax targetExpression,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? thresholdOverride = null)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         if (root == null)
@@ -73,7 +111,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
 
         var targetKey = NormalizeWhitespace(targetExpression.ToString());
-        var threshold = DSA019Analyzer.DefaultMaxDepth;
+        var threshold = thresholdOverride ?? DSA019Analyzer.DefaultMaxDepth;
 
         // Find the containing scope
         var scope = GetContainingScope(targetExpression);

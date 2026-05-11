@@ -1874,7 +1874,11 @@ var result = queryable.Select(e => new
 
 ## Fix / Mitigation
 
-Extract the repeated chain into a local variable:
+The code fixer offers up to two actions depending on context:
+
+**1. Extract into local variable** (always available)
+
+Extracts the exact flagged chain into a local variable and replaces all occurrences in the same scope:
 
 ```cs
 // Before:
@@ -1886,6 +1890,25 @@ var lights = home.Rooms.Bathroom.Lights;
 var primary = lights[0].IsOn();
 var secondary = lights[1].IsOn();
 ```
+
+**2. Extract common root into local variable** (when sibling chains share a prefix)
+
+When multiple flagged chains share a common prefix that has more total occurrences than any individual chain, the code fixer offers an additional action to extract the shared root. This is more efficient than extracting each terminal property separately:
+
+```cs
+// Before (4 occurrences of uc.GuestSystemVersion.GuestSystem):
+var name = uc.GuestSystemVersion.GuestSystem.Name;  // ❌ .Name repeated
+var id = uc.GuestSystemVersion.GuestSystem.Id;       // ❌ .Id repeated
+// ... name and id used again in another branch
+
+// After "Extract 4 occurrences of 'uc.GuestSystemVersion.GuestSystem' into local variable 'guestSystem'":
+var guestSystem = uc.GuestSystemVersion.GuestSystem;
+var name = guestSystem.Name;
+var id = guestSystem.Id;
+// ... guestSystem.Name and guestSystem.Id in the other branch
+```
+
+The common root action appears only when the prefix has strictly more occurrences than the individual chain, indicating that multiple sibling properties (e.g., `.Name` and `.Id`) are accessed on the same intermediate object. Both actions are available in the lightbulb menu; the developer chooses which granularity best fits the specific code.
 
 ## Rule configuration
 

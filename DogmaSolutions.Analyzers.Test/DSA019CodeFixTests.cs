@@ -835,4 +835,267 @@ namespace TestApp
 
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    [TestMethod]
+    public async Task ExtractsCommonRootWhenSiblingChainsSharePrefix()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Machine { public string Name; public int Id; }
+    public class MachineVersion { public Machine Machine; }
+    public class Connection { public MachineVersion MachineVersion; }
+    public class MyService
+    {
+        public void Process(Connection conn)
+        {
+            var name1 = {|#0:conn.MachineVersion.Machine.Name|};
+            var id1 = {|#1:conn.MachineVersion.Machine.Id|};
+            var name2 = {|#2:conn.MachineVersion.Machine.Name|};
+            var id2 = {|#3:conn.MachineVersion.Machine.Id|};
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class Machine { public string Name; public int Id; }
+    public class MachineVersion { public Machine Machine; }
+    public class Connection { public MachineVersion MachineVersion; }
+    public class MyService
+    {
+        public void Process(Connection conn)
+        {
+            var machine = conn.MachineVersion.Machine;
+            var name1 = machine.Name;
+            var id1 = machine.Id;
+            var name2 = machine.Name;
+            var id2 = machine.Id;
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("conn.MachineVersion.Machine.Name", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("conn.MachineVersion.Machine.Id", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(2).WithArguments("conn.MachineVersion.Machine.Name", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(3).WithArguments("conn.MachineVersion.Machine.Id", 2));
+
+        test.CodeActionEquivalenceKey = DSA019Analyzer.DiagnosticId + "_root";
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExtractsCommonRootAcrossTryCatch()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Machine { public string Name; public int Id; }
+    public class MachineVersion { public Machine Machine; }
+    public class Connection { public MachineVersion MachineVersion; }
+    public class MyService
+    {
+        public void Process(Connection conn)
+        {
+            try
+            {
+                var name = {|#0:conn.MachineVersion.Machine.Name|};
+                var id = {|#1:conn.MachineVersion.Machine.Id|};
+            }
+            catch
+            {
+                var name = {|#2:conn.MachineVersion.Machine.Name|};
+                var id = {|#3:conn.MachineVersion.Machine.Id|};
+            }
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class Machine { public string Name; public int Id; }
+    public class MachineVersion { public Machine Machine; }
+    public class Connection { public MachineVersion MachineVersion; }
+    public class MyService
+    {
+        public void Process(Connection conn)
+        {
+            var machine = conn.MachineVersion.Machine;
+            try
+            {
+                var name = machine.Name;
+                var id = machine.Id;
+            }
+            catch
+            {
+                var name = machine.Name;
+                var id = machine.Id;
+            }
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("conn.MachineVersion.Machine.Name", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("conn.MachineVersion.Machine.Id", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(2).WithArguments("conn.MachineVersion.Machine.Name", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(3).WithArguments("conn.MachineVersion.Machine.Id", 2));
+
+        test.CodeActionEquivalenceKey = DSA019Analyzer.DiagnosticId + "_root";
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExtractsCommonRootWithThreeTerminals()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Address { public string Street; public string City; public string Zip; }
+    public class Profile { public Address Home; public Address Work; }
+    public class Contact { public Profile Profile; }
+    public class Customer { public Contact Contact; }
+    public class MyService
+    {
+        public void Process(Customer customer)
+        {
+            var homeStreet = {|#0:customer.Contact.Profile.Home|}.Street;
+            var homeCity = {|#1:customer.Contact.Profile.Home|}.City;
+            var workStreet = {|#2:customer.Contact.Profile.Work|}.Street;
+            var workCity = {|#3:customer.Contact.Profile.Work|}.City;
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class Address { public string Street; public string City; public string Zip; }
+    public class Profile { public Address Home; public Address Work; }
+    public class Contact { public Profile Profile; }
+    public class Customer { public Contact Contact; }
+    public class MyService
+    {
+        public void Process(Customer customer)
+        {
+            var profile = customer.Contact.Profile;
+            var homeStreet = profile.Home.Street;
+            var homeCity = profile.Home.City;
+            var workStreet = profile.Work.Street;
+            var workCity = profile.Work.City;
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("customer.Contact.Profile.Home", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("customer.Contact.Profile.Home", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(2).WithArguments("customer.Contact.Profile.Work", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(3).WithArguments("customer.Contact.Profile.Work", 2));
+
+        test.CodeActionEquivalenceKey = DSA019Analyzer.DiagnosticId + "_root";
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExactFixStillWorksWhenRootFixIsAvailable()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Machine { public string Name; public int Id; }
+    public class MachineVersion { public Machine Machine; }
+    public class Connection { public MachineVersion MachineVersion; }
+    public class MyService
+    {
+        public void Process(Connection conn)
+        {
+            var name1 = {|#0:conn.MachineVersion.Machine.Name|};
+            var id1 = {|#1:conn.MachineVersion.Machine.Id|};
+            var name2 = {|#2:conn.MachineVersion.Machine.Name|};
+            var id2 = {|#3:conn.MachineVersion.Machine.Id|};
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class Machine { public string Name; public int Id; }
+    public class MachineVersion { public Machine Machine; }
+    public class Connection { public MachineVersion MachineVersion; }
+    public class MyService
+    {
+        public void Process(Connection conn)
+        {
+            var name = conn.MachineVersion.Machine.Name;
+            var name1 = name;
+            var id = conn.MachineVersion.Machine.Id;
+            var id1 = id;
+            var name2 = name;
+            var id2 = id;
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("conn.MachineVersion.Machine.Name", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("conn.MachineVersion.Machine.Id", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(2).WithArguments("conn.MachineVersion.Machine.Name", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(3).WithArguments("conn.MachineVersion.Machine.Id", 2));
+
+        test.CodeActionEquivalenceKey = DSA019Analyzer.DiagnosticId;
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }
