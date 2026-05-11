@@ -234,6 +234,88 @@ public partial class DSA018Tests
                 }
             }"
         ],
+        [
+            "Local variable: negated Contains + Add (no TOCTOU risk)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private List<string> GetTheList() => new List<string>();
+                    public int MyMethod()
+                    {
+                        List<string> myList = GetTheList();
+                        if (!myList.Contains(""TEST""))
+                            myList.Add(""TEST"");
+                        return myList.Count;
+                    }
+                }
+            }"
+        ],
+        [
+            "Local variable: negated Any + Add (no TOCTOU risk)",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod()
+                    {
+                        var items = new List<string>();
+                        if (!items.Any(x => x == ""test""))
+                        {
+                            items.Add(""test"");
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Local variable: positive Any + else Add (no TOCTOU risk)",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod()
+                    {
+                        var items = new List<string>();
+                        if (items.Any(x => x == ""test""))
+                        {
+                            System.Console.WriteLine(""exists"");
+                        }
+                        else
+                        {
+                            items.Add(""test"");
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Local variable: positive Any + throw + Add after (no TOCTOU risk)",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod()
+                    {
+                        var items = new List<string>();
+                        if (items.Any(x => x == ""test""))
+                            throw new System.InvalidOperationException();
+                        items.Add(""test"");
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

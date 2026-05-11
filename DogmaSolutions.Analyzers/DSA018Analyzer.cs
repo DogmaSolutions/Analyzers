@@ -67,6 +67,11 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
         if (IsInsideLockStatement(ifStatement))
             return;
 
+        // Skip if the receiver is a local variable — local scope eliminates the cross-thread TOCTOU risk
+        var receiverSymbol = context.SemanticModel.GetSymbolInfo(receiver).Symbol;
+        if (receiverSymbol is ILocalSymbol)
+            return;
+
         var diagnostic = Diagnostic.Create(
             descriptor: _rule,
             location: ifStatement.GetLocation(),

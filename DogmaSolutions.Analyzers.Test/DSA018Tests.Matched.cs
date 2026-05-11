@@ -10,7 +10,7 @@ public partial class DSA018Tests
     private static IEnumerable<object[]> GetMatchedCases =>
     [
         [
-            "List: negated Any + Add",
+            "List field: negated Any + Add",
             @"
             using System.Collections.Generic;
             using System.Linq;
@@ -18,28 +18,129 @@ public partial class DSA018Tests
             {
                 public class MyClass
                 {
+                    private readonly List<string> _items = new List<string>();
                     public void MyMethod()
                     {
-                        var items = new List<string>();
-                        {|#0:if (!items.Any(x => x == ""test""))
+                        {|#0:if (!_items.Any(x => x == ""test""))
                         {
-                            items.Add(""test"");
+                            _items.Add(""test"");
                         }|}
                     }
                 }
             }"
         ],
         [
-            "List: negated Contains + Add",
+            "List field: negated Contains + Add",
             @"
             using System.Collections.Generic;
             namespace TestApp
             {
                 public class MyClass
                 {
+                    private readonly List<string> _items = new List<string>();
                     public void MyMethod()
                     {
-                        var items = new List<string>();
+                        {|#0:if (!_items.Contains(""test""))
+                        {
+                            _items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List field: positive Any + throw + Add after",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly List<string> _items = new List<string>();
+                    public void MyMethod()
+                    {
+                        {|#0:if (_items.Any(x => x == ""test""))
+                            throw new System.InvalidOperationException();|}
+                        _items.Add(""test"");
+                    }
+                }
+            }"
+        ],
+        [
+            "List field: positive Any + else Add",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly List<string> _items = new List<string>();
+                    public void MyMethod()
+                    {
+                        {|#0:if (_items.Any(x => x == ""test""))
+                        {
+                            System.Console.WriteLine(""exists"");
+                        }
+                        else
+                        {
+                            _items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List field: Count == 0 + Add",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly List<string> _items = new List<string>();
+                    public void MyMethod()
+                    {
+                        {|#0:if (_items.Count(x => x == ""test"") == 0)
+                        {
+                            _items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List field: FirstOrDefault == null + Add",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly List<string> _items = new List<string>();
+                    public void MyMethod()
+                    {
+                        {|#0:if (_items.FirstOrDefault(x => x == ""test"") == null)
+                        {
+                            _items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List parameter: negated Contains + Add",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod(List<string> items)
+                    {
                         {|#0:if (!items.Contains(""test""))
                         {
                             items.Add(""test"");
@@ -49,7 +150,7 @@ public partial class DSA018Tests
             }"
         ],
         [
-            "List: positive Any + throw + Add after",
+            "List parameter: negated Any + Add",
             @"
             using System.Collections.Generic;
             using System.Linq;
@@ -57,33 +158,9 @@ public partial class DSA018Tests
             {
                 public class MyClass
                 {
-                    public void MyMethod()
+                    public void MyMethod(List<string> items)
                     {
-                        var items = new List<string>();
-                        {|#0:if (items.Any(x => x == ""test""))
-                            throw new System.InvalidOperationException();|}
-                        items.Add(""test"");
-                    }
-                }
-            }"
-        ],
-        [
-            "List: positive Any + else Add",
-            @"
-            using System.Collections.Generic;
-            using System.Linq;
-            namespace TestApp
-            {
-                public class MyClass
-                {
-                    public void MyMethod()
-                    {
-                        var items = new List<string>();
-                        {|#0:if (items.Any(x => x == ""test""))
-                        {
-                            System.Console.WriteLine(""exists"");
-                        }
-                        else
+                        {|#0:if (!items.Any(x => x == ""test""))
                         {
                             items.Add(""test"");
                         }|}
@@ -92,47 +169,7 @@ public partial class DSA018Tests
             }"
         ],
         [
-            "List: Count == 0 + Add",
-            @"
-            using System.Collections.Generic;
-            using System.Linq;
-            namespace TestApp
-            {
-                public class MyClass
-                {
-                    public void MyMethod()
-                    {
-                        var items = new List<string>();
-                        {|#0:if (items.Count(x => x == ""test"") == 0)
-                        {
-                            items.Add(""test"");
-                        }|}
-                    }
-                }
-            }"
-        ],
-        [
-            "List: FirstOrDefault == null + Add",
-            @"
-            using System.Collections.Generic;
-            using System.Linq;
-            namespace TestApp
-            {
-                public class MyClass
-                {
-                    public void MyMethod()
-                    {
-                        var items = new List<string>();
-                        {|#0:if (items.FirstOrDefault(x => x == ""test"") == null)
-                        {
-                            items.Add(""test"");
-                        }|}
-                    }
-                }
-            }"
-        ],
-        [
-            "ICollection: Contains + Add",
+            "ICollection parameter: Contains + Add",
             @"
             using System.Collections.Generic;
             namespace TestApp
@@ -150,7 +187,7 @@ public partial class DSA018Tests
             }"
         ],
         [
-            "IList: Contains + Add (interface without atomic alternative)",
+            "IList parameter: Contains + Add",
             @"
             using System.Collections.Generic;
             namespace TestApp
@@ -162,6 +199,25 @@ public partial class DSA018Tests
                         {|#0:if (!items.Contains(item))
                         {
                             items.Add(item);
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List property: negated Contains + Add",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public List<string> Items { get; } = new List<string>();
+                    public void MyMethod()
+                    {
+                        {|#0:if (!Items.Contains(""test""))
+                        {
+                            Items.Add(""test"");
                         }|}
                     }
                 }

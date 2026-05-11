@@ -1126,6 +1126,8 @@ This rule fires when the _"if not exists, then insert"_ check-then-act pattern i
 
 Between the existence check and the insert, another thread could modify the collection, leading to duplicate entries or corruption. Since the collection type does not provide a built-in atomic operation, the check-then-act sequence must be protected externally.
 
+**Local variables are excluded**: when the receiver is a local variable declared inside the method body, the collection cannot be accessed from another thread, so the TOCTOU concern does not apply. The rule only fires when the receiver is a field, property, or parameter — symbols that may be shared across threads. Note that **method parameters are still flagged**: the caller controls the reference and may pass a collection that is shared across threads, so the TOCTOU risk persists even though the parameter name appears local to the method.
+
 ## See also
 
 - [DSA012: Check-then-act on database types](#dsa012)
@@ -1137,19 +1139,26 @@ Between the existence check and the insert, another thread could modify the coll
 ## Matched patterns
 
 ```cs
-// List: Any + Add
-if (!items.Any(x => x == value))
+// Field: List Contains + Add — shared state, TOCTOU risk
+if (!_items.Contains(value))
 {
-    items.Add(value);  // ❌ TOCTOU: another thread could add between check and insert
+    _items.Add(value);  // ❌ another thread could add between check and insert
 }
 
-// List: Contains + Add
-if (!items.Contains(value))
+// Property: List Any + Add — shared state, TOCTOU risk
+if (!Items.Any(x => x == value))
 {
-    items.Add(value);  // ❌
+    Items.Add(value);  // ❌
 }
 
-// ICollection: Contains + Add
+// Parameter: List Contains + Add — caller controls the reference, may be shared
+public void AddIfMissing(List<string> items, string value)
+{
+    if (!items.Contains(value))
+        items.Add(value);  // ❌ the caller may share this list across threads
+}
+
+// Parameter: ICollection Contains + Add — same risk through interface
 if (!collection.Contains(item))
 {
     collection.Add(item);  // ❌
@@ -1159,6 +1168,11 @@ if (!collection.Contains(item))
 ## Not matched patterns
 
 ```cs
+// Local variable — no cross-thread TOCTOU risk
+List<string> myList = GetTheList();
+if (!myList.Contains("TEST"))
+    myList.Add("TEST");  // ✅ local scope, not shared
+
 // Dictionary (has atomic alternative — handled by DSA017)
 if (!dict.ContainsKey(key)) { dict.Add(key, value); }  // ✅ not flagged by DSA018
 
@@ -1167,6 +1181,13 @@ if (!set.Contains(item)) { set.Add(item); }  // ✅ not flagged by DSA018
 
 // DbSet (database type — handled by DSA012)
 if (!dbSet.Any(x => x.Id == id)) { dbSet.Add(entity); }  // ✅ not flagged by DSA018
+
+// Already protected by lock
+lock (_sync)
+{
+    if (!_items.Contains(value))
+        _items.Add(value);  // ✅ lock provides synchronization
+}
 ```
 
 ## Fix / Mitigation
@@ -1194,7 +1215,7 @@ dict.TryAdd(value, true);  // ✅ thread-safe, atomic
 
 ## When to ignore this rule
 
-If the code is guaranteed to run single-threaded (e.g., inside a single-threaded console application or a synchronization context that serializes access), the TOCTOU risk does not apply. Suppress with `#pragma warning disable DSA018`.
+If the code is guaranteed to run single-threaded (e.g., inside a single-threaded console application or a synchronization context that serializes access), the TOCTOU risk does not apply. Suppress with `#pragma warning disable DSA018`. Note that check-then-act on **local variables** is already excluded automatically and does not require suppression.
 
 ## Rule configuration
 
