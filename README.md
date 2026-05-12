@@ -45,7 +45,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA002](#dsa002) | Design        | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**.     | ⚠ Warning        | ✅          | ❌        |
 | [DSA003](#dsa003) | Code Smells   | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
 | [DSA004](#dsa004) | Code Smells   | Use `DateTime.UtcNow` instead of `DateTime.Now`                                                                                                                                                            | ⚠ Warning        | ✅          | ✅        |
-| [DSA005](#dsa005) | Code Smells   | Potential non-deterministic point-in-time execution                                                                                                                                                        | ⛔ Error          | ✅          | ❌        |
+| [DSA005](#dsa005) | Code Smells   | Potential non-deterministic point-in-time execution                                                                                                                                                        | ⛔ Error          | ✅          | ✅        |
 | [DSA006](#dsa006) | Code Smells   | General exceptions should not be thrown by user code                                                                                                                                                       | ⛔ Error          | ✅          | ❌        |
 | [DSA007](#dsa007) | Code Smells   | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking")                                                                                         | ⚠ Warning        | ✅          | ❌        |
 | [DSA008](#dsa008) | Bug           | The Required Attribute has no impact on a not-nullable DateTime                                                                                                                                            | ⛔ Error          | ✅          | ❌        |
@@ -377,6 +377,15 @@ In order to avoid problems, apply one of these, depending on the situation:
 - When measuring elapsed time, use a `StopWatch.StartNew()` combined with `StopWatch.Elapsed`
 - When NOT measuring elapsed time, set a `var now = DateTime.UtcNow` variable at the top of the method, or at the beginning of an execution flow/algorithm, and reuse that variable in all places
   instead of `DateTime.***Now`.
+
+## Code fix
+
+Two automatic fixes are available:
+
+| Fix | When offered | What it does |
+|-----|-------------|--------------|
+| **Extract to single point-in-time variable** | Two or more `DateTime.UtcNow` / `DateTime.Now` calls of the same kind in one method | Introduces `var utcNow = DateTime.UtcNow;` at the top and replaces every occurrence with `utcNow` |
+| **Replace {TypeName}.UtcNow with Stopwatch** | A start/end variable pair (names containing *start*/*begin*/*init* and *stop*/*finish*/*end*/*complete*) assigned from the same `DateTime` property, used only in a subtraction `end - start` | Replaces the start assignment with `Stopwatch.StartNew()`, removes the end assignment, and rewrites the subtraction to `stopwatch.Elapsed`; adds `using System.Diagnostics` if missing |
 
 ## Rule configuration
 
