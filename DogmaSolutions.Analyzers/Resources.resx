@@ -364,4 +364,13 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA024AnalyzerTitle" xml:space="preserve">
     <value>Use Path.Combine instead of string concatenation for path-like parameters</value>
   </data>
+    <data name="DSA025AnalyzerDescription" xml:space="preserve">
+    <value>An interpolated string is passed as the message template to an ILogger logging method. Interpolated strings are evaluated eagerly at the call site regardless of whether the log level is enabled, causing unnecessary string allocations and formatting overhead. Additionally, interpolated strings bypass structured log storage: the resulting message is a pre-formatted flat string that cannot be parsed back into discrete fields by log aggregation systems (Seq, Elasticsearch, Application Insights, Loki). This means log entries lose their queryability, correlation, and filtering capabilities. Use a constant message template with named placeholders and pass the values as separate arguments. This allows the logging framework to skip formatting entirely when the log level is disabled, and to store each parameter as a structured field for downstream analysis. This is consistent with the built-in CA2254 diagnostic, but provides an automated code fix to convert interpolated strings to structured templates. Security-wise, structured logging prevents accidental information leakage through uncontrolled string expansion and supports forensic log analysis during incident response (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA025).</value>
+  </data>
+    <data name="DSA025AnalyzerMessageFormat" xml:space="preserve">
+    <value>Use a structured logging template instead of an interpolated string for the '{0}' call. Interpolated strings are evaluated eagerly and bypass structured log storage.</value>
+  </data>
+    <data name="DSA025AnalyzerTitle" xml:space="preserve">
+    <value>Use structured logging template instead of interpolated string</value>
+  </data>
 </root>

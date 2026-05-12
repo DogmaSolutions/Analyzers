@@ -64,6 +64,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA022](#dsa022) | Performance | Hoist loop-invariant expression out of inner loop                                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
 | [DSA023](#dsa023) | Best Practice | Use `Path.Combine` instead of string concatenation to build file system paths                                                                                                                              | ⚠ Warning        | ✅          | ✅        |
 | [DSA024](#dsa024) | Best Practice | Use `Path.Combine` instead of string concatenation for path-like parameters                                                                                                                                | ⚠ Warning        | ✅          | ✅        |
+| [DSA025](#dsa025) | Performance   | Use structured logging template instead of interpolated string                                                                                                                                             | ⚠ Warning        | ✅          | ✅        |
 
 ---
 
@@ -2697,6 +2698,156 @@ Helper.Process(basePath + "\\subfolder\\file.xml");
 **After:**
 ```csharp
 Helper.Process(Path.Combine(basePath, "subfolder", "file.xml"));
+```
+
+---
+
+# DSA025
+
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA025                                                                                         |
+| Title        | Use structured logging template instead of interpolated string                                 |
+| Category     | Performance                                                                                    |
+| Severity     | ⚠ Warning                                                                                      |
+| Code fix     | ✅                                                                                              |
+| Is enabled   | ✅                                                                                              |
+
+## Description
+
+Detects when an interpolated string (`$"..."`) is passed as the `message` parameter to an `ILogger` logging method (`LogTrace`, `LogDebug`, `LogInformation`, `LogWarning`, `LogError`, `LogCritical`, `Log`).
+
+Interpolated strings cause two problems in logging:
+
+1. **Eager evaluation**: The string is formatted at the call site regardless of whether the log level is enabled, causing unnecessary allocations and CPU overhead. High-throughput services that log at `Debug` or `Trace` level in production pay the formatting cost on every call even when the level is disabled.
+2. **Loss of structured data**: The resulting message is a pre-formatted flat string. Log aggregation systems (Seq, Elasticsearch, Application Insights, Loki) cannot parse it back into discrete fields, which means log entries lose their queryability, correlation, and filtering capabilities.
+
+This rule is consistent with the built-in CA2254 diagnostic, but provides an **automated code fix** to convert interpolated strings to structured templates — something CA2254 does not offer.
+
+### Detected methods
+
+The analyzer fires on any method on a type implementing `Microsoft.Extensions.Logging.ILogger`, as well as the extension methods in `Microsoft.Extensions.Logging.LoggerExtensions`.
+
+## See also
+
+- [CA2254: Template should be a static expression](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2254)
+- [High-performance logging in .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/high-performance-logging)
+
+## Fix / Mitigation
+
+The code fixer converts the interpolated string to a constant message template with named placeholders and appends the original expressions as additional method arguments.
+
+**Placeholder naming rule**: all punctuation, parentheses, quotes, and operators are removed; the remaining identifier, literal, and type keyword chunks are concatenated in PascalCase. Duplicate placeholder names receive a numeric suffix (`Name`, `Name2`, `Name3`). Format specifiers (`:C2`, `:N0`, `:yyyy-MM-dd`) are preserved.
+
+**Before:**
+```csharp
+_logger.LogInformation($"User {user.Name} logged in at {DateTime.UtcNow:yyyy-MM-dd}");
+```
+
+**After:**
+```csharp
+_logger.LogInformation("User {UserName} logged in at {DateTimeUtcNow:yyyy-MM-dd}", user.Name, DateTime.UtcNow);
+```
+
+## Severity override
+
+```ini
+# DSA025: Use structured logging template instead of interpolated string
+dotnet_diagnostic.DSA025.severity = error
+```
+
+## Matched patterns
+
+```csharp
+// Simple identifier
+_logger.LogInformation($"User {userName} logged in");
+
+// Member access
+_logger.LogError($"Operation failed: {ex.Message}");
+
+// Method call
+_logger.LogInformation($"User {user.GetFullName()} logged in");
+
+// Multiple holes
+_logger.LogError($"User {userId} action {action} took {duration}ms");
+
+// Arithmetic expression
+_logger.LogInformation($"Total: {item.Price * quantity}");
+
+// Format specifier
+_logger.LogInformation($"Price: {price:C2}");
+
+// ILogger<T>
+_logger.LogInformation($"Processing {item}");
+
+// With exception argument
+_logger.LogError(ex, $"Operation {operation} failed");
+```
+
+## Not matched patterns
+
+```csharp
+// Plain string literal — already a constant template
+_logger.LogInformation("Processing started");
+
+// Structured template with parameters — already correct
+_logger.LogInformation("User {UserName} logged in", userName);
+
+// Interpolated string without holes — no structured data to extract
+_logger.LogInformation($"Processing started");
+
+// Non-logger method — not in scope
+Console.WriteLine($"Hello {name}");
+
+// Variable passed to logger — indirect usage not tracked
+var msg = $"User {userName} logged in";
+_logger.LogInformation(msg);
+```
+
+## Code fix
+
+The code fix replaces the interpolated string with a constant template and appends the extracted expressions as method arguments:
+
+**Before:**
+```csharp
+_logger.LogError($"User {userId} action {action} took {duration}ms");
+```
+
+**After:**
+```csharp
+_logger.LogError("User {UserId} action {Action} took {Duration}ms", userId, action, duration);
+```
+
+### Placeholder naming examples
+
+| Expression              | Placeholder name     |
+|:------------------------|:---------------------|
+| `userName`              | `{UserName}`         |
+| `user.Name`             | `{UserName}`         |
+| `DateTime.Now`          | `{DateTimeNow}`      |
+| `user.GetFullName()`    | `{UserGetFullName}`  |
+| `item.Price * quantity` | `{ItemPriceQuantity}` |
+| `dict["key"]`           | `{DictKey}`          |
+| `Math.Max(a, b)`        | `{MathMaxAB}`        |
+| `(int)status`           | `{IntStatus}`        |
+| `items[0].Name`         | `{Items0Name}`       |
+
+### Duplicate name handling
+
+When multiple interpolation holes produce the same placeholder name, subsequent occurrences receive a numeric suffix:
+
+```csharp
+// Before:
+_logger.LogInformation($"From ({start.X}, {start.Y}) to ({end.X}, {end.Y})");
+
+// After — StartX, StartY, EndX, EndY are all distinct:
+_logger.LogInformation("From ({StartX}, {StartY}) to ({EndX}, {EndY})", start.X, start.Y, end.X, end.Y);
+
+// Before — same expression twice:
+_logger.LogInformation($"First: {name}, Second: {name}");
+
+// After — Name and Name2:
+_logger.LogInformation("First: {Name}, Second: {Name2}", name, name);
 ```
 
 ---
