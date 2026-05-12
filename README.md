@@ -4,7 +4,7 @@
 
 A set of C# Roslyn analyzers that catch bugs, design flaws, and security pitfalls at compile time -- before they reach code review or production.
 
-The package currently ships 23 rules across six categories (Design, Security, Performance, Code Smells, Bug, Best Practice); most include an automatic code fix.  
+The package currently ships 20+ rules across six categories (Design, Security, Performance, Code Smells, Bug, Best Practice); most include an automatic code fix.  
 Rules range from straightforward code-smell detection (e.g. `DateTime.Now` instead of `DateTime.UtcNow`) to cross-method semantic analysis (e.g. Entity Framework queries missing `TagWith`, check-then-act race conditions on concurrent collections, or loop-invariant expressions that should be hoisted).
 
 Install via NuGet and every rule is enforced automatically during compilation, with severity levels configurable through `.editorconfig`.
@@ -2739,6 +2739,10 @@ The analyzer fires on any method on a type implementing `Microsoft.Extensions.Lo
 
 ## See also
 
+Security-wise, interpolated strings permanently fuse parameter values into the message text, eliminating the ability for downstream infrastructure to apply **field-level redaction or access control**. When structured logging is used, each named placeholder (`{Password}`, `{CreditCard}`, `{SessionToken}`) is preserved as a discrete, typed field throughout the logging pipeline; this allows sinks, processors, and log aggregation platforms to enforce policies such as masking sensitive fields in console output while retaining them (encrypted) in a compliance-grade audit store, or restricting visibility of specific fields by user role. Serilog supports this via `[NotLogged]` attributes and `Destructure.ByTransformPolicy`; Application Insights via custom telemetry processors; Seq, Elastic, and Datadog via field-level access control on structured properties. Once `$"User {password} authenticated"` is evaluated at the call site, the password is irrecoverably embedded in a flat string — no downstream component can identify which substring is the sensitive value, let alone redact it or restrict access to it.
+
+- [MITRE, CWE-532: Insertion of Sensitive Information into Log File](https://cwe.mitre.org/data/definitions/532.html) — structured logging does not prevent logging sensitive values, but it gives the infrastructure a handle to enforce redaction policies; interpolation permanently removes that option
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 7 (Resource Availability) and SR 7.6 (Network and Security Configuration Settings): field-level control over logged data supports the principle of least privilege applied to diagnostic information; operators and auditors should see only the fields their role requires
 - [CA2254: Template should be a static expression](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2254)
 - [High-performance logging in .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/high-performance-logging)
 
