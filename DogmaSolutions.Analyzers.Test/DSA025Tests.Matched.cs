@@ -354,7 +354,7 @@ public partial class DSA025Tests
             "LogInformation"
         ],
         [
-            "Interpolation with nameof expression",
+            "Interpolation mixing nameof constant with runtime value",
             @"
             using Microsoft.Extensions.Logging;
             namespace TestApp
@@ -362,9 +362,9 @@ public partial class DSA025Tests
                 public class MyService
                 {
                     private readonly ILogger _logger;
-                    public void Process(string items)
+                    public void Process(string userId)
                     {
-                        _logger.LogInformation({|#0:$""Processing {nameof(items)}""|});
+                        _logger.LogInformation({|#0:$""{nameof(MyService)} processing user {userId}""|});
                     }
                 }
             }",

@@ -88,6 +88,9 @@ public sealed class DSA025Analyzer : DiagnosticAnalyzer
         if (interpolated.Contents.All(c => c is InterpolatedStringTextSyntax))
             return;
 
+        if (AllInterpolationsAreConstant(interpolated, context.SemanticModel))
+            return;
+
         var diagnostic = Diagnostic.Create(
             descriptor: _rule,
             location: interpolated.GetLocation(),
@@ -146,6 +149,23 @@ public sealed class DSA025Analyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool AllInterpolationsAreConstant(
+        InterpolatedStringExpressionSyntax interpolated,
+        SemanticModel semanticModel)
+    {
+        foreach (var content in interpolated.Contents)
+        {
+            if (content is InterpolationSyntax interpolation)
+            {
+                var constantValue = semanticModel.GetConstantValue(interpolation.Expression);
+                if (!constantValue.HasValue)
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     internal static ArgumentSyntax FindMessageArgument(

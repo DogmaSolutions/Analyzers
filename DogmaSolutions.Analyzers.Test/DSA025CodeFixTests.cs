@@ -941,7 +941,7 @@ public class DSA025CodeFixTests
     }
 
     [TestMethod]
-    public async Task ConvertsNameofInHole()
+    public async Task ConvertsNameofMixedWithRuntimeValue()
     {
         var source = @"
             using Microsoft.Extensions.Logging;
@@ -952,7 +952,7 @@ public class DSA025CodeFixTests
                     private readonly ILogger _logger;
                     public void Process(string items)
                     {
-                        _logger.LogInformation({|#0:$""Processing {nameof(items)}""|});
+                        _logger.LogInformation({|#0:$""{nameof(MyService)} processing {items}""|});
                     }
                 }
             }";
@@ -966,7 +966,7 @@ public class DSA025CodeFixTests
                     private readonly ILogger _logger;
                     public void Process(string items)
                     {
-                        _logger.LogInformation(""Processing {NameofItems}"", nameof(items));
+                        _logger.LogInformation(""{NameofMyService} processing {Items}"", nameof(MyService), items);
                     }
                 }
             }";

@@ -215,6 +215,89 @@ public partial class DSA025Tests
                 }
             }"
         ],
+        [
+            "Interpolation with nameof expression (compile-time constant)",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string items)
+                    {
+                        _logger.LogInformation($""Processing {nameof(items)}"");
+                    }
+                }
+            }"
+        ],
+        [
+            "Interpolation with const local (compile-time constant)",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process()
+                    {
+                        const string prefix = ""MyService"";
+                        _logger.LogInformation($""{prefix} is starting."");
+                    }
+                }
+            }"
+        ],
+        [
+            "Interpolation with const field (compile-time constant)",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private const string ServiceName = ""MyService"";
+                    private readonly ILogger _logger;
+                    public void Process()
+                    {
+                        _logger.LogInformation($""{ServiceName} is starting."");
+                    }
+                }
+            }"
+        ],
+        [
+            "Interpolation with multiple compile-time constants",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private const int Version = 2;
+                    private readonly ILogger _logger;
+                    public void Process()
+                    {
+                        _logger.LogInformation($""{nameof(MyService)} v{Version} is starting."");
+                    }
+                }
+            }"
+        ],
+        [
+            "Interpolation with nameof of type (compile-time constant)",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class NotificationCenterHostedService
+                {
+                    private readonly ILogger _logger;
+                    public void Start()
+                    {
+                        _logger.LogInformation($""{nameof(NotificationCenterHostedService)} is starting."");
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]
