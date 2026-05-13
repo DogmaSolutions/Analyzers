@@ -65,6 +65,8 @@ Every rule is accompanied by the following information and clues:
 | [DSA023](#dsa023) | Best Practice | Use `Path.Combine` instead of string concatenation to build file system paths                                                                                                                              | ⚠ Warning        | ✅          | ✅        |
 | [DSA024](#dsa024) | Best Practice | Use `Path.Combine` instead of string concatenation for path-like parameters                                                                                                                                | ⚠ Warning        | ✅          | ✅        |
 | [DSA025](#dsa025) | Performance   | Use structured logging template instead of interpolated string                                                                                                                                             | ⚠ Warning        | ✅          | ✅        |
+| [DSA026](#dsa026) | Bug           | Use nearest scope CancellationToken                                                                                                                                                                        | ⚠ Warning        | ✅          | ✅        |
+| [DSA027](#dsa027) | Performance   | Replace string concatenation in loops with `StringBuilder`                                                                                                                                                 | ⚠ Warning        | ✅          | ✅        |
 
 ---
 
@@ -2862,6 +2864,507 @@ _logger.LogInformation($"First: {name}, Second: {name}");
 // After — Name and Name2:
 _logger.LogInformation("First: {Name}, Second: {Name2}", name, name);
 ```
+
+---
+
+# DSA026
+
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA026                                                                                         |
+| Title        | Use nearest scope CancellationToken                                                            |
+| Category     | Bug                                                                                            |
+| Severity     | ⚠ Warning                                                                                      |
+| Code fix     | ✅                                                                                              |
+| Is enabled   | ✅                                                                                              |
+
+## Description
+
+Detects when a `CancellationToken` from an outer scope is used inside a lambda, delegate, or local function that has its own `CancellationToken` parameter. The inner parameter represents the cancellation scope that the caller intended for the inner operation; using a captured outer token bypasses those semantics entirely.
+
+This is a common source of subtle bugs in concurrent code: the inner operation ignores the cancellation signal it was designed to respond to and instead listens to a token from a different lifetime. For example, a `Parallel.ForEachAsync` body receives a per-iteration token that the framework cancels when the overall operation is cancelled or when backpressure requires stopping; using the method-level token instead means the body misses these signals.
+
+### Detected scopes
+
+The analyzer fires when all of the following are true:
+
+1. The current scope is a **lambda expression** (parenthesized or simple), **anonymous delegate**, or **local function**
+2. That scope declares a **`CancellationToken` parameter** in its signature
+3. The body of that scope references a `CancellationToken` that is a **parameter or local variable from an outer scope** — not the nearest one
+
+The "nearest" token is always the one declared as a parameter of the innermost enclosing scope that has one.
+
+### Detected usage patterns
+
+Any reference to the outer token is flagged, including:
+
+- Passed as a method argument: `DoWork(outerCt)`
+- `ThrowIfCancellationRequested()`: `outerCt.ThrowIfCancellationRequested()`
+- `IsCancellationRequested`: `outerCt.IsCancellationRequested`
+- `Register()`: `outerCt.Register(...)`
+- `WaitHandle`: `outerCt.WaitHandle`
+- `CancellationTokenSource.Token` from an outer-scope source: `outerCts.Token`
+
+## See also
+
+Security-wise, using the wrong `CancellationToken` can cause an inner operation to ignore its intended cancellation scope. In server applications, this means a per-request timeout or client-disconnect token is bypassed in favor of an application-lifetime token; the operation continues running indefinitely, consuming threads, memory, database connections, and other bounded resources. Under load or deliberate abuse, this becomes a resource exhaustion vector: an attacker who can trigger slow or non-cancellable operations can starve the server of resources without being rate-limited by the cancellation mechanism that was designed to prevent exactly this scenario. When cancellation tokens are used for security-critical timeouts (authentication flows, external API calls with SLA-bound deadlines), using the wrong token effectively disables the timeout.
+
+- [MITRE, CWE-400: Uncontrolled Resource Consumption](https://cwe.mitre.org/data/definitions/400.html) — inner operations that ignore their intended cancellation scope run longer than the caller allows, consuming unbounded resources
+- [MITRE, CWE-696: Incorrect Behavior Order](https://cwe.mitre.org/data/definitions/696.html) — the operation responds to the wrong cancellation signal, violating the caller's expected lifecycle contract
+- [IEC 62443-3-3: System security requirements and security levels](https://webstore.iec.ch/en/publication/7033) — FR 7 (Resource Availability): operations must respect their designated resource boundaries; bypassing a per-request cancellation token undermines the system's ability to enforce availability guarantees under adversarial conditions
+- [CA2016: Forward the CancellationToken parameter to methods that take one](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2016) — complementary rule that flags missing token forwarding; DSA026 goes further by detecting when the *wrong* token is forwarded
+- [Cancellation in managed threads](https://learn.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads)
+
+## Fix / Mitigation
+
+Replace the outer-scope `CancellationToken` reference with the nearest parameter. If both tokens are genuinely needed (e.g., combining a per-request token with a global shutdown token), link them explicitly:
+
+```csharp
+using var linked = CancellationTokenSource.CreateLinkedTokenSource(outerCt, innerCt);
+await DoWork(linked.Token);
+```
+
+## Code fix
+
+The code fix replaces the outer token reference with the name of the nearest `CancellationToken` parameter:
+
+**Before:**
+```csharp
+async Task Process(CancellationToken ct)
+{
+    await Parallel.ForEachAsync(items, ct, async (item, innerCt) =>
+    {
+        ct.ThrowIfCancellationRequested();
+        await DoWork(item, ct);
+    });
+}
+```
+
+**After:**
+```csharp
+async Task Process(CancellationToken ct)
+{
+    await Parallel.ForEachAsync(items, ct, async (item, innerCt) =>
+    {
+        innerCt.ThrowIfCancellationRequested();
+        await DoWork(item, innerCt);
+    });
+}
+```
+
+For `CancellationTokenSource.Token` from an outer scope, the entire member access is replaced:
+
+**Before:**
+```csharp
+var cts = new CancellationTokenSource();
+Func<CancellationToken, Task> work = async (innerCt) =>
+{
+    await DoWork(cts.Token);
+};
+```
+
+**After:**
+```csharp
+var cts = new CancellationTokenSource();
+Func<CancellationToken, Task> work = async (innerCt) =>
+{
+    await DoWork(innerCt);
+};
+```
+
+## Severity override
+
+```ini
+# DSA026: Use nearest scope CancellationToken
+dotnet_diagnostic.DSA026.severity = error
+```
+
+## Matched patterns
+
+```csharp
+// Lambda captures outer method parameter
+async Task Process(CancellationToken ct)
+{
+    Func<CancellationToken, Task> work = async (innerCt) =>
+    {
+        await DoWork(ct);                  // ❌ should use innerCt
+        ct.ThrowIfCancellationRequested(); // ❌ should use innerCt
+    };
+}
+
+// Local function uses outer parameter
+async Task Process(CancellationToken ct)
+{
+    async Task Inner(CancellationToken innerCt)
+    {
+        await DoWork(ct);  // ❌ should use innerCt
+    }
+}
+
+// Anonymous delegate
+async Task Process(CancellationToken ct)
+{
+    Action<CancellationToken> work = delegate(CancellationToken innerCt)
+    {
+        ct.ThrowIfCancellationRequested();  // ❌ should use innerCt
+    };
+}
+
+// Parallel.ForEachAsync
+await Parallel.ForEachAsync(items, ct, async (item, innerCt) =>
+{
+    await DoWork(item, ct);  // ❌ should use innerCt
+});
+
+// Multiple nesting levels — nearest token wins
+Func<CancellationToken, Task> outer = async (ct2) =>
+{
+    Func<CancellationToken, Task> inner = async (ct3) =>
+    {
+        await DoWork(ct);   // ❌ should use ct3
+        await DoWork(ct2);  // ❌ should use ct3
+    };
+};
+
+// Outer CancellationTokenSource.Token
+var cts = new CancellationTokenSource();
+Func<CancellationToken, Task> work = async (innerCt) =>
+{
+    await DoWork(cts.Token);  // ❌ should use innerCt
+};
+
+// Outer local variable of type CancellationToken
+var outerToken = ct;
+Func<CancellationToken, Task> work = async (innerCt) =>
+{
+    await DoWork(outerToken);  // ❌ should use innerCt
+};
+
+// Action<string, CancellationToken> with inline lambda
+Action<string, CancellationToken> work = (item, innerCt) =>
+{
+    ct.ThrowIfCancellationRequested();  // ❌ should use innerCt
+};
+
+// Func<string, CancellationToken, Task> with inline lambda
+Func<string, CancellationToken, Task> work = async (item, innerCt) =>
+{
+    await DoWork(item, ct);  // ❌ should use innerCt
+};
+
+// var-assigned lambda
+var work = async (string item, CancellationToken innerCt) =>
+{
+    await DoWork(item, ct);  // ❌ should use innerCt
+};
+```
+
+## Not matched patterns
+
+```csharp
+// No inner CancellationToken parameter — outer is the only one available
+Func<Task> work = async () =>
+{
+    await DoWork(ct);  // ✅ no alternative token
+};
+
+// Correct usage — inner parameter used
+Func<CancellationToken, Task> work = async (innerCt) =>
+{
+    await DoWork(innerCt);  // ✅ correct
+};
+
+// CreateLinkedTokenSource — intentional linking of different scopes
+Func<CancellationToken, Task> work = async (innerCt) =>
+{
+    using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, innerCt);  // ✅ intentional
+    await DoWork(linked.Token);
+};
+
+// CancellationToken.None — deliberate opt-out
+Func<CancellationToken, Task> work = async (innerCt) =>
+{
+    await DoWork(CancellationToken.None);  // ✅ deliberate
+};
+
+// Field or property CancellationToken — ambiguous intent (not flagged)
+Func<CancellationToken, Task> work = async (innerCt) =>
+{
+    await DoWork(_appShutdownToken);  // ✅ could be intentional
+};
+
+// Task constructor CancellationToken — not a lambda parameter
+var task = new Task(() =>
+{
+    ct.ThrowIfCancellationRequested();  // ✅ no inner CT parameter
+}, ct);
+
+// Locally created CancellationTokenSource.Token — not from outer scope
+Func<CancellationToken, Task> work = async (innerCt) =>
+{
+    using var localCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+    await DoWork(localCts.Token);  // ✅ local timeout, different purpose
+};
+
+// Shadowed parameter name — inner ct shadows outer ct
+Func<CancellationToken, Task> work = async (ct) =>
+{
+    await DoWork(ct);  // ✅ refers to inner parameter (shadowing)
+};
+```
+
+---
+
+# DSA027
+
+Replace string concatenation in loops with `StringBuilder`.
+
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA027                                                                                         |
+| Title        | Replace string concatenation in loops with StringBuilder                                       |
+| Category     | Performance                                                                                    |
+| Severity     | Warning                                                                                        |
+| Code Fixer   | Yes                                                                                            |
+| Enabled      | Yes                                                                                            |
+
+## Description
+
+String concatenation using `+=` or `s = s + expr` inside a loop creates a new `String` object on every iteration. Because `System.String` is immutable, the runtime must allocate a new buffer, copy the entire previous content, and append the new segment; the old buffer becomes garbage. Over *n* iterations the work is O(1 + 2 + ... + n) = **O(n^2)** in both CPU and total memory allocated.
+
+`System.Text.StringBuilder` maintains a mutable buffer that grows geometrically (typically doubling), giving amortized **O(1)** per `Append` call and O(n) total work.
+
+For small, fixed iteration counts the difference is negligible, but inside loops whose iteration count scales with input the quadratic growth can manifest as freezes, excessive garbage-collection pressure, or out-of-memory conditions under adversarial input.
+
+## Performance implications
+
+- **CPU**: O(n^2) copy work vs. O(n) with `StringBuilder`
+- **Memory**: O(n^2) total allocations vs. O(n) live memory; excessive GC pressure in Gen0/Gen1
+- **Latency**: individual loop iterations become progressively slower as the accumulated string grows; on large inputs this produces observable UI freezes or request timeouts
+
+## Security implications
+
+### CWE-400: Uncontrolled Resource Consumption
+
+An attacker who controls the iteration count (e.g., the number of records returned from an API, lines in a file, or items in a deserialized collection) can trigger quadratic CPU and memory consumption. On a server this can exhaust worker threads or heap memory, producing a denial-of-service condition.
+
+**IEC 62443 mapping**: FR 7 (Resource Availability) / SR 7.1 (Denial of service protection) and SR 7.2 (Resource management).
+
+### CWE-789: Memory Allocation with Excessive Size Value
+
+Because O(n^2) total bytes are allocated for what should be an O(n) operation, input of moderate size can cause allocations far exceeding reasonable expectations. This can lead to `OutOfMemoryException` or force the operating system to page, degrading the entire host.
+
+## How to suppress
+
+```csharp
+#pragma warning disable DSA027
+result += item;
+#pragma warning restore DSA027
+```
+
+Or in `.editorconfig`:
+
+```ini
+# DSA027: Replace string concatenation in loops with StringBuilder
+dotnet_diagnostic.DSA027.severity = none
+```
+
+## Code fix
+
+The code fix introduces a `StringBuilder` initialized with the current value of the variable, replaces all loop-body concatenations with `Append` calls, and assigns `ToString()` back to the original variable after the loop:
+
+**Before:**
+```csharp
+string result = "";
+foreach (var item in items)
+{
+    result += item;           // ❌ O(n^2)
+}
+```
+
+**After:**
+```csharp
+string result = "";
+var resultBuilder = new System.Text.StringBuilder(result);
+foreach (var item in items)
+{
+    resultBuilder.Append(item);  // ✅ O(n)
+}
+result = resultBuilder.ToString();
+```
+
+When the loop contains `result = result + a + b`, the fix extracts the non-self parts and appends them:
+
+**Before:**
+```csharp
+for (int i = 0; i < items.Length; i++)
+{
+    result = result + items[i] + "\n";  // ❌
+}
+```
+
+**After:**
+```csharp
+var resultBuilder = new System.Text.StringBuilder(result);
+for (int i = 0; i < items.Length; i++)
+{
+    resultBuilder.Append(items[i] + "\n");  // ✅
+}
+result = resultBuilder.ToString();
+```
+
+The builder variable name is derived from the original variable (`resultBuilder`); if that name collides with an existing variable in scope, a numeric suffix is appended (`resultBuilder1`, `resultBuilder2`, ...).
+
+## Matched patterns
+
+```csharp
+// Compound assignment (+=) in any loop type
+string result = "";
+for (int i = 0; i < items.Length; i++)
+{
+    result += items[i];  // ❌
+}
+
+foreach (var item in items)
+{
+    result += item;  // ❌
+}
+
+while (queue.Count > 0)
+{
+    result += queue.Dequeue();  // ❌
+}
+
+do
+{
+    result += items[i];  // ❌
+    i++;
+} while (i < items.Length);
+
+// Simple assignment with self-reference
+result = result + items[i];        // ❌
+result = result + items[i] + "\n"; // ❌ chained additions
+
+// Interpolated string or ToString
+result += $"{items[i]}, ";     // ❌
+result += n.ToString();        // ❌
+
+// Variable initialized with non-empty value
+string result = "Header: ";
+foreach (var item in items)
+{
+    result += item;  // ❌
+}
+
+// Method parameter
+public string Build(string result, string[] items)
+{
+    foreach (var item in items)
+    {
+        result += item;  // ❌
+    }
+    return result;
+}
+
+// var-declared string
+var result = "";
+foreach (var item in items)
+{
+    result += item;  // ❌
+}
+
+// Nested loops — variable declared outside all loops
+string result = "";
+foreach (var row in matrix)
+{
+    foreach (var cell in row)
+    {
+        result += cell;  // ❌
+    }
+}
+
+// Multiple concatenations to same variable
+foreach (var item in items)
+{
+    result += item;   // ❌
+    result += "\n";   // ❌
+}
+
+// Two different variables in same loop
+foreach (var item in items)
+{
+    names += item;                      // ❌
+    values += item.Length.ToString();   // ❌
+}
+
+// Variable declared in outer loop, concatenated in inner loop
+for (int i = 0; i < data.Length; i++)
+{
+    string line = "";
+    for (int j = 0; j < data[i].Length; j++)
+    {
+        line += data[i][j];  // ❌ O(n^2) per outer iteration
+    }
+}
+```
+
+## Not matched patterns
+
+```csharp
+// Concatenation outside any loop — no quadratic behavior
+string result = "";
+result += "hello";
+result += " world";
+
+// Non-string compound assignment
+int total = 0;
+for (int i = 0; i < numbers.Length; i++)
+{
+    total += numbers[i];  // ✅ int, not string
+}
+
+// Variable declared inside loop body — fresh each iteration, no accumulation
+for (int i = 0; i < items.Length; i++)
+{
+    string line = "";
+    line += items[i];  // ✅ reset every iteration
+}
+
+// StringBuilder already used
+var sb = new StringBuilder();
+foreach (var item in items)
+{
+    sb.Append(item);  // ✅ already optimal
+}
+
+// Simple assignment without self-reference
+foreach (var item in items)
+{
+    last = item;  // ✅ overwrite, not accumulation
+}
+
+// Field or property — different symbol kind, may have side effects
+foreach (var item in items)
+{
+    _result += item;   // ✅ field — not flagged
+    Result += item;    // ✅ property — not flagged
+}
+
+// string.Concat call (different pattern, not operator-based)
+result = string.Concat(result, item);  // ✅ not an assignment operator
+
+// Assignment with add expression but no self-reference
+foreach (var item in items)
+{
+    output = prefix + item;  // ✅ not self-referencing
+}
+```
+
+## See also
+
+- [CA1834: Use `StringBuilder.Append(char)` when applicable](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1834) — complementary rule that optimizes single-character `Append` calls on existing `StringBuilder` usage; DSA027 detects when `StringBuilder` should be introduced in the first place
+- [String concatenation (C# guide)](https://learn.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings) — official guidance recommending `StringBuilder` for loop scenarios
+- [StringBuilder Class](https://learn.microsoft.com/en-us/dotnet/api/system.text.stringbuilder) — API reference
 
 ---
 

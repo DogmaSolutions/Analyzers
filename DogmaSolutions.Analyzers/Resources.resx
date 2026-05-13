@@ -373,4 +373,22 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA025AnalyzerTitle" xml:space="preserve">
     <value>Use structured logging template instead of interpolated string</value>
   </data>
+    <data name="DSA026AnalyzerDescription" xml:space="preserve">
+    <value>A CancellationToken from an outer scope is used inside a lambda, delegate, or local function that has its own CancellationToken parameter. The inner parameter represents the cancellation scope that the caller intended for the inner operation. Using a captured outer token bypasses those semantics and can cause operations to ignore their intended cancellation signal — for example, a per-request timeout token is ignored in favor of an application-lifetime shutdown token, allowing the operation to run indefinitely and consume server resources. Use the nearest CancellationToken parameter instead. If both tokens are needed, link them explicitly via CancellationTokenSource.CreateLinkedTokenSource (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA026).</value>
+  </data>
+    <data name="DSA026AnalyzerMessageFormat" xml:space="preserve">
+    <value>Use '{0}' (nearest CancellationToken) instead of '{1}' from an outer scope</value>
+  </data>
+    <data name="DSA026AnalyzerTitle" xml:space="preserve">
+    <value>Use nearest scope CancellationToken</value>
+  </data>
+    <data name="DSA027AnalyzerDescription" xml:space="preserve">
+    <value>A string variable is concatenated using the '+=' operator or the 's = s + expr' pattern inside a loop (for, foreach, while, do-while). Each concatenation allocates a new string and copies all previous content, resulting in O(n^2) time complexity for n iterations. For loops with many iterations or large strings, this causes excessive memory allocations and GC pressure. Use a StringBuilder instead: call Append or AppendLine inside the loop and convert to string once after the loop completes. This eliminates the repeated allocations by writing into a resizable buffer. Security-wise, unbounded string growth inside a loop can be exploited for denial-of-service: an attacker who controls the iteration count or the concatenated content can force quadratic memory and CPU consumption, exhausting server resources (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA027).</value>
+  </data>
+    <data name="DSA027AnalyzerMessageFormat" xml:space="preserve">
+    <value>'{0}' is concatenated in a loop. Use StringBuilder for O(n) instead of O(n^2) performance.</value>
+  </data>
+    <data name="DSA027AnalyzerTitle" xml:space="preserve">
+    <value>Use StringBuilder instead of string concatenation in a loop</value>
+  </data>
 </root>
