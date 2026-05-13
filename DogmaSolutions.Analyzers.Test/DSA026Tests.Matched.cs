@@ -694,9 +694,6 @@ public partial class DSA026Tests
         test.ExpectedDiagnostics.Add(
             CSharpAnalyzerVerifier<DSA026Analyzer>.Diagnostic(DSA026Analyzer.DiagnosticId)
                 .WithLocation(0).WithArguments("innerCt", "ct"));
-        test.ExpectedDiagnostics.Add(
-            CSharpAnalyzerVerifier<DSA026Analyzer>.Diagnostic(DSA026Analyzer.DiagnosticId)
-                .WithSpan(13, 68, 13, 85).WithArguments("innerCt", "cancellationToken"));
 
         await test.RunAsync().ConfigureAwait(false);
     }

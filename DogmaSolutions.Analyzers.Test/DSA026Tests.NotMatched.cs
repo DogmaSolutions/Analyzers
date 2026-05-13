@@ -463,6 +463,27 @@ public partial class DSA026Tests
                 }
             }"
         ],
+        [
+            "Named argument label 'cancellationToken:' is not a usage of the outer token",
+            @"
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public async Task Process(CancellationToken ct)
+                    {
+                        Func<CancellationToken, Task> work = async (innerCt) =>
+                        {
+                            await Task.Delay(millisecondsDelay: 1, cancellationToken: innerCt);
+                        };
+                        await work(ct);
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

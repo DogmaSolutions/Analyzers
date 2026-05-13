@@ -803,4 +803,55 @@ public class DSA026CodeFixTests
                 .Diagnostic(DSA026Analyzer.DiagnosticId).WithLocation(1).WithArguments("innerCt", "outerToken"));
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    [TestMethod]
+    public async Task FixNamedArgumentPreservesLabelReplacesValue()
+    {
+        var source = @"
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public async Task Process(CancellationToken ct)
+                    {
+                        Func<CancellationToken, Task> work = async (innerCt) =>
+                        {
+                            await Task.Delay(millisecondsDelay: 1, cancellationToken: {|#0:ct|});
+                        };
+                        await work(ct);
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public async Task Process(CancellationToken ct)
+                    {
+                        Func<CancellationToken, Task> work = async (innerCt) =>
+                        {
+                            await Task.Delay(millisecondsDelay: 1, cancellationToken: innerCt);
+                        };
+                        await work(ct);
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA026Analyzer, DSA026CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA026Analyzer, DSA026CodeFixProvider>
+                .Diagnostic(DSA026Analyzer.DiagnosticId).WithLocation(0).WithArguments("innerCt", "ct"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }

@@ -67,6 +67,9 @@ public sealed class DSA026Analyzer : DiagnosticAnalyzer
 
         foreach (var identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
+            if (identifier.Parent is NameColonSyntax)
+                continue;
+
             if (IsInsideNestedScopeWithCancellationToken(identifier, context.Node, context.SemanticModel))
                 continue;
 
