@@ -147,20 +147,10 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         // Build the variable declaration
         var variableDeclaration = CreateVariableDeclaration(variableName, expressionToExtract, insertionStatement);
 
-        // Apply changes using SyntaxEditor
-        var editor = new SyntaxEditor(root, document.Project.Solution.Workspace.Services);
+        // DEBUG: Only insert, no replace — testing if InsertNodesBefore preserves \r\n
+        var newRoot = root.InsertNodesBefore(insertionStatement, new[] { variableDeclaration });
 
-        foreach (var nodeToReplace in nodesToReplace)
-        {
-            editor.ReplaceNode(nodeToReplace,
-                SyntaxFactory.IdentifierName(variableName)
-                    .WithLeadingTrivia(nodeToReplace.GetLeadingTrivia())
-                    .WithTrailingTrivia(nodeToReplace.GetTrailingTrivia()));
-        }
-
-        editor.InsertBefore(insertionStatement, variableDeclaration);
-
-        return document.WithSyntaxRoot(editor.GetChangedRoot());
+        return document.WithSyntaxRoot(newRoot);
     }
 
     private static Document ExtractInExpressionBodyLambda(
@@ -480,8 +470,32 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                         SyntaxFactory.VariableDeclarator(variableName)
                             .WithInitializer(SyntaxFactory.EqualsValueClause(
                                 expression.WithoutTrivia())))))
-            .WithLeadingTrivia(insertBeforeStatement.GetLeadingTrivia())
-            .WithTrailingTrivia(GetEndOfLineTrivia(insertBeforeStatement));
+            .WithLeadingTrivia(GetIndentationTrivia(insertBeforeStatement))
+            .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+    }
+
+    private static SyntaxTriviaList GetIndentationTrivia(SyntaxNode node)
+    {
+        var leading = node.GetLeadingTrivia();
+        var startIndex = leading.Count;
+
+        for (var i = leading.Count - 1; i >= 0; i--)
+        {
+            var kind = leading[i].Kind();
+            if (kind == SyntaxKind.WhitespaceTrivia || kind == SyntaxKind.EndOfLineTrivia)
+                startIndex = i;
+            else
+                break;
+        }
+
+        if (startIndex >= leading.Count)
+            return SyntaxTriviaList.Empty;
+
+        var result = new List<SyntaxTrivia>();
+        for (var i = startIndex; i < leading.Count; i++)
+            result.Add(leading[i]);
+
+        return SyntaxFactory.TriviaList(result);
     }
 
     private static SyntaxNode GetContainingScope(SyntaxNode node)
@@ -531,11 +545,26 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
     /// </summary>
     private static SyntaxTrivia GetEndOfLineTrivia(SyntaxNode node)
     {
-        foreach (var trivia in node.DescendantTrivia())
+        for (var current = node; current != null; current = current.Parent)
         {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-                return trivia;
+            foreach (var trivia in current.GetLeadingTrivia())
+            {
+                if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+                    return trivia;
+            }
+
+            foreach (var trivia in current.GetTrailingTrivia())
+            {
+                if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+                    return trivia;
+            }
         }
+
+        var firstEol = node.SyntaxTree.GetRoot().DescendantTokens()
+            .SelectMany(t => t.TrailingTrivia)
+            .FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+        if (firstEol != default)
+            return firstEol;
 
         return SyntaxFactory.LineFeed;
     }

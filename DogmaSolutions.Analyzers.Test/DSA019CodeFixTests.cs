@@ -1,4 +1,6 @@
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -1213,5 +1215,171 @@ namespace TestApp
         test.CodeActionEquivalenceKey = DSA019Analyzer.DiagnosticId;
 
         await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task DoesNotDuplicateRegionDirective()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Data { public int Value; }
+    public class Settings { public Data Data; }
+    public class Config { public Settings Settings; }
+    public class MyClass
+    {
+        public void MyMethod(Config config)
+        {
+#region Processing
+            var x = {|#0:config.Settings.Data.Value|};
+            var y = {|#1:config.Settings.Data.Value|};
+#endregion
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class Data { public int Value; }
+    public class Settings { public Data Data; }
+    public class Config { public Settings Settings; }
+    public class MyClass
+    {
+        public void MyMethod(Config config)
+        {
+            var value = config.Settings.Data.Value;
+            #region Processing
+            var x = value;
+            var y = value;
+#endregion
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("config.Settings.Data.Value", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("config.Settings.Data.Value", 2));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task DebugRegionLineEndings()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Data { public int Value; }
+    public class Settings { public Data Data; }
+    public class Config { public Settings Settings; }
+    public class MyClass
+    {
+        public void MyMethod(Config config)
+        {
+#region Processing
+            var x = config.Settings.Data.Value;
+            var y = config.Settings.Data.Value;
+#endregion
+        }
+    }
+}";
+
+        var workspace = new Microsoft.CodeAnalysis.AdhocWorkspace();
+        var projectId = Microsoft.CodeAnalysis.ProjectId.CreateNewId();
+        var solution = workspace.CurrentSolution
+            .AddProject(projectId, "TestProject", "TestProject", Microsoft.CodeAnalysis.LanguageNames.CSharp)
+            .AddMetadataReference(projectId, Microsoft.CodeAnalysis.MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
+            .AddMetadataReference(projectId, Microsoft.CodeAnalysis.MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location));
+
+        var docId = Microsoft.CodeAnalysis.DocumentId.CreateNewId(projectId);
+        solution = solution.AddDocument(docId, "Test.cs", source);
+        var document = solution.GetDocument(docId);
+
+        var root = await document.GetSyntaxRootAsync().ConfigureAwait(false);
+        var compilation = await document.Project.GetCompilationAsync().ConfigureAwait(false);
+        var model = compilation.GetSemanticModel(root.SyntaxTree);
+
+        var analyzer = new DSA019Analyzer();
+        var compilationWithAnalyzers = compilation.WithAnalyzers(
+            System.Collections.Immutable.ImmutableArray.Create<Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer>(analyzer));
+        var diagnostics = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
+
+        var info = new System.Text.StringBuilder();
+        info.Append(System.Globalization.CultureInfo.InvariantCulture, $"Diagnostics: {diagnostics.Length}");
+
+        if (diagnostics.Length > 0)
+        {
+            var provider = new DSA019CodeFixProvider();
+            var actions = new System.Collections.Generic.List<Microsoft.CodeAnalysis.CodeActions.CodeAction>();
+            var context = new Microsoft.CodeAnalysis.CodeFixes.CodeFixContext(
+                document,
+                diagnostics[0],
+                (action, _) => actions.Add(action),
+                System.Threading.CancellationToken.None);
+            await provider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+
+            info.Append(System.Globalization.CultureInfo.InvariantCulture, $", Actions: {actions.Count}");
+
+            if (actions.Count > 0)
+            {
+                var operations = await actions[0].GetOperationsAsync(System.Threading.CancellationToken.None).ConfigureAwait(false);
+                var applyOp = operations.OfType<Microsoft.CodeAnalysis.CodeActions.ApplyChangesOperation>().First();
+                var changedDoc = applyOp.ChangedSolution.GetDocument(docId);
+                var changedRoot = await changedDoc.GetSyntaxRootAsync().ConfigureAwait(false);
+                var rootFullString = changedRoot.ToFullString();
+                var changedText = await changedDoc.GetTextAsync().ConfigureAwait(false);
+                var result = changedText.ToString();
+
+                // Check both root.ToFullString() and Document.GetTextAsync()
+                var rootIdx = rootFullString.IndexOf("var value", System.StringComparison.Ordinal);
+                if (rootIdx >= 0)
+                {
+                    var semiIdx = rootFullString.IndexOf(';', rootIdx);
+                    if (semiIdx >= 0 && semiIdx + 2 < rootFullString.Length)
+                    {
+                        info.Append(System.Globalization.CultureInfo.InvariantCulture,
+                            $", RootAfterSemi=0x{(int)rootFullString[semiIdx + 1]:X2},0x{(int)rootFullString[semiIdx + 2]:X2}");
+                    }
+                }
+
+                var textIdx = result.IndexOf("var value", System.StringComparison.Ordinal);
+                if (textIdx >= 0)
+                {
+                    var semiIdx2 = result.IndexOf(';', textIdx);
+                    if (semiIdx2 >= 0 && semiIdx2 + 2 < result.Length)
+                    {
+                        info.Append(System.Globalization.CultureInfo.InvariantCulture,
+                            $", TextAfterSemi=0x{(int)result[semiIdx2 + 1]:X2},0x{(int)result[semiIdx2 + 2]:X2}");
+                    }
+                }
+
+                // Find the "var value" line and check its ending
+                var lines = result.Split('\n');
+                for (var i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i].Contains("var value"))
+                    {
+                        var lineEndsWithCr = lines[i].EndsWith("\r", System.StringComparison.Ordinal);
+                        info.Append(System.Globalization.CultureInfo.InvariantCulture,
+                            $", VarValueLine={i}, EndsCR={lineEndsWithCr}, Len={lines[i].Length}");
+                        if (lines[i].Length > 0)
+                        {
+                            var lastChar = (int)lines[i][lines[i].Length - 1];
+                            info.Append(System.Globalization.CultureInfo.InvariantCulture, $", LastChar=0x{lastChar:X2}");
+                        }
+                    }
+                }
+            }
+        }
+
+        Assert.Fail(info.ToString());
     }
 }
