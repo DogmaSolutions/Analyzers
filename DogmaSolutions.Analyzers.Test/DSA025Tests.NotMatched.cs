@@ -144,6 +144,77 @@ public partial class DSA025Tests
                 }
             }"
         ],
+        [
+            "string.Format passed to logger",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(int x)
+                    {
+                        _logger.LogInformation(string.Format(""x={0}"", x));
+                    }
+                }
+            }"
+        ],
+        [
+            "Constant string field passed to logger",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private const string Msg = ""hello"";
+                    private readonly ILogger _logger;
+                    public void Process()
+                    {
+                        _logger.LogInformation(Msg);
+                    }
+                }
+            }"
+        ],
+        [
+            "LoggerMessage.Define high-performance pattern",
+            @"
+            using System;
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private static readonly Action<ILogger, string, Exception> _logAction =
+                        LoggerMessage.Define<string>(LogLevel.Information, new EventId(1), ""User {Name}"");
+                    private readonly ILogger _logger;
+                    public void Process(string name)
+                    {
+                        _logAction(_logger, name, null);
+                    }
+                }
+            }"
+        ],
+        [
+            "Logger wrapper class with LogInformation method",
+            @"
+            namespace TestApp
+            {
+                public class MyLogger
+                {
+                    public void LogInformation(string message) { }
+                }
+                public class MyService
+                {
+                    private readonly MyLogger _logger = new MyLogger();
+                    public void Process(string name)
+                    {
+                        _logger.LogInformation($""Hello {name}"");
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

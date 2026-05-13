@@ -234,6 +234,142 @@ public partial class DSA025Tests
             }",
             "LogInformation"
         ],
+        [
+            "Verbatim interpolated string $@",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string path)
+                    {
+                        _logger.LogInformation({|#0:$@""Path: {path}\subdir""|});
+                    }
+                }
+            }",
+            "LogInformation"
+        ],
+        [
+            "LogError with EventId and exception",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(System.Exception ex, string msg)
+                    {
+                        _logger.LogError(new EventId(1), ex, {|#0:$""Error: {msg}""|});
+                    }
+                }
+            }",
+            "LogError"
+        ],
+        [
+            "Log with LogLevel and EventId",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string x)
+                    {
+                        _logger.Log(LogLevel.Information, new EventId(1), {|#0:$""Msg: {x}""|});
+                    }
+                }
+            }",
+            "Log"
+        ],
+        [
+            "Log with LogLevel EventId and Exception",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(System.Exception ex, string msg)
+                    {
+                        _logger.Log(LogLevel.Error, new EventId(1), ex, {|#0:$""Error: {msg}""|});
+                    }
+                }
+            }",
+            "Log"
+        ],
+        [
+            "Named argument syntax message:",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string name)
+                    {
+                        _logger.LogInformation(message: {|#0:$""User {name}""|});
+                    }
+                }
+            }",
+            "LogInformation"
+        ],
+        [
+            "Interpolation with null-coalescing operator",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string name)
+                    {
+                        _logger.LogInformation({|#0:$""User: {name ?? ""unknown""}""|});
+                    }
+                }
+            }",
+            "LogInformation"
+        ],
+        [
+            "Interpolation with ToString call",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(int count)
+                    {
+                        _logger.LogInformation({|#0:$""Count: {count.ToString()}""|});
+                    }
+                }
+            }",
+            "LogInformation"
+        ],
+        [
+            "Interpolation with nameof expression",
+            @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string items)
+                    {
+                        _logger.LogInformation({|#0:$""Processing {nameof(items)}""|});
+                    }
+                }
+            }",
+            "LogInformation"
+        ],
     ];
 
     [TestMethod]

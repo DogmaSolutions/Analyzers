@@ -816,4 +816,332 @@ public class DSA025CodeFixTests
                 .Diagnostic(DSA025Analyzer.DiagnosticId).WithLocation(0).WithArguments("LogInformation"));
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    [TestMethod]
+    public async Task ConvertsFullLogOverload()
+    {
+        var source = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(System.Exception ex, string msg)
+                    {
+                        _logger.Log(LogLevel.Error, new EventId(1), ex, {|#0:$""Error: {msg}""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(System.Exception ex, string msg)
+                    {
+                        _logger.Log(LogLevel.Error, new EventId(1), ex, ""Error: {Msg}"", msg);
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = GetReferenceAssemblies();
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>
+                .Diagnostic(DSA025Analyzer.DiagnosticId).WithLocation(0).WithArguments("Log"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ConvertsNamedArgumentMessage()
+    {
+        var source = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string name)
+                    {
+                        _logger.LogInformation(message: {|#0:$""User {name}""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string name)
+                    {
+                        _logger.LogInformation(message: ""User {Name}"", name);
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = GetReferenceAssemblies();
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>
+                .Diagnostic(DSA025Analyzer.DiagnosticId).WithLocation(0).WithArguments("LogInformation"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ConvertsNullCoalescingInHole()
+    {
+        var source = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string name)
+                    {
+                        _logger.LogInformation({|#0:$""User: {name ?? ""unknown""}""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string name)
+                    {
+                        _logger.LogInformation(""User: {NameUnknown}"", name ?? ""unknown"");
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = GetReferenceAssemblies();
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>
+                .Diagnostic(DSA025Analyzer.DiagnosticId).WithLocation(0).WithArguments("LogInformation"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ConvertsNameofInHole()
+    {
+        var source = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string items)
+                    {
+                        _logger.LogInformation({|#0:$""Processing {nameof(items)}""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string items)
+                    {
+                        _logger.LogInformation(""Processing {NameofItems}"", nameof(items));
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = GetReferenceAssemblies();
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>
+                .Diagnostic(DSA025Analyzer.DiagnosticId).WithLocation(0).WithArguments("LogInformation"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ConvertsToStringInHole()
+    {
+        var source = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(int count)
+                    {
+                        _logger.LogInformation({|#0:$""Count: {count.ToString()}""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(int count)
+                    {
+                        _logger.LogInformation(""Count: {CountToString}"", count.ToString());
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = GetReferenceAssemblies();
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>
+                .Diagnostic(DSA025Analyzer.DiagnosticId).WithLocation(0).WithArguments("LogInformation"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ConvertsILoggerGenericReceiver()
+    {
+        var source = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger<MyService> _logger;
+                    public void Process(string x)
+                    {
+                        _logger.LogInformation({|#0:$""Value: {x}""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger<MyService> _logger;
+                    public void Process(string x)
+                    {
+                        _logger.LogInformation(""Value: {X}"", x);
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = GetReferenceAssemblies();
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>
+                .Diagnostic(DSA025Analyzer.DiagnosticId).WithLocation(0).WithArguments("LogInformation"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ConvertsVerbatimInterpolatedStringWithBackslash()
+    {
+        var source = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string path)
+                    {
+                        _logger.LogInformation({|#0:$@""Loading: {path}\subdir""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(string path)
+                    {
+                        _logger.LogInformation(""Loading: {Path}\\subdir"", path);
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = GetReferenceAssemblies();
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>
+                .Diagnostic(DSA025Analyzer.DiagnosticId).WithLocation(0).WithArguments("LogInformation"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task DropsAlignmentSpecifierOnly()
+    {
+        var source = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(int count)
+                    {
+                        _logger.LogInformation({|#0:$""Count: {count,-10}""|});
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using Microsoft.Extensions.Logging;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly ILogger _logger;
+                    public void Process(int count)
+                    {
+                        _logger.LogInformation(""Count: {Count}"", count);
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = GetReferenceAssemblies();
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA025Analyzer, DSA025CodeFixProvider>
+                .Diagnostic(DSA025Analyzer.DiagnosticId).WithLocation(0).WithArguments("LogInformation"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }
