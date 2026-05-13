@@ -56,7 +56,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA014](#dsa014) | Security      | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
 | [DSA015](#dsa015) | Security      | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                  | ⚠ Warning        | ✅          | ✅        |
 | [DSA016](#dsa016) | Code Smells   | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                          | ⚠ Warning        | ✅          | ❌        |
-| [DSA017](#dsa017) | Design        | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                | ⚠ Warning        | ✅          | ❌        |
+| [DSA017](#dsa017) | Design        | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                | ⚠ Warning        | ✅          | ✅        |
 | [DSA018](#dsa018) | Design        | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                        | ⚠ Warning        | ✅          | ❌        |
 | [DSA019](#dsa019) | Code Smells   | Avoid repeated deeply nested member access chains                                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
 | [DSA020](#dsa020) | Code Smells   | Remove redundant async/await on `Task.FromResult`                                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
@@ -1097,6 +1097,133 @@ In order to change the severity level of this rule, change/add this line in the 
 # DSA017: Use the collection's atomic operation instead of the check-then-act pattern
 dotnet_diagnostic.DSA017.severity = error
 ```
+
+## Code fix
+
+The code fix is offered for patterns that have a direct, semantics-preserving atomic replacement. It handles three scenarios:
+
+**Dictionary/SortedDictionary: `ContainsKey` + `Add` → `TryAdd`**
+
+```csharp
+// Before
+if (!dict.ContainsKey(key))
+{
+    dict.Add(key, value);
+}
+
+// After
+dict.TryAdd(key, value);
+```
+
+When an `else` branch exists, the code fix preserves it:
+
+```csharp
+// Before
+if (!dict.ContainsKey(key))
+{
+    dict.Add(key, value);
+}
+else
+{
+    Console.WriteLine("exists");
+}
+
+// After
+if (!(dict.TryAdd(key, value)))
+{
+    Console.WriteLine("exists");
+}
+```
+
+**HashSet/SortedSet: `Contains` + `Add` → `Add` (returns bool)**
+
+```csharp
+// Before
+if (!set.Contains(item))
+{
+    set.Add(item);
+}
+
+// After
+set.Add(item);
+```
+
+With an `else` branch:
+
+```csharp
+// Before
+if (!set.Contains(item))
+{
+    set.Add(item);
+}
+else
+{
+    Console.WriteLine("duplicate");
+}
+
+// After
+if (!(set.Add(item)))
+{
+    Console.WriteLine("duplicate");
+}
+```
+
+**Positive check + else insert (Pattern C): `ContainsKey` + else `Add` → `TryAdd`**
+
+```csharp
+// Before (Dictionary)
+if (dict.ContainsKey(key))
+{
+    Console.WriteLine("exists");
+}
+else
+{
+    dict.Add(key, value);
+}
+
+// After
+if (!(dict.TryAdd(key, value)))
+{
+    Console.WriteLine("exists");
+}
+```
+
+The same transformation applies to `HashSet`/`SortedSet` Pattern C (`Contains` + else `Add` → `Add` returns bool).
+
+**Throw-then-insert pattern: `ContainsKey` + `throw` + subsequent `Add` → `TryAdd` + `throw`**
+
+```csharp
+// Before (Dictionary/SortedDictionary)
+if (dict.ContainsKey(key))
+    throw new InvalidOperationException();
+dict.Add(key, value);
+
+// After
+if (!(dict.TryAdd(key, value)))
+    throw new InvalidOperationException();
+```
+
+The same pattern applies to `HashSet`/`SortedSet`:
+
+```csharp
+// Before (HashSet)
+if (set.Contains(item))
+    throw new InvalidOperationException();
+set.Add(item);
+
+// After
+if (!(set.Add(item)))
+    throw new InvalidOperationException();
+```
+
+The throw pattern fix requires the `Add` call to be the **immediately next statement** after the if-throw; intervening statements (e.g., variable declarations the Add depends on) prevent the fix from being offered.
+
+The code fix is **not offered** for:
+- Complex bodies (multiple statements beyond the `Add` call), because inlining the computation into `TryAdd` would change evaluation semantics
+- `SortedList<K,V>` (no `TryAdd`; the indexer has upsert semantics that differ from add-only)
+- `ConcurrentDictionary<K,V>` (the appropriate atomic operation depends on context: `GetOrAdd`, `AddOrUpdate`, or `TryAdd`)
+- Immutable collections (require reassignment patterns the fix does not handle)
+- Throw pattern with non-adjacent `Add` (intervening statements could reference undeclared variables after reordering)
 
 ## Code sample
 
