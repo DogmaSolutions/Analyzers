@@ -208,7 +208,21 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         if (receiverExpr == null)
             return null;
 
-        var symbol = model.GetSymbolInfo(receiverExpr).Symbol;
+        return ResolveChainKey(receiverExpr, model);
+    }
+
+    private static string ResolveChainKey(ExpressionSyntax expr, SemanticModel model)
+    {
+        if (expr is MemberAccessExpressionSyntax memberAccess)
+        {
+            var leftKey = ResolveChainKey(memberAccess.Expression, model);
+            if (leftKey == null)
+                return null;
+
+            return $"{leftKey}.{memberAccess.Name.Identifier.ValueText}";
+        }
+
+        var symbol = model.GetSymbolInfo(expr).Symbol;
         if (symbol == null)
             return null;
 

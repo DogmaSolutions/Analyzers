@@ -343,6 +343,25 @@ public partial class DSA016Tests
             }"
         ],
         [
+            "Same method on member access chain with different root variables",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Detail { public decimal Value; }
+                public class Container { public List<Detail> details = new(); }
+                public class MyService
+                {
+                    public void Process(Container var1, Container var2)
+                    {
+                        var one = var1.details.Sum(v => v.Value);
+                        var two = var2.details.Sum(v => v.Value);
+                    }
+                }
+            }"
+        ],
+        [
             "Same call in both branches of a ternary operator",
             @"
             using System.Collections.Generic;
