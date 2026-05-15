@@ -53,9 +53,13 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         if (targetExpression == null)
             return;
 
+        var displayFragment = targetExpression.ToString();
+        if (displayFragment.Length > 60)
+            displayFragment = displayFragment.Substring(0, 57) + "...";
+
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Extract into local variable",
+                title: $"Extract '{displayFragment}' to local variable",
                 createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct),
                 equivalenceKey: DSA019Analyzer.DiagnosticId),
             diagnostic);
@@ -151,18 +155,31 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         var identifierName = SyntaxFactory.IdentifierName(variableName);
 
         var insertionAnnotation = new SyntaxAnnotation("DSA019_insertion");
-        var annotatedRoot = root.ReplaceNode(insertionStatement, insertionStatement.WithAdditionalAnnotations(insertionAnnotation));
+        var replaceAnnotation = new SyntaxAnnotation("DSA019_replace");
 
-        var newNodesToReplace = nodesToReplace
-            .Select(n => annotatedRoot.FindNode(n.Span))
-            .Where(n => n != null)
-            .ToList();
+        var nodesToReplaceSet = new HashSet<SyntaxNode>(nodesToReplace);
+        var allNodesToAnnotate = new HashSet<SyntaxNode>(nodesToReplace) { insertionStatement };
 
-        var newRoot = annotatedRoot.ReplaceNodes(
-            newNodesToReplace,
-            (original, _) => identifierName
-                .WithLeadingTrivia(original.GetLeadingTrivia())
-                .WithTrailingTrivia(original.GetTrailingTrivia()));
+        var annotatedRoot = root.ReplaceNodes(allNodesToAnnotate, (original, rewritten) =>
+        {
+            var result = rewritten;
+            if (original == insertionStatement)
+                result = result.WithAdditionalAnnotations(insertionAnnotation);
+            if (nodesToReplaceSet.Contains(original))
+                result = result.WithAdditionalAnnotations(replaceAnnotation);
+            return result;
+        });
+
+        var newRoot = annotatedRoot;
+        SyntaxNode nodeToReplace;
+        while ((nodeToReplace = newRoot.GetAnnotatedNodes(replaceAnnotation).FirstOrDefault()) != null)
+        {
+            newRoot = newRoot.ReplaceNode(
+                nodeToReplace,
+                identifierName
+                    .WithLeadingTrivia(nodeToReplace.GetLeadingTrivia())
+                    .WithTrailingTrivia(nodeToReplace.GetTrailingTrivia()));
+        }
 
         var finalInsertion = newRoot.GetAnnotatedNodes(insertionAnnotation).First() as StatementSyntax;
         var containingBlock = finalInsertion.Parent as BlockSyntax;

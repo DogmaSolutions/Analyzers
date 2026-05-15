@@ -1,5 +1,14 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -1269,6 +1278,492 @@ namespace TestApp
                 .WithLocation(1).WithArguments("config.Settings.Data.Value", 2));
 
         await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExtractsMemberAccessUsedAsElementAccessPrefix()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class StepInfo { public string Code; public string Name; public string Tag; }
+    public class GroupInfo { public string Id; public StepInfo[] Steps; public string Extra; }
+    public class Container { public string Label; public GroupInfo[] Groups; }
+    public static class Check
+    {
+        public static void AreEqual(object a, object b) { }
+        public static void One(object a) { }
+    }
+    public class MyTests
+    {
+        public void Verify()
+        {
+            var container = new Container();
+            var code = ""C1"";
+            var name = ""N1"";
+            var tag = ""T1"";
+            var extra = ""E1"";
+
+            Check.One({|#0:container.Groups[0].Steps|});
+            Check.AreEqual(code, {|#4:{|#1:container.Groups[0].Steps|}[0]|}.Code);
+            Check.AreEqual(name, {|#5:{|#2:container.Groups[0].Steps|}[0]|}.Name);
+            Check.AreEqual(tag, {|#6:{|#3:container.Groups[0].Steps|}[0]|}.Tag);
+            Check.AreEqual(extra, container.Groups[0].Extra);
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class StepInfo { public string Code; public string Name; public string Tag; }
+    public class GroupInfo { public string Id; public StepInfo[] Steps; public string Extra; }
+    public class Container { public string Label; public GroupInfo[] Groups; }
+    public static class Check
+    {
+        public static void AreEqual(object a, object b) { }
+        public static void One(object a) { }
+    }
+    public class MyTests
+    {
+        public void Verify()
+        {
+            var container = new Container();
+            var code = ""C1"";
+            var name = ""N1"";
+            var tag = ""T1"";
+            var extra = ""E1"";
+
+            var steps = container.Groups[0].Steps;
+
+            Check.One(steps);
+            Check.AreEqual(code, steps[0].Code);
+            Check.AreEqual(name, steps[0].Name);
+            Check.AreEqual(tag, steps[0].Tag);
+            Check.AreEqual(extra, container.Groups[0].Extra);
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("container.Groups[0].Steps", 4));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("container.Groups[0].Steps", 4));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(4).WithArguments("container.Groups[0].Steps[0]", 3));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(2).WithArguments("container.Groups[0].Steps", 4));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(5).WithArguments("container.Groups[0].Steps[0]", 3));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(3).WithArguments("container.Groups[0].Steps", 4));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(6).WithArguments("container.Groups[0].Steps[0]", 3));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExtractsMemberAccessOnlyAsElementAccessPrefixWithDifferentIndices()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class StepInfo { public string Code; public string Name; }
+    public class GroupInfo { public StepInfo[] Steps; }
+    public class Container { public GroupInfo[] Groups; }
+    public class MyTests
+    {
+        public void Verify(Container container)
+        {
+            var a = {|#3:{|#0:container.Groups[0].Steps|}[0]|}.Code;
+            var b = {|#1:container.Groups[0].Steps|}[1].Code;
+            var c = {|#4:{|#2:container.Groups[0].Steps|}[0]|}.Name;
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class StepInfo { public string Code; public string Name; }
+    public class GroupInfo { public StepInfo[] Steps; }
+    public class Container { public GroupInfo[] Groups; }
+    public class MyTests
+    {
+        public void Verify(Container container)
+        {
+            var steps = container.Groups[0].Steps;
+            var a = steps[0].Code;
+            var b = steps[1].Code;
+            var c = steps[0].Name;
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("container.Groups[0].Steps", 3));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(3).WithArguments("container.Groups[0].Steps[0]", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("container.Groups[0].Steps", 3));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(2).WithArguments("container.Groups[0].Steps", 3));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(4).WithArguments("container.Groups[0].Steps[0]", 2));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExtractsMemberAccessWithIntermediateIndexerInAssignments()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class StepInfo { public string Code; public string Name; }
+    public class GroupInfo { public StepInfo[] Steps; }
+    public class Container { public GroupInfo[] Groups; }
+    public class MyTests
+    {
+        public void Update(Container container)
+        {
+            {|#2:{|#0:container.Groups[0].Steps|}[0]|}.Code = ""A"";
+            {|#3:{|#1:container.Groups[0].Steps|}[0]|}.Name = ""B"";
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class StepInfo { public string Code; public string Name; }
+    public class GroupInfo { public StepInfo[] Steps; }
+    public class Container { public GroupInfo[] Groups; }
+    public class MyTests
+    {
+        public void Update(Container container)
+        {
+            var steps = container.Groups[0].Steps;
+            steps[0].Code = ""A"";
+            steps[0].Name = ""B"";
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("container.Groups[0].Steps", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(2).WithArguments("container.Groups[0].Steps[0]", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("container.Groups[0].Steps", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(3).WithArguments("container.Groups[0].Steps[0]", 2));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExtractsNestedDoubleElementAccessChain()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Cell { public string Value; public string Label; }
+    public class Sheet { public Cell[][] Rows; }
+    public class Workbook { public Sheet[] Sheets; }
+    public class MyTests
+    {
+        public void Verify(Workbook data)
+        {
+            var v = {|#4:{|#2:{|#0:data.Sheets[0].Rows|}[1]|}.Length|};
+            var l = {|#5:{|#3:{|#1:data.Sheets[0].Rows|}[1]|}.Length|};
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class Cell { public string Value; public string Label; }
+    public class Sheet { public Cell[][] Rows; }
+    public class Workbook { public Sheet[] Sheets; }
+    public class MyTests
+    {
+        public void Verify(Workbook data)
+        {
+            var rows = data.Sheets[0].Rows;
+            var v = rows[1].Length;
+            var l = rows[1].Length;
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("data.Sheets[0].Rows", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(2).WithArguments("data.Sheets[0].Rows[1]", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(4).WithArguments("data.Sheets[0].Rows[1].Length", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("data.Sheets[0].Rows", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(3).WithArguments("data.Sheets[0].Rows[1]", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(5).WithArguments("data.Sheets[0].Rows[1].Length", 2));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExtractsMemberAccessAsElementAccessPrefixInMixedContexts()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class StepInfo { public string Code; public string Name; }
+    public class GroupInfo { public StepInfo[] Steps; }
+    public class Container { public GroupInfo[] Groups; }
+    public static class Util { public static string Format(string s) => s; }
+    public class MyTests
+    {
+        public void Process(Container container)
+        {
+            var code = Util.Format({|#3:{|#0:container.Groups[0].Steps|}[0]|}.Code);
+            {|#4:{|#1:container.Groups[0].Steps|}[0]|}.Name = ""updated"";
+            var items = {|#2:container.Groups[0].Steps|};
+        }
+    }
+}";
+
+        var fixedSource = @"
+namespace TestApp
+{
+    public class StepInfo { public string Code; public string Name; }
+    public class GroupInfo { public StepInfo[] Steps; }
+    public class Container { public GroupInfo[] Groups; }
+    public static class Util { public static string Format(string s) => s; }
+    public class MyTests
+    {
+        public void Process(Container container)
+        {
+            var steps = container.Groups[0].Steps;
+            var code = Util.Format(steps[0].Code);
+            steps[0].Name = ""updated"";
+            var items = steps;
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(0).WithArguments("container.Groups[0].Steps", 3));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(3).WithArguments("container.Groups[0].Steps[0]", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(1).WithArguments("container.Groups[0].Steps", 3));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(4).WithArguments("container.Groups[0].Steps[0]", 2));
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                .WithLocation(2).WithArguments("container.Groups[0].Steps", 3));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task CodeFixTitle_ContainsTargetExpression()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Deep { public int X; public int Y; }
+    public class Inner { public Deep Deep; }
+    public class Middle { public Inner Inner; }
+    public class Outer { public Middle Middle; }
+    public class MyService
+    {
+        public void Process(Outer outer)
+        {
+            var x = outer.Middle.Inner.Deep.X;
+            var y = outer.Middle.Inner.Deep.Y;
+        }
+    }
+}";
+
+        var runtimeDir = RuntimeEnvironment.GetRuntimeDirectory();
+        var references = new MetadataReference[]
+        {
+            MetadataReference.CreateFromFile(Path.Combine(runtimeDir, "System.Runtime.dll")),
+            MetadataReference.CreateFromFile(Path.Combine(runtimeDir, "System.Private.CoreLib.dll")),
+        };
+
+        var tree = CSharpSyntaxTree.ParseText(source);
+        var compilation = CSharpCompilation.Create(
+            "Test",
+            new[] { tree },
+            references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var analyzers = ImmutableArray.Create<DiagnosticAnalyzer>(new DSA019Analyzer());
+        var compilationWithAnalyzers = compilation.WithAnalyzers(analyzers);
+        var diagnostics = (await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false))
+            .Where(d => d.Id == DSA019Analyzer.DiagnosticId)
+            .OrderBy(d => d.Location.SourceSpan.Start)
+            .ToArray();
+
+        Assert.IsTrue(diagnostics.Length > 0, "Expected DSA019 diagnostics");
+
+        using var workspace = new AdhocWorkspace();
+        var projectId = ProjectId.CreateNewId();
+        var solution = workspace.CurrentSolution
+            .AddProject(projectId, "Test", "Test", LanguageNames.CSharp)
+            .AddMetadataReferences(projectId, references);
+        var docId = DocumentId.CreateNewId(projectId);
+        solution = solution.AddDocument(docId, "Test.cs", source);
+        workspace.TryApplyChanges(solution);
+
+        var document = workspace.CurrentSolution.GetDocument(docId);
+        var docCompilation = await document.Project.GetCompilationAsync().ConfigureAwait(false);
+        var docDiags = (await docCompilation.WithAnalyzers(analyzers).GetAnalyzerDiagnosticsAsync().ConfigureAwait(false))
+            .Where(d => d.Id == DSA019Analyzer.DiagnosticId)
+            .ToArray();
+
+        var provider = new DSA019CodeFixProvider();
+        var actions = new List<CodeAction>();
+        var fixContext = new CodeFixContext(
+            document,
+            docDiags[0],
+            (action, _) => actions.Add(action),
+            CancellationToken.None);
+
+        await provider.RegisterCodeFixesAsync(fixContext).ConfigureAwait(false);
+
+        Assert.IsTrue(actions.Count > 0, "Expected code fix actions");
+        var mainAction = actions.First(a => a.EquivalenceKey == DSA019Analyzer.DiagnosticId);
+        StringAssert.StartsWith(mainAction.Title, "Extract '");
+        StringAssert.Contains(mainAction.Title, "outer.Middle.Inner.Deep");
+        StringAssert.EndsWith(mainAction.Title, "' to local variable");
+    }
+
+    [TestMethod]
+    public async Task CodeFixTitle_TruncatesLongExpression()
+    {
+        var source = @"
+namespace TestApp
+{
+    public class Z { public int V; }
+    public class Y { public Z VeryLongPropertyNameForTestingTruncation; }
+    public class X { public Y AnotherVeryLongPropertyNameHere; }
+    public class W { public X YetAnotherLongPropertyNameForGoodMeasure; }
+    public class MyService
+    {
+        public void Process(W w)
+        {
+            var a = w.YetAnotherLongPropertyNameForGoodMeasure.AnotherVeryLongPropertyNameHere.VeryLongPropertyNameForTestingTruncation.V;
+            var b = w.YetAnotherLongPropertyNameForGoodMeasure.AnotherVeryLongPropertyNameHere.VeryLongPropertyNameForTestingTruncation.V;
+        }
+    }
+}";
+
+        var runtimeDir = RuntimeEnvironment.GetRuntimeDirectory();
+        var references = new MetadataReference[]
+        {
+            MetadataReference.CreateFromFile(Path.Combine(runtimeDir, "System.Runtime.dll")),
+            MetadataReference.CreateFromFile(Path.Combine(runtimeDir, "System.Private.CoreLib.dll")),
+        };
+
+        var tree = CSharpSyntaxTree.ParseText(source);
+        var compilation = CSharpCompilation.Create(
+            "Test",
+            new[] { tree },
+            references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var analyzers = ImmutableArray.Create<DiagnosticAnalyzer>(new DSA019Analyzer());
+        var docDiags = (await compilation.WithAnalyzers(analyzers).GetAnalyzerDiagnosticsAsync().ConfigureAwait(false))
+            .Where(d => d.Id == DSA019Analyzer.DiagnosticId)
+            .ToArray();
+
+        Assert.IsTrue(docDiags.Length > 0, "Expected DSA019 diagnostics");
+
+        using var workspace = new AdhocWorkspace();
+        var projectId = ProjectId.CreateNewId();
+        var solution = workspace.CurrentSolution
+            .AddProject(projectId, "Test", "Test", LanguageNames.CSharp)
+            .AddMetadataReferences(projectId, references);
+        var docId = DocumentId.CreateNewId(projectId);
+        solution = solution.AddDocument(docId, "Test.cs", source);
+        workspace.TryApplyChanges(solution);
+
+        var document = workspace.CurrentSolution.GetDocument(docId);
+        var docCompilation = await document.Project.GetCompilationAsync().ConfigureAwait(false);
+        var docDiags2 = (await docCompilation.WithAnalyzers(analyzers).GetAnalyzerDiagnosticsAsync().ConfigureAwait(false))
+            .Where(d => d.Id == DSA019Analyzer.DiagnosticId)
+            .ToArray();
+
+        var provider = new DSA019CodeFixProvider();
+        var actions = new List<CodeAction>();
+        var fixContext = new CodeFixContext(
+            document,
+            docDiags2[0],
+            (action, _) => actions.Add(action),
+            CancellationToken.None);
+
+        await provider.RegisterCodeFixesAsync(fixContext).ConfigureAwait(false);
+
+        Assert.IsTrue(actions.Count > 0, "Expected code fix actions");
+        var mainAction = actions.First(a => a.EquivalenceKey == DSA019Analyzer.DiagnosticId);
+        StringAssert.StartsWith(mainAction.Title, "Extract '");
+        StringAssert.EndsWith(mainAction.Title, "' to local variable");
+        Assert.IsTrue(mainAction.Title.Contains("..."), "Long expressions should be truncated with '...'");
+        Assert.IsFalse(mainAction.Title.Contains("VeryLongPropertyNameForTestingTruncation"),
+            "Full long member name should not appear — it should be truncated");
     }
 
 }
