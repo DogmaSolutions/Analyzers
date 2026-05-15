@@ -70,6 +70,10 @@ public sealed class DSA017CodeFixProvider : CodeFixProvider
 
     private static FixKind ClassifyFix(string typeName, string ns, IfStatementSyntax ifStatement)
     {
+        if (TryGetTryGetValueOutVariableName(ifStatement.Condition, out var outVarName) &&
+            IsOutVariableUsedBeyondCondition(outVarName, ifStatement))
+            return FixKind.None;
+
         if (CheckThenActUtils.IsNegatedExistenceCheck(ifStatement.Condition, out _))
         {
             if (!HasSimpleInsertBody(ifStatement.Statement))
@@ -365,5 +369,67 @@ public sealed class DSA017CodeFixProvider : CodeFixProvider
         }
 
         return null;
+    }
+
+    private static bool TryGetTryGetValueOutVariableName(ExpressionSyntax condition, out string outVarName)
+    {
+        outVarName = null;
+
+        var tryGetValueInvocation = condition.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .FirstOrDefault(inv => inv.Expression is MemberAccessExpressionSyntax ma &&
+                                   ma.Name.Identifier.ValueText == "TryGetValue");
+
+        if (tryGetValueInvocation == null)
+            return false;
+
+        foreach (var arg in tryGetValueInvocation.ArgumentList.Arguments)
+        {
+            if (!arg.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
+                continue;
+
+            if (arg.Expression is DeclarationExpressionSyntax decl &&
+                decl.Designation is SingleVariableDesignationSyntax designation)
+            {
+                outVarName = designation.Identifier.ValueText;
+                return true;
+            }
+
+            if (arg.Expression is IdentifierNameSyntax identifier)
+            {
+                outVarName = identifier.Identifier.ValueText;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsOutVariableUsedBeyondCondition(string variableName, IfStatementSyntax ifStatement)
+    {
+        if (ContainsIdentifierReference(ifStatement.Statement, variableName))
+            return true;
+
+        if (ifStatement.Else != null && ContainsIdentifierReference(ifStatement.Else.Statement, variableName))
+            return true;
+
+        if (ifStatement.Parent is BlockSyntax block)
+        {
+            var ifIndex = block.Statements.IndexOf(ifStatement);
+            for (var i = ifIndex + 1; i < block.Statements.Count; i++)
+            {
+                if (ContainsIdentifierReference(block.Statements[i], variableName))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsIdentifierReference(SyntaxNode node, string identifierName)
+    {
+        return node.DescendantNodes()
+            .OfType<IdentifierNameSyntax>()
+            .Any(id => id.Identifier.ValueText == identifierName);
     }
 }

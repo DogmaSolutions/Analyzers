@@ -167,6 +167,63 @@ public partial class DSA017Tests
             }"
         ],
         [
+            "Local Dictionary: ContainsKey + Add (no TOCTOU risk for local variables)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod(string key, string value)
+                    {
+                        var dict = new Dictionary<string, string>();
+                        if (!dict.ContainsKey(key))
+                        {
+                            dict.Add(key, value);
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Local HashSet: Contains + Add (no TOCTOU risk for local variables)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod(string item)
+                    {
+                        var set = new HashSet<string>();
+                        if (!set.Contains(item))
+                        {
+                            set.Add(item);
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Local SortedDictionary: ContainsKey + Add (no TOCTOU risk for local variables)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod(string key, int value)
+                    {
+                        var dict = new SortedDictionary<string, int>();
+                        if (!dict.ContainsKey(key))
+                        {
+                            dict.Add(key, value);
+                        }
+                    }
+                }
+            }"
+        ],
+        [
             "DbSet check-then-act (DSA012 territory, not DSA017)",
             @"
             using System.Linq;

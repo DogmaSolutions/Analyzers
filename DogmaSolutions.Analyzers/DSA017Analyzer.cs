@@ -62,6 +62,11 @@ public sealed class DSA017Analyzer : DiagnosticAnalyzer
         if (CheckThenActUtils.CategorizeReceiverType(receiverType) != CheckThenActUtils.ReceiverCategory.AtomicAlternative)
             return;
 
+        // Skip if the receiver is a local variable — local scope eliminates the cross-thread TOCTOU risk
+        var receiverSymbol = context.SemanticModel.GetSymbolInfo(receiver).Symbol;
+        if (receiverSymbol is ILocalSymbol)
+            return;
+
         CheckThenActUtils.HasAtomicAlternative(receiverType, out var suggestion);
         var typeName = receiverType?.Name ?? "collection";
 
