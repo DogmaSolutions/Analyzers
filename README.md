@@ -1365,6 +1365,26 @@ In order to change the severity level of this rule, change/add this line in the 
 dotnet_diagnostic.DSA018.severity = error
 ```
 
+### Excluded members
+
+Some collection members are safe to use with the check-then-act pattern because they are typically populated during single-threaded startup (e.g., JSON serializer converter lists) and have no atomic alternative. DSA018 ships with a built-in exclusion list for these well-known members and will not flag check-then-act patterns on them.
+
+**Default excluded members** (applied when no `.editorconfig` override is present):
+
+| Type.Member | Reason |
+|---|---|
+| `JsonSerializerOptions.Converters` | System.Text.Json converter registration — typically configured at startup, no concurrent risk |
+| `JsonSerializerSettings.Converters` | Newtonsoft.Json converter registration — typically configured at startup, no concurrent risk |
+
+To **replace** the default list with your own, add a comma-separated list of `Type.Member` entries in `.editorconfig`:
+
+```
+[*.cs]
+dotnet_diagnostic.DSA018.excluded_members = JsonSerializerOptions.Converters, JsonSerializerSettings.Converters, MvcOptions.Filters, PipelineOptions.Handlers
+```
+
+> **Note:** setting `dotnet_diagnostic.DSA018.excluded_members` **replaces** the entire default list. To keep the built-in exclusions while adding your own, include them explicitly in your list.
+
 ## Code sample
 
 ```csharp

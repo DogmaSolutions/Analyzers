@@ -223,6 +223,107 @@ public partial class DSA018Tests
                 }
             }"
         ],
+        [
+            "Collection field: negated Contains + Add (no atomic alternative)",
+            @"
+            using System.Collections.ObjectModel;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly Collection<string> _items = new Collection<string>();
+                    public void MyMethod()
+                    {
+                        {|#0:if (!_items.Contains(""test""))
+                        {
+                            _items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List static field: negated Contains + Add",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private static readonly List<string> _items = new List<string>();
+                    public void MyMethod()
+                    {
+                        {|#0:if (!_items.Contains(""test""))
+                        {
+                            _items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List field: Any == false + Add",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly List<string> _items = new List<string>();
+                    public void MyMethod()
+                    {
+                        {|#0:if (_items.Any(x => x == ""test"") == false)
+                        {
+                            _items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "List field: Exists + else Add",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly List<string> _items = new List<string>();
+                    public void MyMethod()
+                    {
+                        {|#0:if (_items.Exists(x => x == ""test""))
+                        {
+                            System.Console.WriteLine(""found"");
+                        }
+                        else
+                        {
+                            _items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
+        [
+            "Nested member access receiver: field.Property.Contains + Add",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class Options { public List<string> Items { get; } = new List<string>(); }
+                public class MyClass
+                {
+                    private readonly Options _options = new Options();
+                    public void MyMethod()
+                    {
+                        {|#0:if (!_options.Items.Contains(""test""))
+                        {
+                            _options.Items.Add(""test"");
+                        }|}
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

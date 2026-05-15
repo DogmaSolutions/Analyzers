@@ -316,6 +316,104 @@ public partial class DSA018Tests
                 }
             }"
         ],
+        [
+            "SortedSet parameter: Contains + Add (DSA017 territory, not DSA018)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void MyMethod(SortedSet<string> set, string item)
+                    {
+                        if (!set.Contains(item))
+                        {
+                            set.Add(item);
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "SortedDictionary field: ContainsKey + Add (DSA017 territory, not DSA018)",
+            @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    private readonly SortedDictionary<string, int> _dict = new SortedDictionary<string, int>();
+                    public void MyMethod(string key, int value)
+                    {
+                        if (!_dict.ContainsKey(key))
+                        {
+                            _dict.Add(key, value);
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Default excluded member: JsonSerializerOptions.Converters",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace System.Text.Json.Serialization { public abstract class JsonConverter { } }
+            namespace System.Text.Json
+            {
+                public class JsonSerializerOptions
+                {
+                    public IList<System.Text.Json.Serialization.JsonConverter> Converters { get; } = new List<System.Text.Json.Serialization.JsonConverter>();
+                }
+            }
+            namespace TestApp
+            {
+                using System.Text.Json;
+                using System.Text.Json.Serialization;
+                public class MyConverter : JsonConverter { }
+                public class MyClass
+                {
+                    private readonly JsonSerializerOptions _options = new JsonSerializerOptions();
+                    public void Configure()
+                    {
+                        if (!_options.Converters.Any(c => c is MyConverter))
+                        {
+                            _options.Converters.Add(new MyConverter());
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "Default excluded member: JsonSerializerSettings.Converters",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace Newtonsoft.Json
+            {
+                public abstract class JsonConverter { }
+                public class JsonSerializerSettings
+                {
+                    public IList<JsonConverter> Converters { get; } = new List<JsonConverter>();
+                }
+            }
+            namespace TestApp
+            {
+                using Newtonsoft.Json;
+                public class MyConverter : JsonConverter { }
+                public class MyClass
+                {
+                    private readonly JsonSerializerSettings _settings = new JsonSerializerSettings();
+                    public void Configure()
+                    {
+                        if (!_settings.Converters.Any(c => c is MyConverter))
+                        {
+                            _settings.Converters.Add(new MyConverter());
+                        }
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]
@@ -334,6 +432,297 @@ public partial class DSA018Tests
                 new("Microsoft.EntityFrameworkCore", "3.1.22")
             }
         ]);
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task NotMatched_CustomExcludedMember_ViaEditorConfig()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class PipelineOptions
+                {
+                    public List<string> Filters { get; } = new List<string>();
+                }
+                public class MyClass
+                {
+                    private readonly PipelineOptions _options = new PipelineOptions();
+                    public void Configure()
+                    {
+                        if (!_options.Filters.Any(f => f == ""MyFilter""))
+                        {
+                            _options.Filters.Add(""MyFilter"");
+                        }
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA018Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA018.excluded_members = PipelineOptions.Filters
+"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Matched_WhenDefaultExclusionOverriddenByEditorConfig()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace System.Text.Json.Serialization { public abstract class JsonConverter { } }
+            namespace System.Text.Json
+            {
+                public class JsonSerializerOptions
+                {
+                    public IList<System.Text.Json.Serialization.JsonConverter> Converters { get; } = new List<System.Text.Json.Serialization.JsonConverter>();
+                }
+            }
+            namespace TestApp
+            {
+                using System.Text.Json;
+                using System.Text.Json.Serialization;
+                public class MyConverter : JsonConverter { }
+                public class MyClass
+                {
+                    private readonly JsonSerializerOptions _options = new JsonSerializerOptions();
+                    public void Configure()
+                    {
+                        {|#0:if (!_options.Converters.Any(c => c is MyConverter))
+                        {
+                            _options.Converters.Add(new MyConverter());
+                        }|}
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA018Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA018.excluded_members = SomeOther.Member
+"));
+
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA018Analyzer>.Diagnostic(DSA018Analyzer.DiagnosticId)
+                .WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task NotMatched_MultipleExcludedMembers_ViaEditorConfig()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class PipelineOptions
+                {
+                    public List<string> Filters { get; } = new List<string>();
+                    public List<string> Handlers { get; } = new List<string>();
+                }
+                public class MyClass
+                {
+                    private readonly PipelineOptions _options = new PipelineOptions();
+                    public void Configure()
+                    {
+                        if (!_options.Filters.Any(f => f == ""MyFilter""))
+                        {
+                            _options.Filters.Add(""MyFilter"");
+                        }
+                        if (!_options.Handlers.Any(h => h == ""MyHandler""))
+                        {
+                            _options.Handlers.Add(""MyHandler"");
+                        }
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA018Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA018.excluded_members = PipelineOptions.Filters, PipelineOptions.Handlers
+"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task NotMatched_ExcludedMember_CaseInsensitive()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class PipelineOptions
+                {
+                    public List<string> Filters { get; } = new List<string>();
+                }
+                public class MyClass
+                {
+                    private readonly PipelineOptions _options = new PipelineOptions();
+                    public void Configure()
+                    {
+                        if (!_options.Filters.Any(f => f == ""MyFilter""))
+                        {
+                            _options.Filters.Add(""MyFilter"");
+                        }
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA018Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA018.excluded_members = pipelineoptions.filters
+"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Matched_ExcludedMember_DoesNotSuppressDifferentPropertyOnSameType()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class PipelineOptions
+                {
+                    public List<string> Filters { get; } = new List<string>();
+                    public List<string> Handlers { get; } = new List<string>();
+                }
+                public class MyClass
+                {
+                    private readonly PipelineOptions _options = new PipelineOptions();
+                    public void Configure()
+                    {
+                        {|#0:if (!_options.Handlers.Any(h => h == ""MyHandler""))
+                        {
+                            _options.Handlers.Add(""MyHandler"");
+                        }|}
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA018Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA018.excluded_members = PipelineOptions.Filters
+"));
+
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA018Analyzer>.Diagnostic(DSA018Analyzer.DiagnosticId)
+                .WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Matched_ExcludedMembers_SetToNone_OverridesDefaults()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace System.Text.Json.Serialization { public abstract class JsonConverter { } }
+            namespace System.Text.Json
+            {
+                public class JsonSerializerOptions
+                {
+                    public IList<System.Text.Json.Serialization.JsonConverter> Converters { get; } = new List<System.Text.Json.Serialization.JsonConverter>();
+                }
+            }
+            namespace TestApp
+            {
+                using System.Text.Json;
+                using System.Text.Json.Serialization;
+                public class MyConverter : JsonConverter { }
+                public class MyClass
+                {
+                    private readonly JsonSerializerOptions _options = new JsonSerializerOptions();
+                    public void Configure()
+                    {
+                        {|#0:if (!_options.Converters.Any(c => c is MyConverter))
+                        {
+                            _options.Converters.Add(new MyConverter());
+                        }|}
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA018Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA018.excluded_members = none
+"));
+
+        test.ExpectedDiagnostics.Add(
+            CSharpAnalyzerVerifier<DSA018Analyzer>.Diagnostic(DSA018Analyzer.DiagnosticId)
+                .WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task NotMatched_ExcludedMember_NestedPropertyAccess()
+    {
+        var sourceCode = @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class AppConfig
+                {
+                    public List<string> Tags { get; } = new List<string>();
+                }
+                public class MyClass
+                {
+                    private readonly AppConfig _config = new AppConfig();
+                    public void Configure()
+                    {
+                        if (!_config.Tags.Any(t => t == ""important""))
+                        {
+                            _config.Tags.Add(""important"");
+                        }
+                    }
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA018Analyzer>.Test();
+        test.TestCode = sourceCode;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA018.excluded_members = AppConfig.Tags
+"));
 
         await test.RunAsync().ConfigureAwait(false);
     }

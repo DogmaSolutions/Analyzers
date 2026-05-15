@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -19,6 +21,16 @@ namespace DogmaSolutions.Analyzers;
 public sealed class DSA018Analyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "DSA018";
+
+    internal const string ExcludedMembersOptionKey = "dotnet_diagnostic.DSA018.excluded_members";
+
+    private static readonly string[] DefaultExcludedMembers =
+    {
+        "JsonSerializerOptions.Converters",
+        "JsonSerializerSettings.Converters",
+    };
+
+    private static readonly ConcurrentDictionary<AnalyzerConfigOptions, string[]> _excludedMembersCache = new();
 
     private static readonly LocalizableString _title =
         new LocalizableResourceString(nameof(Resources.DSA018AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
@@ -72,6 +84,9 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
         if (receiverSymbol is ILocalSymbol)
             return;
 
+        if (IsExcludedMember(receiverSymbol, context))
+            return;
+
         var diagnostic = Diagnostic.Create(
             descriptor: _rule,
             location: ifStatement.GetLocation(),
@@ -79,6 +94,41 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
             additionalLocations: null,
             properties: null);
         context.ReportDiagnostic(diagnostic);
+    }
+
+    private static bool IsExcludedMember(ISymbol receiverSymbol, SyntaxNodeAnalysisContext context)
+    {
+        if (receiverSymbol?.ContainingType == null)
+            return false;
+
+        var key = receiverSymbol.ContainingType.Name + "." + receiverSymbol.Name;
+        var excludedMembers = GetExcludedMembers(context);
+
+        foreach (var excluded in excludedMembers)
+        {
+            if (string.Equals(key, excluded, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    internal static string[] GetExcludedMembers(SyntaxNodeAnalysisContext context)
+    {
+        var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
+        return _excludedMembersCache.GetOrAdd(config, static c =>
+        {
+            if (c.TryGetValue(ExcludedMembersOptionKey, out var configValue) &&
+                !string.IsNullOrWhiteSpace(configValue))
+            {
+                return configValue.Split(',')
+                    .Select(p => p.Trim())
+                    .Where(p => p.Length > 0)
+                    .ToArray();
+            }
+
+            return DefaultExcludedMembers;
+        });
     }
 
     /// <summary>
