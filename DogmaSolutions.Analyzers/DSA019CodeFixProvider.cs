@@ -145,10 +145,33 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         variableName = ResolveNameConflicts(variableName, scope);
 
         // Build the variable declaration
-        var variableDeclaration = CreateVariableDeclaration(variableName, expressionToExtract, insertionStatement);
+        var eolTrivia = GetEndOfLineTrivia(insertionStatement);
+        var variableDeclaration = CreateVariableDeclaration(variableName, expressionToExtract, insertionStatement, eolTrivia);
 
-        // DEBUG: Only insert, no replace — testing if InsertNodesBefore preserves \r\n
-        var newRoot = root.InsertNodesBefore(insertionStatement, new[] { variableDeclaration });
+        var identifierName = SyntaxFactory.IdentifierName(variableName);
+
+        var insertionAnnotation = new SyntaxAnnotation("DSA019_insertion");
+        var annotatedRoot = root.ReplaceNode(insertionStatement, insertionStatement.WithAdditionalAnnotations(insertionAnnotation));
+
+        var newNodesToReplace = nodesToReplace
+            .Select(n => annotatedRoot.FindNode(n.Span))
+            .Where(n => n != null)
+            .ToList();
+
+        var newRoot = annotatedRoot.ReplaceNodes(
+            newNodesToReplace,
+            (original, _) => identifierName
+                .WithLeadingTrivia(original.GetLeadingTrivia())
+                .WithTrailingTrivia(original.GetTrailingTrivia()));
+
+        var finalInsertion = newRoot.GetAnnotatedNodes(insertionAnnotation).First() as StatementSyntax;
+        var containingBlock = finalInsertion.Parent as BlockSyntax;
+        if (containingBlock == null)
+            return document.WithSyntaxRoot(newRoot);
+
+        var idx = containingBlock.Statements.IndexOf(finalInsertion);
+        var newStatements = containingBlock.Statements.Insert(idx, variableDeclaration);
+        newRoot = newRoot.ReplaceNode(containingBlock, containingBlock.WithStatements(newStatements));
 
         return document.WithSyntaxRoot(newRoot);
     }
@@ -461,8 +484,13 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
     private static LocalDeclarationStatementSyntax CreateVariableDeclaration(
         string variableName,
         ExpressionSyntax expression,
-        StatementSyntax insertBeforeStatement)
+        StatementSyntax insertBeforeStatement,
+        SyntaxTrivia eolTrivia)
     {
+        var eolStr = eolTrivia.ToFullString();
+        if (string.IsNullOrEmpty(eolStr))
+            eolStr = "\r\n";
+
         return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),
@@ -470,8 +498,9 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                         SyntaxFactory.VariableDeclarator(variableName)
                             .WithInitializer(SyntaxFactory.EqualsValueClause(
                                 expression.WithoutTrivia())))))
+            .NormalizeWhitespace(eol: eolStr)
             .WithLeadingTrivia(GetIndentationTrivia(insertBeforeStatement))
-            .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+            .WithTrailingTrivia(eolTrivia);
     }
 
     private static SyntaxTriviaList GetIndentationTrivia(SyntaxNode node)
