@@ -391,4 +391,13 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA027AnalyzerTitle" xml:space="preserve">
     <value>Use StringBuilder instead of string concatenation in a loop</value>
   </data>
+    <data name="DSA028AnalyzerDescription" xml:space="preserve">
+    <value>A method (or property getter) whose return type is IEnumerable&lt;T&gt;, IReadOnlyCollection&lt;T&gt;, or IReadOnlyList&lt;T&gt; materializes the result with .ToList(), but the caller cannot use any List&lt;T&gt;-specific mutating members (Add, Remove, Sort, indexer assignment, etc.) through the declared return type. Using .ToArray() instead eliminates the unused internal capacity buffer (List&lt;T&gt; typically over-allocates by 2×) and the hidden _size bookkeeping field, producing a tighter allocation with better cache locality. From a security perspective, returning an array through an immutable interface makes it harder for callers to accidentally or maliciously mutate shared state via an unsafe downcast to List&lt;T&gt; — an array downcast to IReadOnlyList&lt;T&gt; is still mutable only through the concrete reference, which the caller does not hold (https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA028).</value>
+  </data>
+    <data name="DSA028AnalyzerMessageFormat" xml:space="preserve">
+    <value>Return type does not expose List&lt;T&gt; mutating members. Use .ToArray() instead of .ToList() to avoid unnecessary memory overhead.</value>
+  </data>
+    <data name="DSA028AnalyzerTitle" xml:space="preserve">
+    <value>Prefer ToArray over ToList when return type is a read-only interface</value>
+  </data>
 </root>

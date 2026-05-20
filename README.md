@@ -22,6 +22,14 @@ Given a version number MAJOR.MINOR.PATCH, increment the:
 
 Additional labels for pre-release and build metadata are available as extensions to the MAJOR.MINOR.PATCH format.
 ```
+---
+
+# Installation
+
+Just download and install the NuGet package  
+[![DogmaSolutions.Analyzers on NuGet](https://img.shields.io/nuget/v/DogmaSolutions.Analyzers.svg)](https://www.nuget.org/packages/DogmaSolutions.Analyzers/)
+
+[https://www.nuget.org/packages/DogmaSolutions.Analyzers](https://www.nuget.org/packages/DogmaSolutions.Analyzers)
 
 ---
 
@@ -55,7 +63,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA013](#dsa013) | Security      | Minimal API endpoints should have an explicit authorization configuration                                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
 | [DSA014](#dsa014) | Security      | Minimal API endpoints on route groups should have an explicit authorization configuration                                                                                                                  | ⚠ Warning        | ✅          | ✅        |
 | [DSA015](#dsa015) | Security      | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration                                                                                                  | ⚠ Warning        | ✅          | ✅        |
-| [DSA016](#dsa016) | Code Smells   | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                          | ⚠ Warning        | ✅          | ❌        |
+| [DSA016](#dsa016) | Code Smells   | Avoid repeated invocation of the same enumeration method with identical arguments                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
 | [DSA017](#dsa017) | Design        | Use the collection's atomic operation instead of the check-then-act pattern                                                                                                                                | ⚠ Warning        | ✅          | ✅        |
 | [DSA018](#dsa018) | Design        | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling                                                                                                        | ⚠ Warning        | ✅          | ❌        |
 | [DSA019](#dsa019) | Code Smells   | Avoid repeated deeply nested member access chains                                                                                                                                                          | ⚠ Warning        | ✅          | ✅        |
@@ -67,6 +75,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA025](#dsa025) | Performance   | Use structured logging template instead of interpolated string                                                                                                                                             | ⚠ Warning        | ✅          | ✅        |
 | [DSA026](#dsa026) | Bug           | Use nearest scope CancellationToken                                                                                                                                                                        | ⚠ Warning        | ✅          | ✅        |
 | [DSA027](#dsa027) | Performance   | Replace string concatenation in loops with `StringBuilder`                                                                                                                                                 | ⚠ Warning        | ✅          | ✅        |
+| [DSA028](#dsa028) | Performance   | Prefer `ToArray()` over `ToList()` when return type is a read-only interface                                                                                                                               | ⚠ Warning        | ✅          | ✅        |
 
 ---
 
@@ -74,9 +83,14 @@ Every rule is accompanied by the following information and clues:
 
 Don't use Entity Framework to launch LINQ queries in a WebApi controller.
 
-- **Category**: Design
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA002](#dsa002)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA001                                                                                        |
+| Title        | WebApi controller methods should not contain data-manipulation business logics through a LINQ query expression|
+| Category     | Design                                                                                        |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ❌                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -148,9 +162,14 @@ public class MyEntitiesController : ControllerBase
 
 Don't use an Entity Framework `DbSet` to launch queries in a WebApi controller.
 
-- **Category**: Design
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA001](#dsa001)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA002                                                                                        |
+| Title        | WebApi controller methods should not contain data-manipulation business logics through a LINQ fluent query|
+| Category     | Design                                                                                        |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ❌                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -222,8 +241,14 @@ public class MyEntitiesController : Microsoft.AspNetCore.Mvc.ControllerBase
 
 Use `IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty`.
 
-- **Category**: Code smells
-- **Severity**: Warning ⚠
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA003                                                                                        |
+| Title        | Use String.IsNullOrWhiteSpace instead of String.IsNullOrEmpty                                 |
+| Category     | Code Smells                                                                                   |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -279,8 +304,14 @@ public class MyClass
 
 Use `DateTime.UtcNow` instead of `DateTime.Now`.
 
-- **Category**: Code smells
-- **Severity**: Warning ⚠
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA004                                                                                        |
+| Title        | Use DateTime.UtcNow instead of DateTime.Now                                                   |
+| Category     | Code Smells                                                                                   |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -344,8 +375,14 @@ public class MyClass
 
 Potential non-deterministic point-in-time execution due to multiple usages of `DateTime.UtcNow` or `DateTime.Now` in the same method.
 
-- **Category**: Code smells
-- **Severity**: Error ⛔
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA005                                                                                        |
+| Title        | Potential non-deterministic point-in-time execution                                           |
+| Category     | Code Smells                                                                                   |
+| Severity     | ⛔ Error                                                                                       |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -435,8 +472,14 @@ public class MyClass
 
 General exceptions should not be thrown by user code.
 
-- **Category**: Code smells
-- **Severity**: Error ⛔
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA006                                                                                        |
+| Title        | General exceptions should not be thrown by user code                                          |
+| Category     | Code Smells                                                                                   |
+| Severity     | ⛔ Error                                                                                       |
+| Code fix     | ❌                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -498,8 +541,14 @@ public class MyClass
 
 When initializing a lazy field (and in particular fields containing the instance of a singleton object), use a robust locking pattern, i.e. the “if-lock-if” (aka “double checked locking”)
 
-- **Category**: Code smells
-- **Severity**: Warning ⚠
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA007                                                                                        |
+| Title        | Use the double-checked lazy initialization pattern                                            |
+| Category     | Code Smells                                                                                   |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ❌                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -692,8 +741,14 @@ dotnet_diagnostic.DSA007.severity = warning
 The [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) has no impact on a
 not-nullable [DateTime](https://learn.microsoft.com/it-it/dotnet/api/system.datetime) property.
 
-- **Category**: Bug
-- **Severity**: ⛔ Error
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA008                                                                                        |
+| Title        | The Required Attribute has no impact on a not-nullable DateTime                               |
+| Category     | Bug                                                                                           |
+| Severity     | ⛔ Error                                                                                       |
+| Code fix     | ❌                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -732,8 +787,14 @@ dotnet_diagnostic.DSA008.severity = warning
 The [Required Attribute](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute) has no impact on a
 not-nullable [DateTimeOffset](https://learn.microsoft.com/it-it/dotnet/api/system.DateTimeOffset) property.
 
-- **Category**: Bug
-- **Severity**: ⛔ Error
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA009                                                                                        |
+| Title        | The Required Attribute has no impact on a not-nullable DateTimeOffset                         |
+| Category     | Bug                                                                                           |
+| Severity     | ⛔ Error                                                                                       |
+| Code fix     | ❌                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -771,8 +832,14 @@ dotnet_diagnostic.DSA009.severity = warning
 
 Avoid lazily initialized, self-contained, static singleton properties
 
-- **Category**: Design
-- **Severity**: ⚠ Warning
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA011                                                                                        |
+| Title        | Avoid lazily initialized, self-contained, static singleton properties                         |
+| Category     | Design                                                                                        |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ❌                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 The [Singleton Pattern](https://en.wikipedia.org/wiki/Singleton_pattern) is subject of many controversies. Technically, there is nothing wrong with it, but its usefulness and robustness is very implementation-dependent, and in some cases it's seen as an anti-pattern. 
@@ -874,9 +941,14 @@ dotnet_diagnostic.DSA011.severity = warning
 
 Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU).
 
-- **Category**: Design
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA005](#dsa005), [DSA017](#dsa017), [DSA018](#dsa018)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA012                                                                                        |
+| Title        | Avoid the 'if not exists, then insert' check-then-act antipattern on database types (TOCTOU)  |
+| Category     | Design                                                                                        |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ❌                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 This rule fires when the _"if not exists, then insert"_ check-then-act pattern is used on **database types** (`DbSet<T>`, `IQueryable<T>`).
@@ -997,9 +1069,14 @@ public class MyService
 
 Use the collection's atomic operation instead of the check-then-act pattern.
 
-- **Category**: Design
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA012](#dsa012), [DSA018](#dsa018)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA017                                                                                        |
+| Title        | Use the collection's atomic operation instead of the check-then-act pattern                   |
+| Category     | Design                                                                                        |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -1255,9 +1332,14 @@ public class RegistryService
 
 Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling.
 
-- **Category**: Design
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA012](#dsa012), [DSA017](#dsa017)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA018                                                                                        |
+| Title        | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling|
+| Category     | Design                                                                                        |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ❌                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -1422,9 +1504,14 @@ public class TagService
 
 Minimal API endpoints should have an explicit authorization configuration.
 
-- **Category**: Security
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA014](#dsa014), [DSA015](#dsa015)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA013                                                                                        |
+| Title        | Minimal API endpoints should have an explicit authorization configuration                     |
+| Category     | Security                                                                                      |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -1510,9 +1597,14 @@ public class Program
 
 Minimal API endpoints on route groups should have an explicit authorization configuration.
 
-- **Category**: Security
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA013](#dsa013), [DSA015](#dsa015)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA014                                                                                        |
+| Title        | Minimal API endpoints on route groups should have an explicit authorization configuration     |
+| Category     | Security                                                                                      |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -1611,9 +1703,14 @@ public class Startup
 
 Minimal API endpoints on parameterized route builders should have an explicit authorization configuration.
 
-- **Category**: Security
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA013](#dsa013), [DSA014](#dsa014)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA015                                                                                        |
+| Title        | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration|
+| Category     | Security                                                                                      |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -1715,9 +1812,14 @@ public static class EndpointExtensions
 
 Avoid repeated invocation of the same enumeration method with identical arguments.
 
-- **Category**: Code Smells
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA005](#dsa005)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA016                                                                                        |
+| Title        | Avoid repeated invocation of the same enumeration method with identical arguments             |
+| Category     | Code Smells                                                                                   |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -1863,6 +1965,52 @@ var exists = items.Any(x => x.Id == id);  // ✅ once
 // use 'exists' wherever needed
 ```
 
+## Code fix
+
+The code fix extracts the repeated enumeration method call into a local variable and replaces all duplicate occurrences in the same scope with a reference to that variable.
+
+**Basic pattern:**
+
+```csharp
+// Before
+var a = items.FirstOrDefault(x => x.Id == id);
+var b = items.FirstOrDefault(x => x.Id == id);
+
+// After
+var firstOrDefault = items.FirstOrDefault(x => x.Id == id);
+var a = firstOrDefault;
+var b = firstOrDefault;
+```
+
+The generated variable name is derived from the method name (e.g., `firstOrDefault`, `count`, `any`). If that name conflicts with an existing identifier in scope, a numeric suffix is appended (e.g., `count1`).
+
+**Expression-body lambda conversion:**
+
+When all duplicates appear inside an expression-body lambda, the code fix automatically converts it to a block-body lambda to accommodate the new local variable:
+
+```csharp
+// Before
+var result = orders.Select(o => new
+{
+    Desc = lines.FirstOrDefault(l => l.OrderId == o.OrderId),
+    Qty = lines.FirstOrDefault(l => l.OrderId == o.OrderId),
+});
+
+// After
+var result = orders.Select(o => {
+    var firstOrDefault = lines.FirstOrDefault(l => l.OrderId == o.OrderId);
+    return new
+    {
+        Desc = firstOrDefault,
+        Qty = firstOrDefault,
+    };
+});
+```
+
+**Insertion placement:**
+
+The extracted variable declaration is inserted immediately before the earliest usage. When duplicate calls span branches (e.g., an `if`/`else` and subsequent statements), the variable is placed before the first consuming statement to ensure all references are in scope.
+
 ## When to ignore this rule
 
 If the collection is known to be modified between the two calls and re-enumeration is intentional, you may suppress this rule with `#pragma warning disable DSA016`. However, in most cases, modifying a collection between two identical queries suggests a design issue that should be addressed.
@@ -1915,9 +2063,14 @@ public class OrderService
 
 Avoid repeated deeply nested member access chains.
 
-- **Category**: Code Smells
-- **Severity**: Warning ⚠
-- **Related rules**: [DSA016](#dsa016)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA019                                                                                        |
+| Title        | Avoid repeated deeply nested member access chains                                             |
+| Category     | Code Smells                                                                                   |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -2135,9 +2288,14 @@ public class HomeAutomationService
 
 Remove redundant async/await on Task.FromResult.
 
-- **Category**: Code Smells
-- **Severity**: Warning ⚠
-- **Related rules**: none
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA020                                                                                        |
+| Title        | Remove redundant async/await on Task.FromResult                                               |
+| Category     | Code Smells                                                                                   |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -2267,9 +2425,14 @@ public class EventHandlerSetup
 
 Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability.
 
-- **Category**: Best Practice
-- **Severity**: Warning ⚠
-- **Related rules**: none
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA021                                                                                        |
+| Title        | Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability    |
+| Category     | Best Practice                                                                                 |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -2437,9 +2600,14 @@ public class UserService
 
 Hoist loop-invariant expression out of inner loop.
 
-- **Category**: Performance
-- **Severity**: Warning ⚠
-- **Related rules**: none
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA022                                                                                        |
+| Title        | Hoist loop-invariant expression out of inner loop                                             |
+| Category     | Performance                                                                                   |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -2621,9 +2789,14 @@ public class ImageProcessor
 
 Use `Path.Combine` instead of string concatenation to build file system paths.
 
-- **Category**: Best Practice
-- **Severity**: ⚠ Warning
-- **Has code fix**: ✅ Yes
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA023                                                                                        |
+| Title        | Use Path.Combine instead of string concatenation to build file system paths                   |
+| Category     | Best Practice                                                                                 |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -2732,9 +2905,14 @@ File.Exists(Path.Combine(basePath, "subfolder", "file.xml"));
 
 Use `Path.Combine` instead of string concatenation for path-like parameters in non-System.IO methods.
 
-- **Category**: Best Practice
-- **Severity**: Warning
-- **Has code fix**: Yes
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA024                                                                                        |
+| Title        | Use Path.Combine instead of string concatenation for path-like parameters                     |
+| Category     | Best Practice                                                                                 |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
 
 ## Description
 
@@ -2861,6 +3039,8 @@ Helper.Process(Path.Combine(basePath, "subfolder", "file.xml"));
 ---
 
 # DSA025
+
+Use structured logging template instead of interpolated string.
 
 | Property     | Value                                                                                          |
 |:-------------|:-----------------------------------------------------------------------------------------------|
@@ -3015,6 +3195,8 @@ _logger.LogInformation("First: {Name}, Second: {Name2}", name, name);
 ---
 
 # DSA026
+
+Use the `CancellationToken` available in the current scope, instead of one from an outer scope.
 
 | Property     | Value                                                                                          |
 |:-------------|:-----------------------------------------------------------------------------------------------|
@@ -3271,9 +3453,9 @@ Replace string concatenation in loops with `StringBuilder`.
 | Rule ID      | DSA027                                                                                         |
 | Title        | Replace string concatenation in loops with StringBuilder                                       |
 | Category     | Performance                                                                                    |
-| Severity     | Warning                                                                                        |
-| Code Fixer   | Yes                                                                                            |
-| Enabled      | Yes                                                                                            |
+| Severity     | ⚠ Warning                                                                                      |
+| Code fix     | ✅                                                                                              |
+| Is enabled   | ✅                                                                                              |
 
 ## Description
 
@@ -3513,14 +3695,352 @@ foreach (var item in items)
 - [String concatenation (C# guide)](https://learn.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings) — official guidance recommending `StringBuilder` for loop scenarios
 - [StringBuilder Class](https://learn.microsoft.com/en-us/dotnet/api/system.text.stringbuilder) — API reference
 
+
 ---
 
-# Installation
+# DSA028
 
-Just download and install the NuGet package  
-[![DogmaSolutions.Analyzers on NuGet](https://img.shields.io/nuget/v/DogmaSolutions.Analyzers.svg)](https://www.nuget.org/packages/DogmaSolutions.Analyzers/)
+Prefer `ToArray()` over `ToList()` when return type is a read-only interface.
 
-[https://www.nuget.org/packages/DogmaSolutions.Analyzers](https://www.nuget.org/packages/DogmaSolutions.Analyzers)
+| Property     | Value                                                                                          |
+|:-------------|:-----------------------------------------------------------------------------------------------|
+| Rule ID      | DSA028                                                                                        |
+| Title        | Prefer ToArray over ToList when return type is a read-only interface                          |
+| Category     | Performance                                                                                   |
+| Severity     | ⚠ Warning                                                                                     |
+| Code fix     | ✅                                                                                             |
+| Is enabled   | ✅                                                                                             |
+
+## Description
+
+This rule fires when a method, property (including expression-bodied properties and indexer getters), or local function whose return type is `IEnumerable<T>`, `IReadOnlyCollection<T>`, or `IReadOnlyList<T>` materializes an enumerable with `.ToList()`, but the caller cannot use any `List<T>`-specific mutating members (`Add`, `Remove`, `Sort`, indexer assignment, etc.) through the declared return type. The rule also detects `.ToList()` inside async methods returning `Task<T>` or `ValueTask<T>` where `T` is one of the above interfaces, and unwraps ternary, null-coalescing, parenthesized, cast, and switch expressions to find `.ToList()` calls nested within.
+
+### Performance implications
+
+`List<T>` internally maintains a dynamically resizable array that typically **over-allocates by 2×** to amortize future `Add` operations, plus a hidden `_size` field for bookkeeping. When the list is immediately returned through a read-only interface and never grown, this capacity is pure waste:
+
+| Aspect | `ToList()` | `ToArray()` |
+|---|---|---|
+| Memory overhead | ~2× capacity buffer + `_size` field | Exact-size allocation |
+| Cache locality | Pointer to oversized internal `T[]` | Contiguous exact `T[]` |
+| GC pressure | Larger allocation on heap | Smaller allocation on heap |
+
+For hot paths that materialize collections frequently (e.g., API response projections, data pipeline stages), the cumulative effect of unnecessary `List<T>` overhead can be significant.
+
+### Security implications
+
+Returning a `List<T>` through a read-only interface creates a false sense of immutability. A caller can recover the mutable `List<T>` via an unsafe downcast:
+
+```csharp
+IReadOnlyCollection<Order> orders = service.GetOrders();
+var list = (List<Order>)orders; // succeeds at runtime
+list.Clear();                    // silently mutates shared state
+```
+
+Returning an `T[]` instead does not fully prevent mutation (the caller can still cast to `T[]` and modify elements), but it eliminates the `Add`/`Remove`/`Clear` attack surface — an array cannot change size. This reduces the blast radius of an accidental or malicious downcast.
+
+## Matched patterns
+
+```csharp
+// Direct return of .ToList() through read-only interface
+public IEnumerable<Order> GetOrders(IEnumerable<Order> source)
+{
+    return source.Where(o => o.IsActive).ToList();  // ❌
+}
+
+// Expression-body method
+public IReadOnlyCollection<string> GetNames(IEnumerable<string> source) =>
+    source.Select(x => x.Name).ToList();  // ❌
+
+// Variable assigned with ToList then returned (not mutated)
+public IReadOnlyList<int> GetSorted(IEnumerable<int> source)
+{
+    var result = source.OrderBy(x => x).ToList();  // ❌
+    return result;
+}
+
+// Variable with explicit interface type assigned ToList then returned
+public IEnumerable<int> GetItems(IEnumerable<int> source)
+{
+    IEnumerable<int> result = source.Where(x => x > 0).ToList();  // ❌
+    return result;
+}
+
+// Variable assigned ToList via separate assignment then returned
+public IEnumerable<int> GetItems(IEnumerable<int> source)
+{
+    IEnumerable<int> result;
+    result = source.Where(x => x > 0).ToList();  // ❌
+    return result;
+}
+
+// Property getter
+public IReadOnlyList<Item> Items
+{
+    get { return _data.Where(x => x.IsValid).ToList(); }  // ❌
+}
+
+// Property getter with expression body
+public IReadOnlyCollection<int> Items
+{
+    get => _data.Where(x => x > 0).ToList();  // ❌
+}
+
+// Expression-bodied property
+public IEnumerable<int> Items => _data.Where(x => x > 0).ToList();  // ❌
+
+// Indexer getter
+public IReadOnlyList<int> this[int index]
+{
+    get { return _data[index].Where(x => x > 0).ToList(); }  // ❌
+}
+
+// Async method returning Task<T>
+public async Task<IEnumerable<int>> GetItemsAsync(IEnumerable<int> source)
+{
+    await Task.Delay(1);
+    return source.Where(x => x > 0).ToList();  // ❌
+}
+
+// Async method returning ValueTask<T>
+public async ValueTask<IReadOnlyList<int>> GetItemsAsync(IEnumerable<int> source)
+{
+    await Task.Delay(1);
+    return source.OrderBy(x => x).ToList();  // ❌
+}
+
+// Local function
+public void Process(IEnumerable<int> source)
+{
+    IEnumerable<int> GetFiltered()
+    {
+        return source.Where(x => x > 0).ToList();  // ❌
+    }
+}
+
+// Interface implementation
+public class OrderService : IOrderService
+{
+    public IReadOnlyCollection<Order> GetOrders()
+    {
+        return _db.Orders.ToList();  // ❌
+    }
+}
+
+// Ternary / conditional expressions
+public IEnumerable<int> GetItems(IEnumerable<int> a, IEnumerable<int> b, bool flag)
+{
+    return flag ? a.ToList() : b.ToList();  // ❌ both branches flagged
+}
+
+// Null-coalescing expression
+public IEnumerable<int> GetItems(IEnumerable<int> cached, IEnumerable<int> source)
+{
+    return cached ?? source.ToList();  // ❌
+}
+
+// Switch expression
+public IEnumerable<int> GetItems(IEnumerable<int> source, int mode)
+{
+    return mode switch
+    {
+        1 => source.Where(x => x > 0).ToList(),  // ❌
+        _ => source.ToList()                       // ❌
+    };
+}
+
+// Parenthesized return
+public IEnumerable<int> GetItems(IEnumerable<int> source)
+{
+    return (source.ToList());  // ❌
+}
+```
+
+## Not matched patterns
+
+```csharp
+// Return type is List<T> — caller can use mutating members
+public List<Order> GetOrders(IEnumerable<Order> source)
+{
+    return source.ToList();  // ✅ caller needs the List<T>
+}
+
+// Return type is IList<T> or ICollection<T> — caller can Add/Remove
+public IList<int> GetItems(IEnumerable<int> source)
+{
+    return source.ToList();  // ✅ caller can mutate
+}
+
+// Async method returning Task<List<T>> or ValueTask<List<T>>
+public async Task<List<int>> GetItemsAsync(IEnumerable<int> source)
+{
+    await Task.Delay(1);
+    return source.ToList();  // ✅ caller can mutate the List<T>
+}
+
+// Variable mutated between ToList and return (Add, Remove, Sort, etc.)
+public IEnumerable<int> GetItems(IEnumerable<int> source)
+{
+    var result = source.ToList();
+    result.Add(999);
+    return result;  // ✅ list is mutated, ToList is necessary
+}
+
+// Variable explicitly typed as List<T> — changing to ToArray would break compilation
+public IEnumerable<int> GetItems(IEnumerable<int> source)
+{
+    List<int> result = source.Where(x => x > 0).ToList();
+    return result;  // ✅ explicit List<T> type, ToArray would not compile
+}
+
+// Variable uses List<T>-specific property (var-declared, .Count would break with array)
+public IReadOnlyList<int> GetItems(IEnumerable<int> source)
+{
+    var result = source.ToList();
+    Console.WriteLine(result.Count);  // ✅ .Count is a List<T> property, not on T[]
+    return result;
+}
+
+// Variable uses List<T>-specific instance method (Find, ForEach, IndexOf, etc.)
+public IReadOnlyList<int> GetItems(IEnumerable<int> source)
+{
+    var result = source.ToList();
+    var found = result.Find(x => x > 5);  // ✅ .Find() is List<T>-specific, not on T[]
+    return result;
+}
+
+// Already using ToArray
+public IEnumerable<int> GetItems(IEnumerable<int> source)
+{
+    return source.ToArray();  // ✅ already optimal
+}
+
+// Return type is void — no collection return
+public void Process(IEnumerable<int> source)
+{
+    var result = source.ToList();  // ✅ not returned
+}
+
+// ToList inside a lambda — not the method's own return
+public IEnumerable<IEnumerable<int>> GetGrouped(IEnumerable<int> source)
+{
+    return source.GroupBy(x => x % 2)
+        .Select(g => (IEnumerable<int>)g.ToList());  // ✅ lambda's own return
+}
+```
+
+## Fix / Mitigation
+
+Replace `.ToList()` with `.ToArray()`:
+
+```csharp
+// Before
+public IReadOnlyCollection<Order> GetOrders(IEnumerable<Order> source)
+{
+    return source.Where(o => o.IsActive).ToList();  // ❌
+}
+
+// After
+public IReadOnlyCollection<Order> GetOrders(IEnumerable<Order> source)
+{
+    return source.Where(o => o.IsActive).ToArray();  // ✅
+}
+```
+
+## Code fix
+
+The code fix replaces `.ToList()` with `.ToArray()` in the flagged expression. The fix is always a single-token replacement and does not alter the surrounding code structure.
+
+```csharp
+// Before
+return items.Where(x => x.IsActive).ToList();
+
+// After
+return items.Where(x => x.IsActive).ToArray();
+```
+
+## When to ignore this rule
+
+If you intentionally return a `List<T>` through a read-only interface because downstream code performs a known-safe downcast to `List<T>`, you may suppress this rule with `#pragma warning disable DSA028`. However, relying on downcasting violates the interface contract and is generally discouraged — consider changing the return type to `List<T>` instead.
+
+## Rule configuration
+
+In order to change the severity level of this rule, change/add this line in the `.editorconfig` file:
+
+```
+# DSA028: Prefer ToArray over ToList when return type is a read-only interface
+dotnet_diagnostic.DSA028.severity = error
+```
+
+## Code sample
+
+```csharp
+public class OrderService
+{
+    private readonly IEnumerable<Order> _orders;
+
+    // this WILL trigger the rule: ToList returned through IReadOnlyCollection
+    public IReadOnlyCollection<Order> GetActiveOrders()
+    {
+        return _orders.Where(o => o.IsActive).ToList();  // ❌ ToList unnecessary
+    }
+
+    // this WILL trigger the rule: expression-bodied property
+    public IEnumerable<Order> ActiveOrders => _orders.Where(o => o.IsActive).ToList();  // ❌
+
+    // this WILL trigger the rule: async method returning Task<IEnumerable<T>>
+    public async Task<IEnumerable<Order>> GetActiveOrdersAsync()
+    {
+        await Task.Delay(1);
+        return _orders.Where(o => o.IsActive).ToList();  // ❌
+    }
+
+    // this WILL trigger the rule: ToList inside ternary branch
+    public IEnumerable<Order> GetOrders(bool activeOnly)
+    {
+        return activeOnly ? _orders.Where(o => o.IsActive).ToList() : _orders.ToList();  // ❌ both branches
+    }
+
+    // this WILL NOT trigger the rule: ToArray is already used
+    public IReadOnlyCollection<Order> GetActiveOrdersFixed()
+    {
+        return _orders.Where(o => o.IsActive).ToArray();  // ✅
+    }
+
+    // this WILL NOT trigger the rule: return type is List<T>
+    public List<Order> GetMutableOrders()
+    {
+        return _orders.Where(o => o.IsActive).ToList();  // ✅ caller needs List<T>
+    }
+
+    // this WILL NOT trigger the rule: list is mutated before return
+    public IEnumerable<Order> GetOrdersWithDefault()
+    {
+        var result = _orders.ToList();
+        result.Add(Order.Default);  // mutation prevents the fix
+        return result;  // ✅
+    }
+
+    // this WILL NOT trigger the rule: variable explicitly typed as List<T>
+    public IEnumerable<Order> GetOrdersSafe()
+    {
+        List<Order> result = _orders.ToList();
+        return result;  // ✅ explicit List<T> type
+    }
+
+    // this WILL NOT trigger the rule: List-specific method used on var-declared variable
+    public IReadOnlyList<Order> GetOrdersChecked()
+    {
+        var result = _orders.ToList();
+        var exists = result.Exists(o => o.IsActive);  // ✅ .Exists() is List<T>-specific
+        return result;
+    }
+}
+```
+
+---
+
+---
 
 # Contributing
 
