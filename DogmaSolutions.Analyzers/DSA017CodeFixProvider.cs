@@ -70,9 +70,11 @@ public sealed class DSA017CodeFixProvider : CodeFixProvider
 
     private static FixKind ClassifyFix(string typeName, string ns, IfStatementSyntax ifStatement)
     {
-        if (TryGetTryGetValueOutVariableName(ifStatement.Condition, out var outVarName) &&
-            IsOutVariableUsedBeyondCondition(outVarName, ifStatement))
-            return FixKind.None;
+        if (TryGetTryGetValueOutVariableName(ifStatement.Condition, out var outVarName))
+        {
+            if (IsOutVariableUsedBeyondCondition(outVarName, ifStatement) || ifStatement.Else != null)
+                return FixKind.None;
+        }
 
         if (CheckThenActUtils.IsNegatedExistenceCheck(ifStatement.Condition, out _))
         {

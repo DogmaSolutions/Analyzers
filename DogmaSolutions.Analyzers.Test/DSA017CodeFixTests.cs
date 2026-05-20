@@ -137,7 +137,7 @@ namespace TestApp
     }
 
     [TestMethod]
-    public async Task FixDictionaryTryGetValueAddElseUpdateWithBracesWhenOutVarUnused()
+    public async Task NoFixForDictionaryTryGetValueWithElseBracesWhenOutVarUnused()
     {
         var source = @"
 using System.Collections.Generic;
@@ -162,28 +162,10 @@ namespace TestApp
     }
 }";
 
-        var fixedSource = @"
-using System.Collections.Generic;
-namespace TestApp
-{
-    public class MyClass
-    {
-        public void Merge(Dictionary<string, string> target, Dictionary<string, string> source)
-        {
-            foreach (var entry in source)
-            {
-                if (!(target.TryAdd(entry.Key, entry.Value)))
-                {
-                    target[entry.Key] = entry.Value;
-                }
-            }
-        }
-    }
-}";
-
         var test = new CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>.Test();
         test.TestCode = source;
-        test.FixedCode = fixedSource;
+        test.FixedState.InheritanceMode = StateInheritanceMode.AutoInheritAll;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>
@@ -193,7 +175,7 @@ namespace TestApp
     }
 
     [TestMethod]
-    public async Task FixDictionaryTryGetValueAddElseUpdateNoBracesWhenOutVarUnused()
+    public async Task NoFixForDictionaryTryGetValueWithElseNoBracesWhenOutVarUnused()
     {
         var source = @"
 using System.Collections.Generic;
@@ -214,26 +196,10 @@ namespace TestApp
     }
 }";
 
-        var fixedSource = @"
-using System.Collections.Generic;
-namespace TestApp
-{
-    public class MyClass
-    {
-        public void Merge(Dictionary<string, string> target, Dictionary<string, string> source)
-        {
-            foreach (var entry in source)
-            {
-                if (!(target.TryAdd(entry.Key, entry.Value)))
-                    target[entry.Key] = entry.Value;
-            }
-        }
-    }
-}";
-
         var test = new CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>.Test();
         test.TestCode = source;
-        test.FixedCode = fixedSource;
+        test.FixedState.InheritanceMode = StateInheritanceMode.AutoInheritAll;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>
