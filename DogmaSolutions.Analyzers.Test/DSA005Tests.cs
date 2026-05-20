@@ -121,7 +121,7 @@ namespace WebApplication1
     public static string GetQueryExpressionSyntaxMatchedCasesDisplayName(MethodInfo methodInfo, object[] data)
     {
         #pragma warning disable CA1062
-        return (string)data[0];
+        return CSharpVerifierHelper.SanitizeTestDisplayName((string)data[0]);
         #pragma warning restore CA1062
     }
 

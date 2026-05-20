@@ -16,6 +16,9 @@ namespace DogmaSolutions.Analyzers.Test
         /// </summary>
         internal static ImmutableDictionary<string, ReportDiagnostic> NullableWarnings { get; } = GetNullableWarningsFromCompiler();
 
+        internal static string SanitizeTestDisplayName(string title) =>
+            "(" + title.Replace('<', '[').Replace('>', ']').Replace('(', '[').Replace(')', ']') + ")";
+
         private static ImmutableDictionary<string, ReportDiagnostic> GetNullableWarningsFromCompiler()
         {
             string[] args = ["/warnaserror:nullable"];

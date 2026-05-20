@@ -210,25 +210,25 @@ namespace WebApplication1
 "
         ],
         [
-            "if-lock-if (value from constant) 8", @"
+            "if-lock-if (value from constant) 8 with braces on outer if", @"
 using System;
 namespace WebApplication1
-{      
-    public class MyClass 
-    {    
+{
+    public class MyClass
+    {
       private string _theField;
       private readonly object _theLock = new object();
- 
+
       public void IsOk(int id)
-      {     
+      {
         if(_theField == null) {
             if(id>0){
                 lock(_theLock)
-                    if(_theField == null) 
+                    if(_theField == null)
                        _theField = ""Test Value"";
                     else
                         return;
-            } 
+            }
             else
                return;
         }
@@ -721,7 +721,7 @@ namespace WebApplication1
     public static string GetQueryExpressionSyntaxCaseDisplayName(MethodInfo methodInfo, object[] data)
     {
         #pragma warning disable CA1062
-        return (string)data[0];
+        return CSharpVerifierHelper.SanitizeTestDisplayName((string)data[0]);
         #pragma warning restore CA1062
     }
 
