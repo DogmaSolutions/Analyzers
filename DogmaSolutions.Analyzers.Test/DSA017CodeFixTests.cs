@@ -1984,4 +1984,288 @@ namespace TestApp
                 .WithArguments("Dictionary", "TryAdd or indexer assignment [key] = value"));
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    // ---------------------------------------------------------------
+    // Trivia edge cases: mixed braces, comments, blank lines
+    // ---------------------------------------------------------------
+
+    [TestMethod]
+    public async Task FixDictionaryPatternCMixedBraces_IfBracedElseNot()
+    {
+        var source = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            {|#0:if (dict.ContainsKey(key))
+            {
+                System.Console.WriteLine(""exists"");
+            }
+            else
+                dict.Add(key, value);|}
+        }
+    }
+}";
+
+        var fixedSource = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            if (!(dict.TryAdd(key, value)))
+            {
+                System.Console.WriteLine(""exists"");
+            }
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>
+                .Diagnostic(DSA017Analyzer.DiagnosticId).WithLocation(0)
+                .WithArguments("Dictionary", "TryAdd or indexer assignment [key] = value"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixDictionaryPatternCMixedBraces_IfNotBracedElseBraced()
+    {
+        var source = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            {|#0:if (dict.ContainsKey(key))
+                System.Console.WriteLine(""exists"");
+            else
+            {
+                dict.Add(key, value);
+            }|}
+        }
+    }
+}";
+
+        var fixedSource = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            if (!(dict.TryAdd(key, value)))
+                System.Console.WriteLine(""exists"");
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>
+                .Diagnostic(DSA017Analyzer.DiagnosticId).WithLocation(0)
+                .WithArguments("Dictionary", "TryAdd or indexer assignment [key] = value"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixDictionaryPatternAMixedBraces_IfNotBracedElseBraced()
+    {
+        var source = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            {|#0:if (!dict.ContainsKey(key))
+                dict.Add(key, value);
+            else
+            {
+                System.Console.WriteLine(""exists"");
+            }|}
+        }
+    }
+}";
+
+        var fixedSource = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            if (!(dict.TryAdd(key, value)))
+            {
+                System.Console.WriteLine(""exists"");
+            }
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>
+                .Diagnostic(DSA017Analyzer.DiagnosticId).WithLocation(0)
+                .WithArguments("Dictionary", "TryAdd or indexer assignment [key] = value"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixDictionaryWithLeadingComment()
+    {
+        var source = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            // Ensure key is present
+            {|#0:if (!dict.ContainsKey(key))
+            {
+                dict.Add(key, value);
+            }|}
+        }
+    }
+}";
+
+        var fixedSource = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            // Ensure key is present
+            dict.TryAdd(key, value);
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>
+                .Diagnostic(DSA017Analyzer.DiagnosticId).WithLocation(0)
+                .WithArguments("Dictionary", "TryAdd or indexer assignment [key] = value"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixDictionaryThrowPatternWithLeadingComment()
+    {
+        var source = @"
+using System;
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            // Guard against duplicates
+            {|#0:if (dict.ContainsKey(key))
+                throw new InvalidOperationException();|}
+            dict.Add(key, value);
+        }
+    }
+}";
+
+        var fixedSource = @"
+using System;
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(Dictionary<string, int> dict, string key, int value)
+        {
+            // Guard against duplicates
+            if (!(dict.TryAdd(key, value)))
+                throw new InvalidOperationException();
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>
+                .Diagnostic(DSA017Analyzer.DiagnosticId).WithLocation(0)
+                .WithArguments("Dictionary", "TryAdd or indexer assignment [key] = value"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixHashSetPatternAMixedBraces_IfBracedElseNot()
+    {
+        var source = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(HashSet<string> set, string item)
+        {
+            {|#0:if (!set.Contains(item))
+            {
+                set.Add(item);
+            }
+            else
+                System.Console.WriteLine(""exists"");|}
+        }
+    }
+}";
+
+        var fixedSource = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class MyClass
+    {
+        public void MyMethod(HashSet<string> set, string item)
+        {
+            if (!(set.Add(item)))
+                System.Console.WriteLine(""exists"");
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA017Analyzer, DSA017CodeFixProvider>
+                .Diagnostic(DSA017Analyzer.DiagnosticId).WithLocation(0)
+                .WithArguments("HashSet", "Add (already returns a bool indicating whether the element was added)"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }

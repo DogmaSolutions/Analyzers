@@ -216,9 +216,10 @@ public sealed class DSA017CodeFixProvider : CodeFixProvider
                 SyntaxKind.LogicalNotExpression,
                 SyntaxFactory.ParenthesizedExpression(tryAddCall));
 
-            var newIf = SyntaxFactory.IfStatement(newCondition, otherBody)
-                .WithLeadingTrivia(ifStatement.GetLeadingTrivia())
-                .WithTrailingTrivia(ifStatement.GetTrailingTrivia());
+            var newIf = ifStatement
+                .WithCondition(newCondition.WithLeadingTrivia(SyntaxFactory.Space))
+                .WithStatement(otherBody)
+                .WithElse(null);
 
             var newRoot = root.ReplaceNode(ifStatement, newIf);
             return document.WithSyntaxRoot(newRoot);
@@ -253,9 +254,10 @@ public sealed class DSA017CodeFixProvider : CodeFixProvider
                 SyntaxKind.LogicalNotExpression,
                 SyntaxFactory.ParenthesizedExpression(addInvocation.WithoutTrivia()));
 
-            var newIf = SyntaxFactory.IfStatement(newCondition, otherBody)
-                .WithLeadingTrivia(ifStatement.GetLeadingTrivia())
-                .WithTrailingTrivia(ifStatement.GetTrailingTrivia());
+            var newIf = ifStatement
+                .WithCondition(newCondition.WithLeadingTrivia(SyntaxFactory.Space))
+                .WithStatement(otherBody)
+                .WithElse(null);
 
             var newRoot = root.ReplaceNode(ifStatement, newIf);
             return document.WithSyntaxRoot(newRoot);
