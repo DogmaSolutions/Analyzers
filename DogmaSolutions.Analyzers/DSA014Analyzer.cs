@@ -39,7 +39,7 @@ public sealed class DSA014Analyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: _description,
-        helpLinkUri: "https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA014");
+        helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA014.md");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
 

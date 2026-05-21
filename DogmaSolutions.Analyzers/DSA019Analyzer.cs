@@ -47,7 +47,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: _description,
-        helpLinkUri: "https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA019");
+        helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA019.md");
 
     private static readonly ConcurrentDictionary<AnalyzerConfigOptions, ParsedConfig> _configCache =
         new ConcurrentDictionary<AnalyzerConfigOptions, ParsedConfig>();

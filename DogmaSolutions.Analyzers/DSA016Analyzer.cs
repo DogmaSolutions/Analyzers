@@ -41,7 +41,7 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: _description,
-        helpLinkUri: "https://github.com/DogmaSolutions/Analyzers?tab=readme-ov-file#DSA016");
+        helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA016.md");
 
     private static readonly HashSet<string> TrackedMethods = new HashSet<string>(StringComparer.Ordinal)
     {
