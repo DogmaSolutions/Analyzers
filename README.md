@@ -56,8 +56,8 @@ Every rule is accompanied by the following information and clues:
 | [DSA005](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA005.md) | Code Smells | Potential non-deterministic point-in-time execution | ⛔ Error | ✅ | ✅ |
 | [DSA006](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA006.md) | Code Smells | General exceptions should not be thrown by user code | ⛔ Error | ✅ | ❌ |
 | [DSA007](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA007.md) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking") | ⚠ Warning | ✅ | ❌ |
-| [DSA008](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA008.md) | Bug | The Required Attribute has no impact on a not-nullable DateTime | ⛔ Error | ✅ | ❌ |
-| [DSA009](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA009.md) | Bug | The Required Attribute has no impact on a not-nullable DateTimeOffset | ⛔ Error | ✅ | ❌ |
+| [DSA008](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA008.md) | Bug | The Required Attribute has no impact on a not-nullable DateTime | ⛔ Error | ✅ | ✅ |
+| [DSA009](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA009.md) | Bug | The Required Attribute has no impact on a not-nullable DateTimeOffset | ⛔ Error | ✅ | ✅ |
 | [DSA011](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA011.md) | Design | Avoid lazily initialized, self-contained, static singleton properties | ⚠ Warning | ✅ | ❌ |
 | [DSA012](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA012.md) | Design | Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU) | ⚠ Warning | ✅ | ❌ |
 | [DSA013](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA013.md) | Security | Minimal API endpoints should have an explicit authorization configuration | ⚠ Warning | ✅ | ✅ |
