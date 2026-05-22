@@ -496,6 +496,483 @@ namespace TestApp
     }
 
     [TestMethod]
+    public async Task Fixes_Required_preserves_xml_doc_and_other_attributes_trivia()
+    {
+        var source = @"
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Height of the frame.
+        /// </summary>
+        {|#0:[Required]
+        [Range(5, 8192)]
+        public int Height { get; set; } = 1080;|}
+    }
+}";
+
+        var fixedSource = @"
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Height of the frame.
+        /// </summary>
+        [Range(5, 8192)]
+        public int Height { get; set; } = 1080;
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.CodeActionEquivalenceKey = "DSA029.Remove";
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>
+                .Diagnostic(DSA029Analyzer.DiagnosticId).WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Fixes_Required_after_other_attr_with_xml_doc_preserves_trivia()
+    {
+        var source = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// My property.
+        /// </summary>
+        {|#0:[Description(""test"")]
+        [Required]
+        public int MyProperty { get; set; }|}
+    }
+}";
+
+        var fixedSource = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// My property.
+        /// </summary>
+        [Description(""test"")]
+        public int MyProperty { get; set; }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.CodeActionEquivalenceKey = "DSA029.Remove";
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>
+                .Diagnostic(DSA029Analyzer.DiagnosticId).WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Fixes_Required_only_attr_with_xml_doc_preserves_trivia()
+    {
+        var source = @"
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// My property.
+        /// </summary>
+        {|#0:[Required]
+        public bool MyProperty { get; set; }|}
+    }
+}";
+
+        var fixedSource = @"
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// My property.
+        /// </summary>
+        public bool MyProperty { get; set; }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.CodeActionEquivalenceKey = "DSA029.Remove";
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>
+                .Diagnostic(DSA029Analyzer.DiagnosticId).WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Fixes_Required_Range_replacement_with_xml_doc_preserves_trivia()
+    {
+        var source = @"
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Count of items.
+        /// </summary>
+        {|#0:[Required]
+        public int Count { get; set; }|}
+    }
+}";
+
+        var fixedSource = @"
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Count of items.
+        /// </summary>
+        [Range(1, int.MaxValue)]
+        public int Count { get; set; }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.CodeActionEquivalenceKey = "DSA029.Range";
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>
+                .Diagnostic(DSA029Analyzer.DiagnosticId).WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Fixes_Required_between_properties_with_xml_docs_preserves_trivia()
+    {
+        var source = @"
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Name.
+        /// </summary>
+        [Required]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Count.
+        /// </summary>
+        {|#0:[Required]
+        public int Count { get; set; }|}
+
+        /// <summary>
+        /// Label.
+        /// </summary>
+        [Required]
+        public string Label { get; set; }
+    }
+}";
+
+        var fixedSource = @"
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Name.
+        /// </summary>
+        [Required]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Count.
+        /// </summary>
+        public int Count { get; set; }
+
+        /// <summary>
+        /// Label.
+        /// </summary>
+        [Required]
+        public string Label { get; set; }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.CodeActionEquivalenceKey = "DSA029.Remove";
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>
+                .Diagnostic(DSA029Analyzer.DiagnosticId).WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Fixes_Required_middle_of_three_attr_lists_with_xml_doc()
+    {
+        var source = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Count.
+        /// </summary>
+        {|#0:[Description(""count"")]
+        [Required]
+        [Range(1, 100)]
+        public int Count { get; set; }|}
+    }
+}";
+
+        var fixedSource = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Count.
+        /// </summary>
+        [Description(""count"")]
+        [Range(1, 100)]
+        public int Count { get; set; }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.CodeActionEquivalenceKey = "DSA029.Remove";
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>
+                .Diagnostic(DSA029Analyzer.DiagnosticId).WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Fixes_Required_shared_list_Required_first()
+    {
+        var source = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        {|#0:[Required, Description(""test"")]
+        public int MyProperty { get; set; }|}
+    }
+}";
+
+        var fixedSource = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        [Description(""test"")]
+        public int MyProperty { get; set; }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.CodeActionEquivalenceKey = "DSA029.Remove";
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>
+                .Diagnostic(DSA029Analyzer.DiagnosticId).WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Fixes_Required_shared_list_Required_second()
+    {
+        var source = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        {|#0:[Description(""test""), Required]
+        public int MyProperty { get; set; }|}
+    }
+}";
+
+        var fixedSource = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        [Description(""test"")]
+        public int MyProperty { get; set; }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.CodeActionEquivalenceKey = "DSA029.Remove";
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>
+                .Diagnostic(DSA029Analyzer.DiagnosticId).WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task Fixes_Required_Range_replacement_with_xml_doc_and_other_attrs()
+    {
+        var source = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Count of items.
+        /// </summary>
+        {|#0:[Required]
+        [Description(""count"")]
+        public int Count { get; set; }|}
+    }
+}";
+
+        var fixedSource = @"
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+namespace TestApp
+{
+    public class MyClass
+    {
+        /// <summary>
+        /// Count of items.
+        /// </summary>
+        [Range(1, int.MaxValue)]
+        [Description(""count"")]
+        public int Count { get; set; }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.CodeActionEquivalenceKey = "DSA029.Range";
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+        [
+            ..new PackageIdentity[]
+            {
+                new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                new("Microsoft.EntityFrameworkCore", "3.1.22")
+            }
+        ]);
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA029Analyzer, DSA029CodeFixProvider>
+                .Diagnostic(DSA029Analyzer.DiagnosticId).WithLocation(0));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
     public async Task Fixes_Required_preserves_other_attributes()
     {
         var source = @"

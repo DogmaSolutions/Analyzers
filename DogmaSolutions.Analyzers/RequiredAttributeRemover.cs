@@ -26,12 +26,19 @@ internal static class RequiredAttributeRemover
         PropertyDeclarationSyntax newProperty;
         if (attrList.Attributes.Count == 1)
         {
+            var removedIndex = propertyDeclaration.AttributeLists.IndexOf(attrList);
             var newAttributeLists = propertyDeclaration.AttributeLists.Remove(attrList);
             newProperty = propertyDeclaration.WithAttributeLists(newAttributeLists);
 
             if (newProperty.AttributeLists.Count == 0)
             {
                 newProperty = newProperty.WithLeadingTrivia(attrList.GetLeadingTrivia());
+            }
+            else if (removedIndex == 0)
+            {
+                var firstAttrList = newProperty.AttributeLists[0];
+                var newFirstAttrList = firstAttrList.WithLeadingTrivia(attrList.GetLeadingTrivia());
+                newProperty = newProperty.ReplaceNode(firstAttrList, newFirstAttrList);
             }
             else
             {
