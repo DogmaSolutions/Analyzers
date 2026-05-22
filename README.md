@@ -76,6 +76,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA026](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA026.md) | Bug | Use nearest scope CancellationToken | ⚠ Warning | ✅ | ✅ |
 | [DSA027](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA027.md) | Performance | Replace string concatenation in loops with `StringBuilder` | ⚠ Warning | ✅ | ✅ |
 | [DSA028](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA028.md) | Performance | Prefer `ToArray()` over `ToList()` when return type is a read-only interface | ⚠ Warning | ✅ | ✅ |
+| [DSA029](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA029.md) | Bug | The Required Attribute has no impact on a not-nullable value type | ⚠ Warning | ✅ | ✅ |
 
 ---
 

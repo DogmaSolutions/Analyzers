@@ -400,4 +400,14 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA028AnalyzerTitle" xml:space="preserve">
     <value>Prefer ToArray over ToList when return type is a read-only interface</value>
   </data>
+
+    <data name="DSA029AnalyzerDescription" xml:space="preserve">
+    <value>Is a common misunderstanding that the RequiredAttribute is somehow able to validate a not-nullable value type property. In reality, not-nullable value types (bool, int, long, decimal, float, double, byte, enums, structs, etc.) are ignored by the RequiredAttribute, so it doesn't make any sense to use it in this context. Remove the RequiredAttribute, or make the property nullable (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA029.md).</value>
+  </data>
+    <data name="DSA029AnalyzerMessageFormat" xml:space="preserve">
+    <value>The RequiredAttribute has no impact on a not-nullable value type property. Remove it, or make the property nullable.</value>
+  </data>
+    <data name="DSA029AnalyzerTitle" xml:space="preserve">
+    <value>Do not use the RequiredAttribute for a non-nullable value type property</value>
+  </data>
 </root>
