@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +21,7 @@ public sealed class DSA032CodeFixProvider : CodeFixProvider
 {
    internal const string LocalConstEquivalenceKey = DSA032Analyzer.DiagnosticId + ".LocalConst";
    internal const string ClassFieldEquivalenceKey = DSA032Analyzer.DiagnosticId + ".ClassField";
+   internal const string UseReplacementEquivalenceKey = DSA032Analyzer.DiagnosticId + ".UseReplacement";
 
    public override ImmutableArray<string> FixableDiagnosticIds => [DSA032Analyzer.DiagnosticId];
 
@@ -49,6 +52,21 @@ public sealed class DSA032CodeFixProvider : CodeFixProvider
       if (displayValue.Length > 40)
          displayValue = displayValue.Substring(0, 37) + "...";
 
+      var replacements = await LoadReplacementsAsync(context.Document.Project, stringValue, context.CancellationToken).ConfigureAwait(false);
+      foreach (var replacement in replacements)
+      {
+         var displayReplacement = replacement;
+         if (displayReplacement.Length > 60)
+            displayReplacement = displayReplacement.Substring(0, 57) + "...";
+
+         context.RegisterCodeFix(
+            CodeAction.Create(
+               title: $"Replace \"{displayValue}\" with '{displayReplacement}'",
+               createChangedDocument: ct => ReplaceWithKnownConstantAsync(context.Document, literal, stringValue, replacement, ct),
+               equivalenceKey: UseReplacementEquivalenceKey + ":" + replacement),
+            diagnostic);
+      }
+
       context.RegisterCodeFix(
          CodeAction.Create(
             title: $"Extract \"{displayValue}\" to local constant '{constName}'",
@@ -62,6 +80,68 @@ public sealed class DSA032CodeFixProvider : CodeFixProvider
             createChangedDocument: ct => ExtractToClassFieldAsync(context.Document, literal, stringValue, ct),
             equivalenceKey: ClassFieldEquivalenceKey),
          diagnostic);
+   }
+
+   private static async Task<ImmutableArray<string>> LoadReplacementsAsync(Project project, string stringValue, CancellationToken cancellationToken)
+   {
+      var builder = ImmutableArray.CreateBuilder<string>();
+      foreach (var doc in project.AdditionalDocuments)
+      {
+         if (!Path.GetFileName(doc.Name).Equals(DSA032Analyzer.StringReplacementsFileName, StringComparison.OrdinalIgnoreCase))
+            continue;
+
+         var text = await doc.GetTextAsync(cancellationToken).ConfigureAwait(false);
+         if (text == null)
+            continue;
+
+         foreach (var line in text.Lines)
+         {
+            var lineText = line.ToString().Trim();
+            if (lineText.Length == 0 || lineText.StartsWith("#", StringComparison.Ordinal))
+               continue;
+
+            var arrowIndex = lineText.LastIndexOf("->", StringComparison.Ordinal);
+            if (arrowIndex < 0)
+               continue;
+
+            var left = Unquote(lineText.Substring(0, arrowIndex).Trim());
+            var right = Unquote(lineText.Substring(arrowIndex + 2).Trim());
+
+            if (left == stringValue && right.Length > 0)
+               builder.Add(right);
+         }
+      }
+
+      return builder.ToImmutable();
+   }
+
+   private static async Task<Document> ReplaceWithKnownConstantAsync(
+      Document document,
+      LiteralExpressionSyntax targetLiteral,
+      string stringValue,
+      string replacementExpression,
+      CancellationToken cancellationToken)
+   {
+      var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+      if (root == null)
+         return document;
+
+      var methodBody = FindContainingMethodBody(targetLiteral);
+      if (methodBody == null)
+         return document;
+
+      var allLiterals = FindMatchingLiterals(methodBody, stringValue);
+      if (allLiterals.Count < 2)
+         return document;
+
+      var replacement = SyntaxFactory.ParseExpression(replacementExpression);
+
+      var newRoot = root.ReplaceNodes(allLiterals, (original, _) =>
+         replacement
+            .WithLeadingTrivia(original.GetLeadingTrivia())
+            .WithTrailingTrivia(original.GetTrailingTrivia()));
+
+      return document.WithSyntaxRoot(newRoot);
    }
 
    private static async Task<Document> ExtractToLocalConstAsync(
@@ -441,5 +521,12 @@ public sealed class DSA032CodeFixProvider : CodeFixProvider
          return firstEol;
 
       return SyntaxFactory.LineFeed;
+   }
+
+   private static string Unquote(string value)
+   {
+      if (value.Length >= 2 && value[0] == '`' && value[value.Length - 1] == '`')
+         return value.Substring(1, value.Length - 2);
+      return value;
    }
 }

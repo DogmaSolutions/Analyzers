@@ -25,6 +25,7 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
    internal const string StringValueProperty = "StringValue";
    internal const string IgnoredStringsFileName = "DSA032_IgnoredStrings.txt";
    internal const string IgnoredFileNamesFileName = "DSA032_IgnoredFileNames.txt";
+   internal const string StringReplacementsFileName = "DSA032_StringReplacements.txt";
 
    internal static readonly ImmutableArray<string> DefaultIgnoredFilePatterns = ImmutableArray.Create(
       "*.Designer.cs",

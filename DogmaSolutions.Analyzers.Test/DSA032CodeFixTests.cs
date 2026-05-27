@@ -2460,4 +2460,1748 @@ namespace TestApp
 
       await test.RunAsync().ConfigureAwait(false);
    }
+
+   // ──────────────────────────────────────────────────────────────────────────
+   //  Known replacement fix — file optionality
+   // ──────────────────────────────────────────────────────────────────────────
+
+   [TestMethod]
+   public async Task UseReplacement_FileNotPresent_StandardFixesStillWork()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_EmptyFile_StandardFixesStillWork()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, string.Empty));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, string.Empty));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_CommentsOnlyFile_StandardFixesStillWork()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
+        }
+    }
+}";
+
+      var fileContent = @"# This file is intentionally left with comments only
+# No actual replacements
+";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, fileContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, fileContent));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_NoMatchingEntry_StandardFixesStillWork()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`SomeUnrelatedString` -> `Replacement.Value`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`SomeUnrelatedString` -> `Replacement.Value`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   // ──────────────────────────────────────────────────────────────────────────
+   //  Known replacement fix — code chunk replacements
+   // ──────────────────────────────────────────────────────────────────────────
+
+   [TestMethod]
+   public async Task UseReplacement_MemberAccessExpression()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string SecretConnection = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = MyConstants.SecretConnection;
+            var b = MyConstants.SecretConnection;
+            var c = MyConstants.SecretConnection;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.SecretConnection";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.SecretConnection`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.SecretConnection`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_SimpleIdentifier()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        private const string SecretConnectionString = ""ConnectionStrings:Secret"";
+
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        private const string SecretConnectionString = ""ConnectionStrings:Secret"";
+
+        public void Process()
+        {
+            var a = SecretConnectionString;
+            var b = SecretConnectionString;
+            var c = SecretConnectionString;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":SecretConnectionString";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `SecretConnectionString`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `SecretConnectionString`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_StringLiteralCodeChunk()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = ""ReplacedValue"";
+            var b = ""ReplacedValue"";
+            var c = ""ReplacedValue"";
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + @":""ReplacedValue""";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.NumberOfFixAllIterations = 1;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         @"`ConnectionStrings:Secret` -> `""ReplacedValue""`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         @"`ConnectionStrings:Secret` -> `""ReplacedValue""`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+      test.FixedState.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithSpan(8, 21, 8, 36).WithArguments("ReplacedValue", 3));
+      test.FixedState.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithSpan(9, 21, 9, 36).WithArguments("ReplacedValue", 3));
+      test.FixedState.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithSpan(10, 21, 10, 36).WithArguments("ReplacedValue", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_NameofExpression()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""MyService""|};
+            var b = {|#1:""MyService""|};
+            var c = {|#2:""MyService""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = nameof(MyService);
+            var b = nameof(MyService);
+            var c = nameof(MyService);
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":nameof(MyService)";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`MyService` -> `nameof(MyService)`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`MyService` -> `nameof(MyService)`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("MyService", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("MyService", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("MyService", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_DeepMemberAccess()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class Config
+    {
+        public static class Keys
+        {
+            public const string Secret = ""ConnectionStrings:Secret"";
+        }
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = Config.Keys.Secret;
+            var b = Config.Keys.Secret;
+            var c = Config.Keys.Secret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":Config.Keys.Secret";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `Config.Keys.Secret`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `Config.Keys.Secret`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   // ──────────────────────────────────────────────────────────────────────────
+   //  Known replacement fix — multiple replacements for same string
+   // ──────────────────────────────────────────────────────────────────────────
+
+   [TestMethod]
+   public async Task UseReplacement_MultipleReplacementsForSameString_FirstOption()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class ConstantsA
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+    public static class ConstantsB
+    {
+        public const string ConnStr = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = ConstantsA.Secret;
+            var b = ConstantsA.Secret;
+            var c = ConstantsA.Secret;
+        }
+    }
+}";
+
+      var replacementsContent = @"`ConnectionStrings:Secret` -> `ConstantsA.Secret`
+`ConnectionStrings:Secret` -> `ConstantsB.ConnStr`";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":ConstantsA.Secret";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_MultipleReplacementsForSameString_SecondOption()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class ConstantsA
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+    public static class ConstantsB
+    {
+        public const string ConnStr = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = ConstantsB.ConnStr;
+            var b = ConstantsB.ConnStr;
+            var c = ConstantsB.ConnStr;
+        }
+    }
+}";
+
+      var replacementsContent = @"`ConnectionStrings:Secret` -> `ConstantsA.Secret`
+`ConnectionStrings:Secret` -> `ConstantsB.ConnStr`";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":ConstantsB.ConnStr";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_ThreeReplacementsForSameString_ThirdOption()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class A { public const string V = ""ConnectionStrings:Secret""; }
+    public static class B { public const string V = ""ConnectionStrings:Secret""; }
+    public static class C { public const string V = ""ConnectionStrings:Secret""; }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = C.V;
+            var b = C.V;
+            var c = C.V;
+        }
+    }
+}";
+
+      var replacementsContent = @"`ConnectionStrings:Secret` -> `A.V`
+`ConnectionStrings:Secret` -> `B.V`
+`ConnectionStrings:Secret` -> `C.V`";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":C.V";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_MultipleReplacementsOnlyMatchingStringIsOffered()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string SecretConnection = ""ConnectionStrings:Secret"";
+        public const string OtherValue = ""SomeOtherString"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = MyConstants.SecretConnection;
+            var b = MyConstants.SecretConnection;
+            var c = MyConstants.SecretConnection;
+        }
+    }
+}";
+
+      var replacementsContent = @"`ConnectionStrings:Secret` -> `MyConstants.SecretConnection`
+`SomeOtherString` -> `MyConstants.OtherValue`";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.SecretConnection";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   // ──────────────────────────────────────────────────────────────────────────
+   //  Known replacement fix — file parsing edge cases
+   // ──────────────────────────────────────────────────────────────────────────
+
+   [TestMethod]
+   public async Task UseReplacement_CommentsAndEmptyLinesIgnored()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class AppConstants
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = AppConstants.Secret;
+            var b = AppConstants.Secret;
+            var c = AppConstants.Secret;
+        }
+    }
+}";
+
+      var replacementsContent = @"# Known connection strings
+
+`ConnectionStrings:Secret` -> `AppConstants.Secret`
+
+# Other replacements
+`SomeOtherValue` -> `OtherConstants.Value`
+";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":AppConstants.Secret";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_LinesWithoutArrowIgnored()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = MyConstants.Secret;
+            var b = MyConstants.Secret;
+            var c = MyConstants.Secret;
+        }
+    }
+}";
+
+      var replacementsContent = @"this line has no arrow separator
+also invalid
+`ConnectionStrings:Secret` -> `MyConstants.Secret`
+another bad line";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.Secret";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_WhitespaceTrimmed()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = MyConstants.Secret;
+            var b = MyConstants.Secret;
+            var c = MyConstants.Secret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.Secret";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "   `ConnectionStrings:Secret`   ->   `MyConstants.Secret`   "));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "   `ConnectionStrings:Secret`   ->   `MyConstants.Secret`   "));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_EmptyRightSideIgnored()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` ->   "));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` ->   "));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   // ──────────────────────────────────────────────────────────────────────────
+   //  Known replacement fix — interactions with other features
+   // ──────────────────────────────────────────────────────────────────────────
+
+   [TestMethod]
+   public async Task UseReplacement_InConstructorBody()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public MyService()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public MyService()
+        {
+            var a = MyConstants.Secret;
+            var b = MyConstants.Secret;
+            var c = MyConstants.Secret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.Secret";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.Secret`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.Secret`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_ReplacementAndLocalConstCoexist()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedLocalConst = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedLocalConst;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.Secret`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.Secret`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_StringContainingArrow()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string ArrowValue = ""value -> other"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""value -> other""|};
+            var b = {|#1:""value -> other""|};
+            var c = {|#2:""value -> other""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = MyConstants.ArrowValue;
+            var b = MyConstants.ArrowValue;
+            var c = MyConstants.ArrowValue;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.ArrowValue";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`value -> other` -> `MyConstants.ArrowValue`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`value -> other` -> `MyConstants.ArrowValue`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("value -> other", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("value -> other", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("value -> other", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   // ──────────────────────────────────────────────────────────────────────────
+   //  Known replacement fix — missing permutations
+   // ──────────────────────────────────────────────────────────────────────────
+
+   [TestMethod]
+   public async Task UseReplacement_ArrowWithoutSpaces()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = MyConstants.Secret;
+            var b = MyConstants.Secret;
+            var c = MyConstants.Secret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.Secret";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret`->`MyConstants.Secret`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret`->`MyConstants.Secret`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_PartialLeftSideDoesNotMatch()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings` -> `MyConstants.Partial`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings` -> `MyConstants.Partial`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_TwoDifferentStringsEachWithReplacement()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+        public const string LogLevel = ""Logging:LogLevel"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+            var d = {|#3:""Logging:LogLevel""|};
+            var e = {|#4:""Logging:LogLevel""|};
+            var f = {|#5:""Logging:LogLevel""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = MyConstants.Secret;
+            var b = MyConstants.Secret;
+            var c = MyConstants.Secret;
+            var d = {|#3:""Logging:LogLevel""|};
+            var e = {|#4:""Logging:LogLevel""|};
+            var f = {|#5:""Logging:LogLevel""|};
+        }
+    }
+}";
+
+      var replacementsContent = @"`ConnectionStrings:Secret` -> `MyConstants.Secret`
+`Logging:LogLevel` -> `MyConstants.LogLevel`";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.Secret";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.NumberOfFixAllIterations = 1;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(3).WithArguments("Logging:LogLevel", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(4).WithArguments("Logging:LogLevel", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(5).WithArguments("Logging:LogLevel", 3));
+      test.FixedState.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithSpan(11, 21, 11, 39).WithArguments("Logging:LogLevel", 3));
+      test.FixedState.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithSpan(12, 21, 12, 39).WithArguments("Logging:LogLevel", 3));
+      test.FixedState.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithSpan(13, 21, 13, 39).WithArguments("Logging:LogLevel", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_StringInIgnoredStringsFile_NoDiagnosticNoReplacement()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = ""ConnectionStrings:Secret"";
+            var b = ""ConnectionStrings:Secret"";
+            var c = ""ConnectionStrings:Secret"";
+        }
+    }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA032Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.IgnoredStringsFileName, "ConnectionStrings:Secret"));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.Secret`"));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_FileInIgnoredFileNames_NoDiagnosticNoReplacement()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = ""ConnectionStrings:Secret"";
+            var b = ""ConnectionStrings:Secret"";
+            var c = ""ConnectionStrings:Secret"";
+        }
+    }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA032Analyzer>.Test();
+      test.TestState.Sources.Add(("MyAutoGenerated.cs", source));
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.IgnoredFileNamesFileName, "*AutoGenerated*"));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.Secret`"));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_IgnoredStringsSuppressesOneButReplacementOfferedForAnother()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string LogLevel = ""Logging:LogLevel"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = ""ConnectionStrings:Secret"";
+            var b = ""ConnectionStrings:Secret"";
+            var c = ""ConnectionStrings:Secret"";
+            var d = {|#0:""Logging:LogLevel""|};
+            var e = {|#1:""Logging:LogLevel""|};
+            var f = {|#2:""Logging:LogLevel""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = ""ConnectionStrings:Secret"";
+            var b = ""ConnectionStrings:Secret"";
+            var c = ""ConnectionStrings:Secret"";
+            var d = MyConstants.LogLevel;
+            var e = MyConstants.LogLevel;
+            var f = MyConstants.LogLevel;
+        }
+    }
+}";
+
+      var replacementsContent = @"`ConnectionStrings:Secret` -> `MyConstants.Secret`
+`Logging:LogLevel` -> `MyConstants.LogLevel`";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.LogLevel";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.IgnoredStringsFileName, "ConnectionStrings:Secret"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.IgnoredStringsFileName, "ConnectionStrings:Secret"));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("Logging:LogLevel", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("Logging:LogLevel", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("Logging:LogLevel", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_ReplacementAndClassFieldCoexist()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedClassField = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        private const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
+        public void Process()
+        {
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedClassField;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.ClassFieldEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.Secret`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.Secret`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_StringDotEmptyExpression()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""hello world value""|};
+            var b = {|#1:""hello world value""|};
+            var c = {|#2:""hello world value""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = string.Empty;
+            var b = string.Empty;
+            var c = string.Empty;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":string.Empty";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`hello world value` -> `string.Empty`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`hello world value` -> `string.Empty`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("hello world value", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("hello world value", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("hello world value", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_IgnoredBaseType_NoDiagnosticEvenWithReplacement()
+   {
+      var source = @"
+namespace Microsoft.EntityFrameworkCore.Migrations
+{
+    public abstract class Migration
+    {
+    }
+}
+
+namespace TestApp
+{
+    public class InitialCreate : Microsoft.EntityFrameworkCore.Migrations.Migration
+    {
+        public void Up()
+        {
+            var a = ""ConnectionStrings:Secret"";
+            var b = ""ConnectionStrings:Secret"";
+            var c = ""ConnectionStrings:Secret"";
+        }
+    }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA032Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.Secret`"));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
 }
