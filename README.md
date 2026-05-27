@@ -4,7 +4,7 @@
 
 A set of C# Roslyn analyzers that catch bugs, design flaws, and security pitfalls at compile time -- before they reach code review or production.
 
-The package currently ships 20+ rules across six categories (Design, Security, Performance, Code Smells, Bug, Best Practice); most include an automatic code fix.  
+The package currently ships 30+ rules across six categories (Design, Security, Performance, Code Smells, Bug, Best Practice); most include an automatic code fix.  
 Rules range from straightforward code-smell detection (e.g. `DateTime.Now` instead of `DateTime.UtcNow`) to cross-method semantic analysis (e.g. Entity Framework queries missing `TagWith`, check-then-act race conditions on concurrent collections, or loop-invariant expressions that should be hoisted).
 
 Install via NuGet and every rule is enforced automatically during compilation, with severity levels configurable through `.editorconfig`.
@@ -77,6 +77,9 @@ Every rule is accompanied by the following information and clues:
 | [DSA027](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA027.md) | Performance | Replace string concatenation in loops with `StringBuilder` | ⚠ Warning | ✅ | ✅ |
 | [DSA028](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA028.md) | Performance | Prefer `ToArray()` over `ToList()` when return type is a read-only interface | ⚠ Warning | ✅ | ✅ |
 | [DSA029](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA029.md) | Bug | The Required Attribute has no impact on a not-nullable value type | ⚠ Warning | ✅ | ✅ |
+| [DSA030](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA030.md) | Best Practice | Entity Framework queries should explicitly specify a change tracking strategy | 💡 Suggestion | ✅ | ✅ |
+| [DSA031](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA031.md) | Performance | Use AsNoTracking for Entity Framework queries that do not require change tracking | ⚠ Warning | ✅ | ✅ |
+| [DSA032](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA032.md) | Code Smells | Avoid duplicated string literals in the same method body | ⚠ Warning | ✅ | ✅ |
 
 ---
 

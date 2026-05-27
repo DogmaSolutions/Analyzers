@@ -410,4 +410,34 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA029AnalyzerTitle" xml:space="preserve">
     <value>Do not use the RequiredAttribute for a non-nullable value type property</value>
   </data>
+
+    <data name="DSA030AnalyzerDescription" xml:space="preserve">
+    <value>Entity Framework queries that materialize results without explicitly specifying a change tracking strategy (AsNoTracking, AsTracking, or AsNoTrackingWithIdentityResolution) rely on the DbContext default, which is usually full tracking. This can lead to unnecessary memory consumption and slower queries when the entities are only read, or to subtle bugs when the developer assumes tracking is disabled. Explicitly specifying the tracking strategy forces a conscious decision and makes the intent clear (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA030.md).</value>
+  </data>
+    <data name="DSA030AnalyzerMessageFormat" xml:space="preserve">
+    <value>Entity Framework query materialized via '{0}' without an explicit change tracking strategy. Add .AsNoTracking() or .AsTracking() to make the intent explicit.</value>
+  </data>
+    <data name="DSA030AnalyzerTitle" xml:space="preserve">
+    <value>Entity Framework queries should explicitly specify a change tracking strategy</value>
+  </data>
+
+    <data name="DSA031AnalyzerDescription" xml:space="preserve">
+    <value>An Entity Framework query materializes entities but change tracking is provably unnecessary—either because the query projects to a non-entity type (anonymous type, tuple, primitive), or because the containing method does not modify or persist the materialized entities. Adding AsNoTracking() eliminates unnecessary snapshot allocations, reduces GC pressure, and improves materialization throughput. In security-sensitive contexts, it also closes the stale-state manipulation surface by detaching returned entities from the change tracker (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA031.md).</value>
+  </data>
+    <data name="DSA031AnalyzerMessageFormat" xml:space="preserve">
+    <value>Entity Framework query should use AsNoTracking(); '{0}' does not require change tracking</value>
+  </data>
+    <data name="DSA031AnalyzerTitle" xml:space="preserve">
+    <value>Use AsNoTracking for Entity Framework queries that do not require change tracking</value>
+  </data>
+
+    <data name="DSA032AnalyzerDescription" xml:space="preserve">
+    <value>A string literal appears multiple times in the same method body. Repeated string literals reduce maintainability: if the value needs to change, every occurrence must be found and updated, risking inconsistencies and subtle bugs. Extract the duplicated string into a constant (local or class-level) and reference the constant instead. The maximum allowed duplications and the minimum string length are configurable via 'dotnet_diagnostic.DSA032.max_duplications' (default: 2) and 'dotnet_diagnostic.DSA032.min_string_length' (default: 5) (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA032.md).</value>
+  </data>
+    <data name="DSA032AnalyzerMessageFormat" xml:space="preserve">
+    <value>The string literal "{0}" appears {1} times in the same method body. Extract it into a constant.</value>
+  </data>
+    <data name="DSA032AnalyzerTitle" xml:space="preserve">
+    <value>Avoid duplicated string literals in the same method body</value>
+  </data>
 </root>
