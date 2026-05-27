@@ -35,7 +35,8 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
    internal static readonly ImmutableArray<string> DefaultIgnoredBaseTypes = ImmutableArray.Create(
       "Microsoft.EntityFrameworkCore.Migrations.Migration",
       "Microsoft.EntityFrameworkCore.Infrastructure.ModelSnapshot",
-      "System.Data.Entity.Migrations.DbMigration");
+      "System.Data.Entity.Migrations.DbMigration",
+      "Microsoft.EntityFrameworkCore.DbContext");
 
    private static readonly LocalizableString _title =
       new LocalizableResourceString(nameof(Resources.DSA032AnalyzerTitle), Resources.ResourceManager, typeof(Resources));

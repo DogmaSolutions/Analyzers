@@ -512,7 +512,7 @@ namespace TestApp
       var test = new CSharpAnalyzerVerifier<DSA032Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.TestState.AdditionalFiles.Add((DSA032Analyzer.IgnoredStringsFileName, ""));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.IgnoredStringsFileName, string.Empty));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA032Analyzer>.Diagnostic(DSA032Analyzer.DiagnosticId)
             .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
@@ -731,7 +731,7 @@ namespace TestApp
 
       // Single wildcard matches everything
       Assert.IsTrue(DSA032Analyzer.MatchesGlobPattern("Anything.cs", "*"));
-      Assert.IsTrue(DSA032Analyzer.MatchesGlobPattern("", "*"));
+      Assert.IsTrue(DSA032Analyzer.MatchesGlobPattern(string.Empty, "*"));
 
       // Consecutive wildcards
       Assert.IsTrue(DSA032Analyzer.MatchesGlobPattern("Anything.cs", "**"));
@@ -753,8 +753,8 @@ namespace TestApp
       Assert.IsFalse(DSA032Analyzer.MatchesGlobPattern("A.cs", "ALongerName.cs"));
 
       // Empty text with non-wildcard pattern
-      Assert.IsFalse(DSA032Analyzer.MatchesGlobPattern("", "*.cs"));
-      Assert.IsFalse(DSA032Analyzer.MatchesGlobPattern("", "Exact.cs"));
+      Assert.IsFalse(DSA032Analyzer.MatchesGlobPattern(string.Empty, "*.cs"));
+      Assert.IsFalse(DSA032Analyzer.MatchesGlobPattern(string.Empty, "Exact.cs"));
    }
 
    [TestMethod]
@@ -900,7 +900,7 @@ namespace TestApp
       var test = new CSharpAnalyzerVerifier<DSA032Analyzer>.Test();
       test.TestState.Sources.Add(("Resources.Designer.cs", source));
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.TestState.AdditionalFiles.Add((DSA032Analyzer.IgnoredFileNamesFileName, ""));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.IgnoredFileNamesFileName, string.Empty));
 
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -1199,6 +1199,37 @@ namespace TestApp
     public class InitialCreate : System.Data.Entity.Migrations.DbMigration
     {
         public void Up()
+        {
+            var a = ""ConnectionStrings:Secret"";
+            var b = ""ConnectionStrings:Secret"";
+            var c = ""ConnectionStrings:Secret"";
+        }
+    }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA032Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task DoesNotFlagEfCoreDbContextClass()
+   {
+      var source = @"
+namespace Microsoft.EntityFrameworkCore
+{
+    public abstract class DbContext
+    {
+    }
+}
+
+namespace TestApp
+{
+    public class MyDbContext : Microsoft.EntityFrameworkCore.DbContext
+    {
+        public void OnModelCreating()
         {
             var a = ""ConnectionStrings:Secret"";
             var b = ""ConnectionStrings:Secret"";
