@@ -435,7 +435,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>A string literal appears multiple times in the same method body. Repeated string literals reduce maintainability: if the value needs to change, every occurrence must be found and updated, risking inconsistencies and subtle bugs. Extract the duplicated string into a constant (local or class-level) and reference the constant instead. The maximum allowed duplications and the minimum string length are configurable via 'dotnet_diagnostic.DSA032.max_duplications' (default: 2) and 'dotnet_diagnostic.DSA032.min_string_length' (default: 5) (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA032.md).</value>
   </data>
     <data name="DSA032AnalyzerMessageFormat" xml:space="preserve">
-    <value>The string literal "{0}" appears {1} times in the same method body. Extract it into a constant.</value>
+    <value>The string literal "{0}" appears {1} times in the same method body. Either add it to the exclusions ("DSA032_IgnoredStrings.txt" or "DSA032_IgnoredFileNames.txt"), or extract it into a constant.</value>
   </data>
     <data name="DSA032AnalyzerTitle" xml:space="preserve">
     <value>Avoid duplicated string literals in the same method body</value>
