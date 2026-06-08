@@ -65,6 +65,8 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => ExtractToVariableAsync(context.Document, invocation, ct),
                 equivalenceKey: DSA016Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, invocation, DSA016Analyzer.DiagnosticId, nameof(Resources.DSA016ReviewComment));
     }
 
     private static async Task<Document> ExtractToVariableAsync(

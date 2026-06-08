@@ -45,6 +45,8 @@ public sealed class DSA008CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => RemoveRequiredAttributeAsync(context.Document, propertyDeclaration, ct),
                 equivalenceKey: DSA008Analyzer.DiagnosticId + ".Remove"),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, propertyDeclaration, DSA008Analyzer.DiagnosticId, nameof(Resources.DSA008ReviewComment));
     }
 
     private static async Task<Document> RemoveRequiredAttributeAsync(

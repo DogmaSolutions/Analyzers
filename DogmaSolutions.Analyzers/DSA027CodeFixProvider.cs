@@ -44,6 +44,8 @@ public sealed class DSA027CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => ConvertToStringBuilderAsync(context.Document, assignment, ct),
                 equivalenceKey: DSA027Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA027Analyzer.DiagnosticId, nameof(Resources.DSA027ReviewComment));
     }
 
     private static async Task<Document> ConvertToStringBuilderAsync(

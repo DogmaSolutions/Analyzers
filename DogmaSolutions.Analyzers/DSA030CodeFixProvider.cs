@@ -56,6 +56,8 @@ public sealed class DSA030CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => InsertTrackingMethodAsync(context.Document, invocation, "AsTracking", ct),
                 equivalenceKey: AsTrackingEquivalenceKey),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, invocation, DSA030Analyzer.DiagnosticId, nameof(Resources.DSA030ReviewComment));
     }
 
     private static async Task<Document> InsertTrackingMethodAsync(

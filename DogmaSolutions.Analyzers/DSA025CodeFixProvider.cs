@@ -45,6 +45,8 @@ public sealed class DSA025CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => ConvertToStructuredLoggingAsync(context.Document, interpolated, ct),
                 equivalenceKey: DSA025Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, interpolated, DSA025Analyzer.DiagnosticId, nameof(Resources.DSA025ReviewComment));
     }
 
     private static async Task<Document> ConvertToStructuredLoggingAsync(

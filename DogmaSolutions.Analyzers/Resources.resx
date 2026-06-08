@@ -326,7 +326,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>Redundant async/await on Task.FromResult. Remove the async modifier and the await keyword; the Task is already completed.</value>
   </data>
     <data name="DSA020AnalyzerTitle" xml:space="preserve">
-    <value>Remove redundant async/await on Task.FromResult</value>
+    <value>Remove redundant async/await on `Task.FromResult`</value>
   </data>
     <data name="DSA021AnalyzerDescription" xml:space="preserve">
     <value>Entity Framework queries that do not include a TagWith() or TagWithCallSite() call lack the traceability markers required for rapid root cause analysis during security incidents and operational failures. When an anomalous, slow, or malicious query pattern is detected in production database logs, monitoring dashboards, or intrusion detection systems, the absence of a source-identifying tag forces incident responders to manually reverse-engineer the generated SQL back to application source code — a process that is error-prone, time-consuming, and potentially catastrophic under the time pressure of an active incident or attack. TagWithCallSite() automatically embeds the source file path, line number, and calling method name into the generated SQL as a comment, enabling immediate identification of the originating code path. TagWith() allows developers to add a custom descriptive label for contextual traceability. In the context of cybersecurity, this directly supports mitigation of CWE-400 (Uncontrolled Resource Consumption): when a resource-exhaustion attack targets the database layer, tagged queries enable rapid identification and surgical isolation of the offending code path without requiring a full application shutdown. In the context of IEC 62443 certification, query tagging is vital for the Traceability requirements under FR 2 (Use Control) and the Integrity verification requirements under FR 3 (System Integrity), enabling auditable, tamper-evident chains from observed database activity back to the originating application code and the identity context in which it executed (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA021.md).</value>
@@ -335,7 +335,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>The Entity Framework query materialized by '{0}' does not include a call to TagWith() or TagWithCallSite(). Untagged queries hinder root cause analysis and incident response traceability.</value>
   </data>
     <data name="DSA021AnalyzerTitle" xml:space="preserve">
-    <value>Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability</value>
+    <value>Entity Framework queries should be tagged with `TagWith` or `TagWithCallSite` for traceability</value>
   </data>
     <data name="DSA022AnalyzerDescription" xml:space="preserve">
     <value>An arithmetic or bitwise expression inside a loop body references only variables that are not modified within that loop iteration, making it loop-invariant. The expression is redundantly recomputed on every iteration, wasting CPU cycles on identical results. While modern compilers perform Loop-Invariant Code Motion (LICM) as a JIT optimization, this transformation is not guaranteed across all .NET runtimes, JIT tiers, and platforms; explicitly hoisting the computation to a variable declared before the loop ensures deterministic performance regardless of optimizer quality. In tight numerical loops, redundant multiplications and additions inside the innermost loop can degrade throughput by orders of magnitude, particularly when the loop operates over large data sets where the redundant operations compound into millions of wasted cycles. Additionally, hoisting invariant sub-expressions improves cache locality by reducing the instruction footprint of the hot loop body, allowing the CPU instruction cache to retain the performance-critical path more effectively. In the context of cybersecurity, this relates to CWE-405 (Asymmetric Resource Consumption / Amplification): an attacker who can influence the iteration count of a loop containing unnecessarily repeated computations can amplify the cost of each request, turning a linear-time operation into a practical denial-of-service vector. In the context of IEC 62443 certification, computational efficiency in control loops directly supports FR 7 (Resource Availability) by ensuring that processing resources are not wasted on redundant computations that could be avoided with straightforward code restructuring (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA022.md).</value>
@@ -353,7 +353,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>Use 'Path.Combine' instead of string concatenation to build the file path argument for '{0}'. Manual path concatenation is error-prone and platform-dependent.</value>
   </data>
     <data name="DSA023AnalyzerTitle" xml:space="preserve">
-    <value>Use Path.Combine instead of string concatenation to build file system paths</value>
+    <value>Use `Path.Combine` instead of string concatenation to build file system paths</value>
   </data>
     <data name="DSA024AnalyzerDescription" xml:space="preserve">
     <value>A string concatenation is used to compose a value passed to a parameter whose name indicates it represents a file system path or file name. Manual path concatenation is error-prone: missing or duplicated separators, platform-dependent behavior (backslash on Windows vs. forward slash on Unix), and potential path traversal vulnerabilities when user-controlled segments are not properly normalized. Path.Combine handles all of these concerns correctly by normalizing separators and joining path segments in a platform-independent manner. This rule complements DSA023 by covering methods outside the well-known System.IO types, detecting path-like parameters by name. The set of recognized parameter names is configurable via .editorconfig options dotnet_diagnostic.DSA024.exact_parameter_names and dotnet_diagnostic.DSA024.prefix_suffix_parameter_names. Security-wise, this is correlated to CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') (https://cwe.mitre.org/data/definitions/22.html). In the context of IEC 62443, proper path handling supports FR 3 (System Integrity) by ensuring that file system operations target the intended paths and are not susceptible to manipulation through separator injection or normalization inconsistencies (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA024.md).</value>
@@ -362,7 +362,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>Use 'Path.Combine' instead of string concatenation to build the path-like argument for '{0}'. Manual path concatenation is error-prone and platform-dependent.</value>
   </data>
     <data name="DSA024AnalyzerTitle" xml:space="preserve">
-    <value>Use Path.Combine instead of string concatenation for path-like parameters</value>
+    <value>Use `Path.Combine` instead of string concatenation for path-like parameters</value>
   </data>
     <data name="DSA025AnalyzerDescription" xml:space="preserve">
     <value>An interpolated string is passed as the message template to an ILogger logging method. Interpolated strings are evaluated eagerly at the call site regardless of whether the log level is enabled, causing unnecessary string allocations and formatting overhead. Additionally, interpolated strings bypass structured log storage: the resulting message is a pre-formatted flat string that cannot be parsed back into discrete fields by log aggregation systems (Seq, Elasticsearch, Application Insights, Loki). This means log entries lose their queryability, correlation, and filtering capabilities. Use a constant message template with named placeholders and pass the values as separate arguments. This allows the logging framework to skip formatting entirely when the log level is disabled, and to store each parameter as a structured field for downstream analysis. This is consistent with the built-in CA2254 diagnostic, but provides an automated code fix to convert interpolated strings to structured templates. Security-wise, structured logging prevents accidental information leakage through uncontrolled string expansion and supports forensic log analysis during incident response (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA025.md).</value>
@@ -398,7 +398,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>Return type does not expose List&lt;T&gt; mutating members. Use .ToArray() instead of .ToList() to avoid unnecessary memory overhead.</value>
   </data>
     <data name="DSA028AnalyzerTitle" xml:space="preserve">
-    <value>Prefer ToArray over ToList when return type is a read-only interface</value>
+    <value>Prefer `ToArray` over `ToList` when return type is a read-only interface</value>
   </data>
 
     <data name="DSA029AnalyzerDescription" xml:space="preserve">
@@ -428,7 +428,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>Entity Framework query should use AsNoTracking(); '{0}' does not require change tracking</value>
   </data>
     <data name="DSA031AnalyzerTitle" xml:space="preserve">
-    <value>Use AsNoTracking for Entity Framework queries that do not require change tracking</value>
+    <value>Use `AsNoTracking` for Entity Framework queries that do not require change tracking</value>
   </data>
 
     <data name="DSA032AnalyzerDescription" xml:space="preserve">
@@ -439,5 +439,245 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   </data>
     <data name="DSA032AnalyzerTitle" xml:space="preserve">
     <value>Avoid duplicated string literals in the same method body</value>
+  </data>
+  <data name="DSA001ReviewComment" xml:space="preserve">
+    <value>/* [DSA001 / CySec + QA + Design]: WebApi controllers should not contain data-manipulation business logics through a LINQ query expression (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA001.md)
+ * MITRE, CWE-653: Improper Isolation or Compartmentalization - https://cwe.mitre.org/data/definitions/653.html
+ * MITRE, CWE-1057: Data Access Operations Outside of Expected Data Manager Component - https://cwe.mitre.org/data/definitions/1057.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA002ReviewComment" xml:space="preserve">
+    <value>/* [DSA002 / CySec + QA + Design]: WebApi controllers should not contain data-manipulation business logics through a LINQ fluent query (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA002.md)
+ * MITRE, CWE-653: Improper Isolation or Compartmentalization - https://cwe.mitre.org/data/definitions/653.html
+ * MITRE, CWE-1057: Data Access Operations Outside of Expected Data Manager Component - https://cwe.mitre.org/data/definitions/1057.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA003ReviewComment" xml:space="preserve">
+    <value>/* [DSA003 / CySec + QA + Code Smell]: Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty` (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA003.md)
+ * MITRE, CWE-20: Improper Input Validation - https://cwe.mitre.org/data/definitions/20.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA004ReviewComment" xml:space="preserve">
+    <value>/* [DSA004 / CySec + QA + Code Smell]: Use `DateTime.UtcNow` instead of `DateTime.Now` (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA004.md)
+ * CWE-361: 7PK - Time and State - https://cwe.mitre.org/data/definitions/361.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA005ReviewComment" xml:space="preserve">
+    <value>/* [DSA005 / CySec + QA + Code Smell]: Potential non-deterministic point-in-time execution (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA005.md)
+ * CWE-361: 7PK - Time and State - https://cwe.mitre.org/data/definitions/361.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA006ReviewComment" xml:space="preserve">
+    <value>/* [DSA006 / CySec + QA + Code Smell]: General exceptions should not be thrown by user code (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA006.md)
+ * MITRE, CWE-397: Declaration of Throws for Generic Exception - https://cwe.mitre.org/data/definitions/397.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA007ReviewComment" xml:space="preserve">
+    <value>/* [DSA007 / CySec + QA + Code Smell]: Use the double-checked lazy initialization pattern (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA007.md)
+ * Wikipedia: Double-checked locking - https://en.wikipedia.org/wiki/Double-checked_locking
+ * Microsoft Documentation: Managed Threading Best Practices - https://docs.microsoft.com/en-us/dotnet/standard/threading/managed-threading-best-practices
+ * MITRE, CWE-667: Improper Locking - https://cwe.mitre.org/data/definitions/667.html
+ * MITRE, CWE-413: Improper Resource Locking - https://cwe.mitre.org/data/definitions/413.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA008ReviewComment" xml:space="preserve">
+    <value>/* [DSA008 / CySec + QA + Bug]: The `RequiredAttribute` has no impact on a not-nullable `DateTime` (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA008.md)
+ * `RequiredAttribute` - https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute
+ * `RangeAttribute` - https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute
+ * `DateTime` - https://learn.microsoft.com/it-it/dotnet/api/system.datetime
+ * MITRE, CWE-20: Improper Input Validation - https://cwe.mitre.org/data/definitions/20.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA009ReviewComment" xml:space="preserve">
+    <value>/* [DSA009 / CySec + QA + Bug]: The `RequiredAttribute` has no impact on a not-nullable `DateTime`Offset (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA009.md)
+ * `RequiredAttribute` - https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute
+ * `RangeAttribute` - https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute
+ * `DateTimeOffset` - https://learn.microsoft.com/it-it/dotnet/api/system.datetimeoffset
+ * MITRE, CWE-20: Improper Input Validation - https://cwe.mitre.org/data/definitions/20.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA011ReviewComment" xml:space="preserve">
+    <value>/* [DSA011 / CySec + QA + Design]: Avoid lazily initialized, self-contained, static singleton properties (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA011.md)
+ * Singletons Are Evil - https://wiki.c2.com/?SingletonsAreEvil
+ * Singleton Pattern - https://en.wikipedia.org/wiki/Singleton_pattern
+ * MITRE, CWE-543: Use of Singleton Pattern Without Proper Synchronization in a Multithreaded Context - https://cwe.mitre.org/data/definitions/543.html
+ * MITRE, CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization - https://cwe.mitre.org/data/definitions/362.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA012ReviewComment" xml:space="preserve">
+    <value>/* [DSA012 / CySec + QA + Design]: Avoid the 'if not exists, then insert' check-then-act antipattern on database types (TOCTOU) (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA012.md)
+ * TOCTOU - Time-of-Check to Time-of-Use - https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use
+ * MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition - https://cwe.mitre.org/data/definitions/367.html
+ * EAFP - Easier to Ask for Forgiveness than Permission - https://devblogs.microsoft.com/python/idiomatic-python-eafp-versus-lbyl/
+ * OWASP: Race Conditions - https://owasp.org/www-community/vulnerabilities/Race_condition
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA013ReviewComment" xml:space="preserve">
+    <value>/* [DSA013 / CySec + QA + Security]: Minimal API endpoints should have an explicit authorization configuration (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA013.md)
+ * MITRE, CWE-862: Missing Authorization - https://cwe.mitre.org/data/definitions/862.html
+ * ASP.NET Core Minimal APIs - Authorization - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security
+ * OWASP: Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA014ReviewComment" xml:space="preserve">
+    <value>/* [DSA014 / CySec + QA + Security]: Minimal API endpoints on route groups should have an explicit authorization configuration (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA014.md)
+ * MITRE, CWE-862: Missing Authorization - https://cwe.mitre.org/data/definitions/862.html
+ * ASP.NET Core Minimal APIs - Authorization - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security
+ * OWASP: Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA015ReviewComment" xml:space="preserve">
+    <value>/* [DSA015 / CySec + QA + Security]: Minimal API endpoints on parameterized route builders should have an explicit authorization configuration (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA015.md)
+ * MITRE, CWE-862: Missing Authorization - https://cwe.mitre.org/data/definitions/862.html
+ * ASP.NET Core Minimal APIs - Authorization - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security
+ * OWASP: Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA016ReviewComment" xml:space="preserve">
+    <value>/* [DSA016 / CySec + QA + Code Smell]: Avoid repeated invocation of the same enumeration method with identical arguments (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA016.md)
+ * MITRE, CWE-1041: Use of Redundant Code - https://cwe.mitre.org/data/definitions/1041.html
+ * MITRE, CWE-1049: Interaction Frequency - https://cwe.mitre.org/data/definitions/1049.html
+ * MITRE, CWE-834: Excessive Iteration - https://cwe.mitre.org/data/definitions/834.html
+ * DRY - Don't Repeat Yourself - https://en.wikipedia.org/wiki/Don%27t_repeat_yourself
+ * CA1851: Possible multiple enumerations of IEnumerable collection - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1851
+ */</value>
+  </data>
+  <data name="DSA017ReviewComment" xml:space="preserve">
+    <value>/* [DSA017 / CySec + QA + Design]: Use the collection's atomic operation instead of the check-then-act pattern (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA017.md)
+ * MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition - https://cwe.mitre.org/data/definitions/367.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA018ReviewComment" xml:space="preserve">
+    <value>/* [DSA018 / CySec + QA + Design]: Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA018.md)
+ * MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition - https://cwe.mitre.org/data/definitions/367.html
+ * MITRE, CWE-667: Improper Locking - https://cwe.mitre.org/data/definitions/667.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA019ReviewComment" xml:space="preserve">
+    <value>/* [DSA019 / CySec + QA + Code Smell]: Avoid repeated deeply nested member access chains (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA019.md)
+ * MITRE, CWE-1041: Use of Redundant Code - https://cwe.mitre.org/data/definitions/1041.html
+ * MITRE, CWE-1049: Interaction Frequency - https://cwe.mitre.org/data/definitions/1049.html
+ * MITRE, CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition - https://cwe.mitre.org/data/definitions/367.html
+ * DRY - Don't Repeat Yourself - https://en.wikipedia.org/wiki/Don%27t_repeat_yourself
+ */</value>
+  </data>
+  <data name="DSA020ReviewComment" xml:space="preserve">
+    <value>/* [DSA020 / CySec + QA + Code Smell]: Remove redundant async/await on `Task.FromResult` (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA020.md)
+ * MITRE, CWE-1049: Interaction Frequency - https://cwe.mitre.org/data/definitions/1049.html
+ * CA1849: Call async methods when in an async method - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1849
+ * Stephen Toub: How Async/Await Really Works in C# - https://devblogs.microsoft.com/dotnet/how-async-await-really-works/
+ * Sergey Tepliakov: Dissecting the async methods in C# - https://devblogs.microsoft.com/premier-developer/dissecting-the-async-methods-in-c/
+ * .NET 6 Performance Improvements: Async - https://devblogs.microsoft.com/dotnet/performance-improvements-in-net-6/#async
+ * .NET 7 Performance Improvements: Async - https://devblogs.microsoft.com/dotnet/performance_improvements_in_net_7/#async
+ * Roslyn Async Design - https://github.com/dotnet/roslyn/blob/main/docs/features/async.md
+ */</value>
+  </data>
+  <data name="DSA021ReviewComment" xml:space="preserve">
+    <value>/* [DSA021 / CySec + QA + Best Practice]: Entity Framework queries should be tagged with `TagWith` or `TagWithCallSite` for traceability (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA021.md)
+ * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ * Microsoft: Query tags in Entity Framework Core - https://learn.microsoft.com/en-us/ef/core/querying/tags
+ * Microsoft: `TagWithCallSite` - https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.entityframeworkqueryableextensions.tagwithcallsite
+ */</value>
+  </data>
+  <data name="DSA022ReviewComment" xml:space="preserve">
+    <value>/* [DSA022 / CySec + QA + Performance]: Hoist loop-invariant expression out of inner loop (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA022.md)
+ * MITRE, CWE-405: Asymmetric Resource Consumption (Amplification) - https://cwe.mitre.org/data/definitions/405.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ * Wikipedia: Loop-invariant code motion - https://en.wikipedia.org/wiki/Loop-invariant_code_motion
+ */</value>
+  </data>
+  <data name="DSA023ReviewComment" xml:space="preserve">
+    <value>/* [DSA023 / CySec + QA + Best Practice]: Use `Path.Combine` instead of string concatenation to build file system paths (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA023.md)
+ * CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') - https://cwe.mitre.org/data/definitions/22.html
+ * `Path.Combine` documentation - https://docs.microsoft.com/en-us/dotnet/api/system.io.path.combine
+ * IEC 62443 - FR 3 (System Integrity)
+ */</value>
+  </data>
+  <data name="DSA024ReviewComment" xml:space="preserve">
+    <value>/* [DSA024 / CySec + QA + Best Practice]: Use `Path.Combine` instead of string concatenation for path-like parameters (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA024.md)
+ * CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') - https://cwe.mitre.org/data/definitions/22.html
+ * `Path.Combine` documentation - https://docs.microsoft.com/en-us/dotnet/api/system.io.path.combine
+ * IEC 62443 - FR 3 (System Integrity)
+ */</value>
+  </data>
+  <data name="DSA025ReviewComment" xml:space="preserve">
+    <value>/* [DSA025 / CySec + QA + Performance]: Use structured logging template instead of interpolated string (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA025.md)
+ * MITRE, CWE-532: Insertion of Sensitive Information into Log File - https://cwe.mitre.org/data/definitions/532.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ * CA2254: Template should be a static expression - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2254
+ * High-performance logging in .NET - https://learn.microsoft.com/en-us/dotnet/core/extensions/high-performance-logging
+ */</value>
+  </data>
+  <data name="DSA026ReviewComment" xml:space="preserve">
+    <value>/* [DSA026 / CySec + QA + Bug]: Use nearest scope CancellationToken (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA026.md)
+ * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+ * MITRE, CWE-696: Incorrect Behavior Order - https://cwe.mitre.org/data/definitions/696.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ * CA2016: Forward the CancellationToken parameter to methods that take one - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2016
+ * Cancellation in managed threads - https://learn.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads
+ */</value>
+  </data>
+  <data name="DSA027ReviewComment" xml:space="preserve">
+    <value>/* [DSA027 / CySec + QA + Performance]: Replace string concatenation in loops with `StringBuilder` (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA027.md)
+ * CA1834: Use StringBuilder.Append(char) when applicable - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1834
+ * String concatenation (C# guide) - https://learn.microsoft.com/en-us/dotnet/csharp/how-to/concatenate-multiple-strings
+ * `StringBuilder` Class - https://learn.microsoft.com/en-us/dotnet/api/system.text.stringbuilder
+ */</value>
+  </data>
+  <data name="DSA028ReviewComment" xml:space="preserve">
+    <value>/* [DSA028 / CySec + QA + Performance]: Prefer `ToArray` over `ToList` when return type is a read-only interface (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA028.md)
+ */</value>
+  </data>
+  <data name="DSA029ReviewComment" xml:space="preserve">
+    <value>/* [DSA029 / CySec + QA + Bug]: The `RequiredAttribute` has no impact on a not-nullable value type (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA029.md)
+ * `RequiredAttribute` - https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.requiredattribute
+ * `RangeAttribute` - https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.rangeattribute
+ * Value types - https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/value-types
+ * MITRE, CWE-20: Improper Input Validation - https://cwe.mitre.org/data/definitions/20.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ */</value>
+  </data>
+  <data name="DSA030ReviewComment" xml:space="preserve">
+    <value>/* [DSA030 / CySec + QA + Best Practice]: Entity Framework queries should explicitly specify a change tracking strategy (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA030.md)
+ * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+ * MITRE, CWE-284: Improper Access Control - https://cwe.mitre.org/data/definitions/284.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ * Microsoft: No-tracking queries in Entity Framework Core - https://learn.microsoft.com/en-us/ef/core/querying/tracking#no-tracking-queries
+ * Microsoft: `AsNoTracking` - https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.entityframeworkqueryableextensions.asnotracking
+ * Microsoft: `AsNoTrackingWithIdentityResolution` - https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.entityframeworkqueryableextensions.asnotrackingwithidentityresolution
+ * Microsoft: Performance - No-tracking queries - https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying#tracking-no-tracking-and-identity-resolution
+ */</value>
+  </data>
+  <data name="DSA031ReviewComment" xml:space="preserve">
+    <value>/* [DSA031 / CySec + QA + Performance]: Use `AsNoTracking` for Entity Framework queries that do not require change tracking (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA031.md)
+ * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+ * MITRE, CWE-284: Improper Access Control - https://cwe.mitre.org/data/definitions/284.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ * Microsoft: No-tracking queries in Entity Framework Core - https://learn.microsoft.com/en-us/ef/core/querying/tracking#no-tracking-queries
+ * Microsoft: Performance - No-tracking queries - https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying#tracking-no-tracking-and-identity-resolution
+ */</value>
+  </data>
+  <data name="DSA032ReviewComment" xml:space="preserve">
+    <value>/* [DSA032 / CySec + QA + Code Smell]: Avoid duplicated string literals in the same method body (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA032.md)
+ * CWE-1041: Use of Redundant Code - https://cwe.mitre.org/data/definitions/1041.html
+ * DRY - Don't Repeat Yourself - https://en.wikipedia.org/wiki/Don%27t_repeat_yourself
+ */</value>
   </data>
 </root>

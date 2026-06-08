@@ -31,12 +31,17 @@ public sealed class DSA026CodeFixProvider : CodeFixProvider
             string.IsNullOrEmpty(nearestName))
             return;
 
+        var diagnosticSpan = diagnostic.Location.SourceSpan;
+        var node = root.FindNode(diagnosticSpan);
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: $"Use '{nearestName}' from nearest scope",
                 createChangedDocument: ct => ReplaceTokenAsync(context.Document, diagnostic, nearestName, ct),
                 equivalenceKey: DSA026Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA026Analyzer.DiagnosticId, nameof(Resources.DSA026ReviewComment));
     }
 
     private static async Task<Document> ReplaceTokenAsync(

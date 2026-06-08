@@ -76,6 +76,8 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
                     diagnostic);
             }
         }
+
+        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA005Analyzer.DiagnosticId, nameof(Resources.DSA005ReviewComment));
     }
 
     #region Extract to variable (existing fix)

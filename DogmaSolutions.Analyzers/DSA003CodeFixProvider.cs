@@ -39,6 +39,8 @@ public sealed class DSA003CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => ReplaceWithIsNullOrWhiteSpaceAsync(context.Document, node, ct),
                 equivalenceKey: DSA003Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA003Analyzer.DiagnosticId, nameof(Resources.DSA003ReviewComment));
     }
 
     private static async Task<Document> ReplaceWithIsNullOrWhiteSpaceAsync(

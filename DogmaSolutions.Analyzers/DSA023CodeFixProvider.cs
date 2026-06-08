@@ -45,6 +45,8 @@ public sealed class DSA023CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => ReplaceWithPathCombineAsync(context.Document, binaryExpr, ct),
                 equivalenceKey: DSA023Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, binaryExpr, DSA023Analyzer.DiagnosticId, nameof(Resources.DSA023ReviewComment));
     }
 
     private static async Task<Document> ReplaceWithPathCombineAsync(

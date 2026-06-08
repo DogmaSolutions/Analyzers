@@ -39,6 +39,8 @@ public sealed class DSA004CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => ReplaceWithUtcNowAsync(context.Document, node, ct),
                 equivalenceKey: DSA004Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA004Analyzer.DiagnosticId, nameof(Resources.DSA004ReviewComment));
     }
 
     private static async Task<Document> ReplaceWithUtcNowAsync(

@@ -63,6 +63,8 @@ public sealed class DSA029CodeFixProvider : CodeFixProvider
                     equivalenceKey: DSA029Analyzer.DiagnosticId + ".Range"),
                 diagnostic);
         }
+
+        ReviewCommentCodeFix.Register(context, diagnostic, propertyDeclaration, DSA029Analyzer.DiagnosticId, nameof(Resources.DSA029ReviewComment));
     }
 
     internal static (SyntaxKind TypeKeyword, string TypeKeywordText)? GetRangeReplacementInfo(

@@ -43,6 +43,8 @@ public sealed class DSA028CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => ReplaceToListWithToArrayAsync(context.Document, toListInvocation, ct),
                 equivalenceKey: DSA028Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, toListInvocation, DSA028Analyzer.DiagnosticId, nameof(Resources.DSA028ReviewComment));
     }
 
     private static async Task<Document> ReplaceToListWithToArrayAsync(

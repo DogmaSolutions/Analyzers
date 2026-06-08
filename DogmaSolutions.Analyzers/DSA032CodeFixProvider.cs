@@ -80,6 +80,8 @@ public sealed class DSA032CodeFixProvider : CodeFixProvider
             createChangedDocument: ct => ExtractToClassFieldAsync(context.Document, literal, stringValue, ct),
             equivalenceKey: ClassFieldEquivalenceKey),
          diagnostic);
+
+      ReviewCommentCodeFix.Register(context, diagnostic, literal, DSA032Analyzer.DiagnosticId, nameof(Resources.DSA032ReviewComment));
    }
 
    private static async Task<ImmutableArray<string>> LoadReplacementsAsync(Project project, string stringValue, CancellationToken cancellationToken)

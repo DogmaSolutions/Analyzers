@@ -53,6 +53,8 @@ public sealed class DSA021CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => AddTagToQueryAsync(context.Document, invocation, useCallSite: false, ct),
                 equivalenceKey: TagWithEquivalenceKey),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, invocation, DSA021Analyzer.DiagnosticId, nameof(Resources.DSA021ReviewComment));
     }
 
     private static async Task<Document> AddTagToQueryAsync(

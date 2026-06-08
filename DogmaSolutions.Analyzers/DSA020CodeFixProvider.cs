@@ -47,6 +47,8 @@ public sealed class DSA020CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => RemoveRedundantAsyncAwaitAsync(context.Document, lambda, ct),
                 equivalenceKey: DSA020Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, lambda, DSA020Analyzer.DiagnosticId, nameof(Resources.DSA020ReviewComment));
     }
 
     private static async Task<Document> RemoveRedundantAsyncAwaitAsync(

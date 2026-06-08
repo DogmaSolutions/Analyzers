@@ -832,5 +832,191 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA032AnalyzerTitle", resourceCulture);
             }
         }
+
+        internal static string DSA001ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA001ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA002ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA002ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA003ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA003ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA004ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA004ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA005ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA005ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA006ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA006ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA007ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA007ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA008ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA008ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA009ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA009ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA011ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA011ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA012ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA012ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA013ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA013ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA014ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA014ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA015ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA015ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA016ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA016ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA017ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA017ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA018ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA018ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA019ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA019ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA020ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA020ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA021ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA021ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA022ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA022ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA023ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA023ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA024ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA024ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA025ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA025ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA026ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA026ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA027ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA027ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA028ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA028ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA029ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA029ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA030ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA030ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA031ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA031ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA032ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA032ReviewComment", resourceCulture);
+            }
+        }
     }
 }

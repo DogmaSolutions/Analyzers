@@ -44,6 +44,8 @@ public sealed class DSA022CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => HoistExpressionAsync(context.Document, expression, ct),
                 equivalenceKey: DSA022Analyzer.DiagnosticId),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, expression, DSA022Analyzer.DiagnosticId, nameof(Resources.DSA022ReviewComment));
     }
 
     private static async Task<Document> HoistExpressionAsync(

@@ -49,36 +49,36 @@ Every rule is accompanied by the following information and clues:
 
 | Id | Category | Description | Default severity | Is enabled | Code fix |
 |----|----------|-------------|------------------|------------|----------|
-| [DSA001](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA001.md) | Design | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. | ⚠ Warning | ✅ | ❌ |
-| [DSA002](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA002.md) | Design | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**. | ⚠ Warning | ✅ | ❌ |
+| [DSA001](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA001.md) | Design | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ query expression**. | ⚠ Warning | ✅ | ✅ |
+| [DSA002](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA002.md) | Design | [WebApi controller methods](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase) should not contain data-manipulation business logics through a **LINQ fluent query**. | ⚠ Warning | ✅ | ✅ |
 | [DSA003](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA003.md) | Code Smells | Use `String.IsNullOrWhiteSpace` instead of `String.IsNullOrEmpty` | ⚠ Warning | ✅ | ✅ |
 | [DSA004](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA004.md) | Code Smells | Use `DateTime.UtcNow` instead of `DateTime.Now` | ⚠ Warning | ✅ | ✅ |
 | [DSA005](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA005.md) | Code Smells | Potential non-deterministic point-in-time execution | ⛔ Error | ✅ | ✅ |
-| [DSA006](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA006.md) | Code Smells | General exceptions should not be thrown by user code | ⛔ Error | ✅ | ❌ |
-| [DSA007](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA007.md) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking") | ⚠ Warning | ✅ | ❌ |
-| [DSA008](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA008.md) | Bug | The Required Attribute has no impact on a not-nullable DateTime | ⛔ Error | ✅ | ✅ |
-| [DSA009](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA009.md) | Bug | The Required Attribute has no impact on a not-nullable DateTimeOffset | ⛔ Error | ✅ | ✅ |
-| [DSA011](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA011.md) | Design | Avoid lazily initialized, self-contained, static singleton properties | ⚠ Warning | ✅ | ❌ |
-| [DSA012](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA012.md) | Design | Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU) | ⚠ Warning | ✅ | ❌ |
+| [DSA006](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA006.md) | Code Smells | General exceptions should not be thrown by user code | ⛔ Error | ✅ | ✅ |
+| [DSA007](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA007.md) | Code Smells | When initializing a lazy field, use a robust locking pattern, i.e. the "if-lock-if" (aka "double checked locking") | ⚠ Warning | ✅ | ✅ |
+| [DSA008](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA008.md) | Bug | The `RequiredAttribute` has no impact on a not-nullable `DateTime` | ⛔ Error | ✅ | ✅ |
+| [DSA009](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA009.md) | Bug | The `RequiredAttribute` has no impact on a not-nullable `DateTimeOffset` | ⛔ Error | ✅ | ✅ |
+| [DSA011](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA011.md) | Design | Avoid lazily initialized, self-contained, static singleton properties | ⚠ Warning | ✅ | ✅ |
+| [DSA012](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA012.md) | Design | Avoid the "if not exists, then insert" check-then-act antipattern on database types (TOCTOU) | ⚠ Warning | ✅ | ✅ |
 | [DSA013](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA013.md) | Security | Minimal API endpoints should have an explicit authorization configuration | ⚠ Warning | ✅ | ✅ |
 | [DSA014](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA014.md) | Security | Minimal API endpoints on route groups should have an explicit authorization configuration | ⚠ Warning | ✅ | ✅ |
 | [DSA015](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA015.md) | Security | Minimal API endpoints on parameterized route builders should have an explicit authorization configuration | ⚠ Warning | ✅ | ✅ |
 | [DSA016](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA016.md) | Code Smells | Avoid repeated invocation of the same enumeration method with identical arguments | ⚠ Warning | ✅ | ✅ |
 | [DSA017](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA017.md) | Design | Use the collection's atomic operation instead of the check-then-act pattern | ⚠ Warning | ✅ | ✅ |
-| [DSA018](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA018.md) | Design | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling | ⚠ Warning | ✅ | ❌ |
+| [DSA018](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA018.md) | Design | Protect the check-then-act pattern with a lock or use a collection with built-in duplicate handling | ⚠ Warning | ✅ | ✅ |
 | [DSA019](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA019.md) | Code Smells | Avoid repeated deeply nested member access chains | ⚠ Warning | ✅ | ✅ |
 | [DSA020](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA020.md) | Code Smells | Remove redundant async/await on `Task.FromResult` | ⚠ Warning | ✅ | ✅ |
-| [DSA021](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA021.md) | Best Practice | Entity Framework queries should be tagged with TagWith or TagWithCallSite for traceability | ⚠ Warning | ✅ | ✅ |
+| [DSA021](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA021.md) | Best Practice | Entity Framework queries should be tagged with `TagWith` or `TagWithCallSite` for traceability | ⚠ Warning | ✅ | ✅ |
 | [DSA022](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA022.md) | Performance | Hoist loop-invariant expression out of inner loop | ⚠ Warning | ✅ | ✅ |
 | [DSA023](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA023.md) | Best Practice | Use `Path.Combine` instead of string concatenation to build file system paths | ⚠ Warning | ✅ | ✅ |
 | [DSA024](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA024.md) | Best Practice | Use `Path.Combine` instead of string concatenation for path-like parameters | ⚠ Warning | ✅ | ✅ |
 | [DSA025](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA025.md) | Performance | Use structured logging template instead of interpolated string | ⚠ Warning | ✅ | ✅ |
-| [DSA026](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA026.md) | Bug | Use nearest scope CancellationToken | ⚠ Warning | ✅ | ✅ |
+| [DSA026](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA026.md) | Bug | Use nearest scope `CancellationToken` | ⚠ Warning | ✅ | ✅ |
 | [DSA027](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA027.md) | Performance | Replace string concatenation in loops with `StringBuilder` | ⚠ Warning | ✅ | ✅ |
 | [DSA028](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA028.md) | Performance | Prefer `ToArray()` over `ToList()` when return type is a read-only interface | ⚠ Warning | ✅ | ✅ |
-| [DSA029](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA029.md) | Bug | The Required Attribute has no impact on a not-nullable value type | ⚠ Warning | ✅ | ✅ |
+| [DSA029](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA029.md) | Bug | The `RequiredAttribute` has no impact on a not-nullable value type | ⚠ Warning | ✅ | ✅ |
 | [DSA030](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA030.md) | Best Practice | Entity Framework queries should explicitly specify a change tracking strategy | 💡 Suggestion | ✅ | ✅ |
-| [DSA031](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA031.md) | Performance | Use AsNoTracking for Entity Framework queries that do not require change tracking | ⚠ Warning | ✅ | ✅ |
+| [DSA031](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA031.md) | Performance | Use `AsNoTracking` for Entity Framework queries that do not require change tracking | ⚠ Warning | ✅ | ✅ |
 | [DSA032](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA032.md) | Code Smells | Avoid duplicated string literals in the same method body | ⚠ Warning | ✅ | ✅ |
 
 ---

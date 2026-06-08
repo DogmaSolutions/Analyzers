@@ -100,6 +100,8 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                 }
             }
         }
+
+        ReviewCommentCodeFix.Register(context, diagnostic, targetExpression, DSA019Analyzer.DiagnosticId, nameof(Resources.DSA019ReviewComment));
     }
 
     private static async Task<Document> ExtractToVariableAsync(

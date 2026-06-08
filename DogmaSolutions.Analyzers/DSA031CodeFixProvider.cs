@@ -48,6 +48,8 @@ public sealed class DSA031CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => InsertAsNoTrackingAsync(context.Document, invocation, ct),
                 equivalenceKey: EquivalenceKey),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, invocation, DSA031Analyzer.DiagnosticId, nameof(Resources.DSA031ReviewComment));
     }
 
     private static async Task<Document> InsertAsNoTrackingAsync(

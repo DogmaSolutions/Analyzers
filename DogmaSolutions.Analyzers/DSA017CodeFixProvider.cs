@@ -57,6 +57,8 @@ public sealed class DSA017CodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => ApplyFixAsync(context.Document, ifStatement, fix, ct),
                 equivalenceKey: DSA017Analyzer.DiagnosticId + "." + fix),
             diagnostic);
+
+        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA017Analyzer.DiagnosticId, nameof(Resources.DSA017ReviewComment));
     }
 
     private enum FixKind

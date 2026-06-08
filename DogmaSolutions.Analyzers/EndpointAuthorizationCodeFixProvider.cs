@@ -54,6 +54,16 @@ public sealed class EndpointAuthorizationCodeFixProvider : CodeFixProvider
                 createChangedDocument: ct => AddAuthMethodAsync(context.Document, invocation, "AllowAnonymous", ct),
                 equivalenceKey: "AddAllowAnonymous"),
             diagnostic);
+
+        var reviewResourceKey = diagnostic.Id switch
+        {
+           DSA013Analyzer.DiagnosticId => nameof(Resources.DSA013ReviewComment),
+           DSA014Analyzer.DiagnosticId => nameof(Resources.DSA014ReviewComment),
+           DSA015Analyzer.DiagnosticId => nameof(Resources.DSA015ReviewComment),
+           _ => null
+        };
+        if (reviewResourceKey != null)
+           ReviewCommentCodeFix.Register(context, diagnostic, invocation, diagnostic.Id, reviewResourceKey);
     }
 
     private static async Task<Document> AddAuthMethodAsync(
