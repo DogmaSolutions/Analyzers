@@ -39,6 +39,26 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
       "System.Data.Entity.Migrations.DbMigration",
       "Microsoft.EntityFrameworkCore.DbContext");
 
+   // Base types whose specific methods should be ignored (method name → base types).
+   // Unlike DefaultIgnoredBaseTypes which ignores ALL methods in the class, this only
+   // ignores the named method when the class derives from one of the listed base types.
+   internal static readonly ImmutableDictionary<string, ImmutableArray<string>> DefaultIgnoredMethodsByBaseType =
+      ImmutableDictionary.CreateRange(new[]
+      {
+         new KeyValuePair<string, ImmutableArray<string>>("InitializeComponent", ImmutableArray.Create(
+            "System.Windows.Forms.Form",
+            "System.Windows.Forms.UserControl",
+            "System.Windows.Window",
+            "System.Windows.Controls.UserControl",
+            "System.Windows.Controls.Page",
+            "Microsoft.Maui.Controls.ContentPage",
+            "Microsoft.Maui.Controls.ContentView",
+            "Avalonia.Controls.Window",
+            "Avalonia.Controls.UserControl",
+            "Xamarin.Forms.ContentPage",
+            "Xamarin.Forms.ContentView"))
+      });
+
    private static readonly LocalizableString _title =
       new LocalizableResourceString(nameof(Resources.DSA032AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
 
@@ -244,6 +264,39 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
       return false;
    }
 
+   private static bool IsIgnoredMethodInBaseType(SyntaxNodeAnalysisContext context)
+   {
+      string methodName;
+      if (context.Node is MethodDeclarationSyntax method)
+         methodName = method.Identifier.ValueText;
+      else if (context.Node is ConstructorDeclarationSyntax)
+         return false;
+      else
+         return false;
+
+      if (!DefaultIgnoredMethodsByBaseType.TryGetValue(methodName, out var baseTypes))
+         return false;
+
+      var containingType = context.ContainingSymbol?.ContainingType;
+      if (containingType == null)
+         return false;
+
+      var current = containingType.BaseType;
+      while (current != null)
+      {
+         var fullName = current.ToDisplayString();
+         foreach (var ignoredType in baseTypes)
+         {
+            if (string.Equals(fullName, ignoredType, StringComparison.Ordinal))
+               return true;
+         }
+
+         current = current.BaseType;
+      }
+
+      return false;
+   }
+
    private static void AnalyzeMethodBody(
       SyntaxNodeAnalysisContext context,
       ImmutableHashSet<string> ignoredStrings,
@@ -254,6 +307,10 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
 
       if (IsContainedInIgnoredBaseType(context))
          return;
+
+      if (IsIgnoredMethodInBaseType(context))
+         return;
+
       SyntaxNode body;
       if (context.Node is MethodDeclarationSyntax method)
          body = (SyntaxNode)method.Body ?? method.ExpressionBody;
