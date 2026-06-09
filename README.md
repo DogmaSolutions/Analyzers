@@ -2,11 +2,18 @@
 
 [![DogmaSolutions.Analyzers on NuGet](https://img.shields.io/nuget/v/DogmaSolutions.Analyzers.svg)](https://www.nuget.org/packages/DogmaSolutions.Analyzers/)
 
-A set of C# Roslyn analyzers that catch bugs, design flaws, and security pitfalls at compile time -- before they reach code review or production.
+A set of C# Roslyn analyzers, code fixers, and refactorings that catch bugs, design flaws, and security pitfalls at compile time -- before they reach code review or production.
 
-The package currently ships 30+ rules across six categories (Design, Security, Performance, Code Smells, Bug, Best Practice); most include an automatic code fix.  
-Rules range from straightforward code-smell detection (e.g. `DateTime.Now` instead of `DateTime.UtcNow`) to cross-method semantic analysis (e.g. Entity Framework queries missing `TagWith`, check-then-act race conditions on concurrent collections, or loop-invariant expressions that should be hoisted).
-
+The package currently ships 30+ rules across six categories:
+- Design
+- Security
+- Performance
+- Code Smells
+- Bug
+- Best Practice
+ 
+Most analyzers include an automatic code fix.
+All of them include tools for adding code-review comments.
 Install via NuGet and every rule is enforced automatically during compilation, with severity levels configurable through `.editorconfig`.
 
 ---
