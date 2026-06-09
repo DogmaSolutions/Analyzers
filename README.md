@@ -1,4 +1,4 @@
-# Dogma Solutions Roslyn Analyzers
+# Dogma Solutions Roslyn Analyzers and Code Fixers
 
 [![DogmaSolutions.Analyzers on NuGet](https://img.shields.io/nuget/v/DogmaSolutions.Analyzers.svg)](https://www.nuget.org/packages/DogmaSolutions.Analyzers/)
 
