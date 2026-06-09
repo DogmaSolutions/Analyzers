@@ -39,7 +39,7 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
 
     private static readonly string[] TagMethods = { "TagWith", "TagWithCallSite" };
 
-    private static readonly string[] AsyncTerminalMethods =
+    internal static readonly string[] AsyncTerminalMethods =
     {
         "ToListAsync", "ToArrayAsync",
         "FirstAsync", "FirstOrDefaultAsync",
@@ -54,7 +54,7 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
         "LoadAsync", "ForEachAsync",
     };
 
-    private static readonly string[] SyncTerminalMethods =
+    internal static readonly string[] SyncTerminalMethods =
     {
         "ToList", "ToArray",
         "First", "FirstOrDefault",
@@ -99,7 +99,7 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(diagnostic);
     }
 
-    private static bool TryGetTerminalMethodName(InvocationExpressionSyntax invocation, out string methodName)
+    internal static bool TryGetTerminalMethodName(InvocationExpressionSyntax invocation, out string methodName)
     {
         methodName = null;
         if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
@@ -116,7 +116,7 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsEntityFrameworkChain(InvocationExpressionSyntax terminalInvocation, SemanticModel semanticModel)
+    internal static bool IsEntityFrameworkChain(InvocationExpressionSyntax terminalInvocation, SemanticModel semanticModel)
     {
         var terminalSymbol = semanticModel.GetSymbolInfo(terminalInvocation).Symbol as IMethodSymbol;
         if (terminalSymbol != null)
@@ -359,7 +359,7 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsInsideSubquery(SyntaxNode node, SemanticModel semanticModel)
+    internal static bool IsInsideSubquery(SyntaxNode node, SemanticModel semanticModel)
     {
         var current = node.Parent;
         while (current != null)
