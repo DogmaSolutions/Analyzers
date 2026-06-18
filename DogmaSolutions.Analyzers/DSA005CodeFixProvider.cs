@@ -49,13 +49,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         if (!hasExtractableGroup)
             return;
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title: "Extract to single point-in-time variable",
-                createChangedDocument: ct => ExtractToVariableAsync(context.Document, method, ct),
-                equivalenceKey: DSA005Analyzer.DiagnosticId),
-            diagnostic);
-
+        var stopwatchFixRegistered = false;
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel != null)
         {
@@ -74,7 +68,18 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
                         createChangedDocument: ct => ReplaceWithStopwatchAsync(context.Document, method, ct),
                         equivalenceKey: DSA005Analyzer.DiagnosticId + "_Stopwatch"),
                     diagnostic);
+                stopwatchFixRegistered = true;
             }
+        }
+
+        if (!stopwatchFixRegistered)
+        {
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: "Extract to single point-in-time variable",
+                    createChangedDocument: ct => ExtractToVariableAsync(context.Document, method, ct),
+                    equivalenceKey: DSA005Analyzer.DiagnosticId),
+                diagnostic);
         }
 
         ReviewCommentCodeFix.Register(context, diagnostic, node, DSA005Analyzer.DiagnosticId, nameof(Resources.DSA005ReviewComment));
@@ -183,24 +188,33 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         {
             replacements[pair.StartInitializerExpression] = CreateStopwatchStartNewExpression();
 
-            bool singleAssigned = pair.Subtractions.Count == 1 && pair.Subtractions[0].IsAssignedToVariable;
-
-            if (singleAssigned)
+            if (pair.EndStatement == null)
             {
-                replacements[pair.Subtractions[0].Expression] = CreateElapsedAccessExpression(pair.StartVarName);
-                replacements[pair.EndStatement] = pair.EndStatement.WithAdditionalAnnotations(removeAnnotation);
+                // Inline pattern: DateTime.UtcNow - startVar (no end variable)
+                foreach (var sub in pair.Subtractions)
+                    replacements[sub.Expression] = CreateElapsedAccessExpression(pair.StartVarName);
             }
             else
             {
-                var elapsedVarName = DeriveElapsedVariableName(pair.StartVarName, existingNames);
-                existingNames.Add(elapsedVarName);
+                bool singleAssigned = pair.Subtractions.Count == 1 && pair.Subtractions[0].IsAssignedToVariable;
 
-                var annotation = new SyntaxAnnotation("DSA005_elapsed_" + elapsedVarName);
-                replaceAnnotations.Add((annotation, elapsedVarName, pair.StartVarName));
-                replacements[pair.EndStatement] = pair.EndStatement.WithAdditionalAnnotations(annotation);
+                if (singleAssigned)
+                {
+                    replacements[pair.Subtractions[0].Expression] = CreateElapsedAccessExpression(pair.StartVarName);
+                    replacements[pair.EndStatement] = pair.EndStatement.WithAdditionalAnnotations(removeAnnotation);
+                }
+                else
+                {
+                    var elapsedVarName = DeriveElapsedVariableName(pair.StartVarName, existingNames);
+                    existingNames.Add(elapsedVarName);
 
-                foreach (var sub in pair.Subtractions)
-                    replacements[sub.Expression] = SyntaxFactory.IdentifierName(elapsedVarName);
+                    var annotation = new SyntaxAnnotation("DSA005_elapsed_" + elapsedVarName);
+                    replaceAnnotations.Add((annotation, elapsedVarName, pair.StartVarName));
+                    replacements[pair.EndStatement] = pair.EndStatement.WithAdditionalAnnotations(annotation);
+
+                    foreach (var sub in pair.Subtractions)
+                        replacements[sub.Expression] = SyntaxFactory.IdentifierName(elapsedVarName);
+                }
             }
         }
 
@@ -262,6 +276,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         var pairs = new List<ElapsedTimePairInfo>();
         var usedDeclarators = new HashSet<VariableDeclaratorSyntax>();
 
+        // Pass 1: find start+end variable pairs (existing logic)
         foreach (var startVar in dateTimeVars.Where(v => ContainsStartKeyword(v.Declarator.Identifier.ValueText)))
         {
             if (usedDeclarators.Contains(startVar.Declarator))
@@ -302,6 +317,34 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
             }
         }
 
+        // Pass 2: find start variables with inline DateTime subtraction (no end variable)
+        foreach (var startVar in dateTimeVars.Where(v => ContainsStartKeyword(v.Declarator.Identifier.ValueText)))
+        {
+            if (usedDeclarators.Contains(startVar.Declarator))
+                continue;
+
+            var inlineSubtractions = FindInlineSubtractionExpressions(
+                body, startVar.Declarator, startVar.DateTimeProperty, startVar.TypeName, model);
+            if (inlineSubtractions.Count == 0)
+                continue;
+
+            if (!AreVariablesOnlyUsedInSubtractions(body, startVar.Declarator, null, inlineSubtractions, model))
+                continue;
+
+            usedDeclarators.Add(startVar.Declarator);
+
+            pairs.Add(new ElapsedTimePairInfo(
+                startVar.Declarator,
+                null,
+                null,
+                startVar.InitializerExpression,
+                startVar.Declarator.Identifier.ValueText,
+                null,
+                startVar.DateTimeProperty,
+                startVar.TypeName,
+                inlineSubtractions));
+        }
+
         return pairs;
     }
 
@@ -336,6 +379,40 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         return result;
     }
 
+    private static List<SubtractionMatch> FindInlineSubtractionExpressions(
+        BlockSyntax body,
+        VariableDeclaratorSyntax startDeclarator,
+        string dateTimeProperty,
+        string typeName,
+        SemanticModel model)
+    {
+        var startSymbol = model.GetDeclaredSymbol(startDeclarator);
+        if (startSymbol == null)
+            return [];
+
+        var result = new List<SubtractionMatch>();
+
+        foreach (var binary in body.DescendantNodes().OfType<BinaryExpressionSyntax>()
+                     .Where(b => b.IsKind(SyntaxKind.SubtractExpression)))
+        {
+            if (binary.Left is MemberAccessExpressionSyntax memberAccess &&
+                memberAccess.Expression is IdentifierNameSyntax { Identifier.ValueText: "DateTime" or "DateTimeOffset" } leftType &&
+                leftType.Identifier.ValueText == typeName &&
+                memberAccess.Name?.Identifier.ValueText == dateTimeProperty)
+            {
+                var rightSymbol = model.GetSymbolInfo(binary.Right).Symbol;
+                if (SymbolEqualityComparer.Default.Equals(rightSymbol, startSymbol))
+                {
+                    bool isAssigned = binary.Parent is EqualsValueClauseSyntax evc &&
+                                      evc.Parent is VariableDeclaratorSyntax;
+                    result.Add(new SubtractionMatch(binary, isAssigned));
+                }
+            }
+        }
+
+        return result;
+    }
+
     private static bool AreVariablesOnlyUsedInSubtractions(
         BlockSyntax body,
         VariableDeclaratorSyntax startDeclarator,
@@ -344,8 +421,11 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         SemanticModel model)
     {
         var startSymbol = model.GetDeclaredSymbol(startDeclarator);
-        var endSymbol = model.GetDeclaredSymbol(endDeclarator);
-        if (startSymbol == null || endSymbol == null)
+        if (startSymbol == null)
+            return false;
+
+        var endSymbol = endDeclarator != null ? model.GetDeclaredSymbol(endDeclarator) : null;
+        if (endDeclarator != null && endSymbol == null)
             return false;
 
         var subtractionSpans = subtractions.Select(s => s.Expression.Span).ToList();
@@ -354,7 +434,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         {
             var symbol = model.GetSymbolInfo(identifier).Symbol;
             if (!SymbolEqualityComparer.Default.Equals(symbol, startSymbol) &&
-                !SymbolEqualityComparer.Default.Equals(symbol, endSymbol))
+                (endSymbol == null || !SymbolEqualityComparer.Default.Equals(symbol, endSymbol)))
                 continue;
 
             bool insideSubtraction = subtractionSpans.Any(span => span.Contains(identifier.Span));
@@ -580,11 +660,11 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         }
 
         public VariableDeclaratorSyntax StartDeclarator { get; }
-        public VariableDeclaratorSyntax EndDeclarator { get; }
-        public LocalDeclarationStatementSyntax EndStatement { get; }
+        public VariableDeclaratorSyntax EndDeclarator { get; }  // null for inline pattern
+        public LocalDeclarationStatementSyntax EndStatement { get; }  // null for inline pattern
         public MemberAccessExpressionSyntax StartInitializerExpression { get; }
         public string StartVarName { get; }
-        public string EndVarName { get; }
+        public string EndVarName { get; }  // null for inline pattern
         public string DateTimeProperty { get; }
         public string TypeName { get; }
         public List<SubtractionMatch> Subtractions { get; }
