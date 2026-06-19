@@ -54,6 +54,7 @@ namespace Microsoft.EntityFrameworkCore
         public static Task<T> SingleAsync<T>(this IQueryable<T> source, CancellationToken ct = default) => null;
         public static Task<T> SingleOrDefaultAsync<T>(this IQueryable<T> source, CancellationToken ct = default) => null;
         public static IQueryable<T> TagWith<T>(this IQueryable<T> source, string tag) => source;
+        public static IQueryable<T> TagWithCallSite<T>(this IQueryable<T> source, [CallerFilePath] string file = null, [CallerLineNumber] int line = 0) => source;
         public static IQueryable<T> AsNoTracking<T>(this IQueryable<T> source) where T : class => source;
         public static IQueryable<T> AsTracking<T>(this IQueryable<T> source) where T : class => source;
         public static IQueryable<T> AsNoTrackingWithIdentityResolution<T>(this IQueryable<T> source) where T : class => source;
@@ -102,7 +103,7 @@ namespace TestApp
         var fixedSource = BuildSource(@"
         public async Task<object> Test()
         {
-            var result = await _context.Users.Select(u => new { u.Name }).AsNoTracking().ToListAsync();
+            var result = await _context.Users.AsNoTracking().Select(u => new { u.Name }).ToListAsync();
             return result;
         }");
 
@@ -130,7 +131,7 @@ namespace TestApp
         var fixedSource = BuildSource(@"
         public async Task<object> Test()
         {
-            var result = await _context.Users.Select(u => u.Name).AsNoTracking().ToListAsync();
+            var result = await _context.Users.AsNoTracking().Select(u => u.Name).ToListAsync();
             return result;
         }");
 
@@ -188,7 +189,7 @@ namespace TestApp
         var fixedSource = BuildSource(@"
         public async Task Test()
         {
-            var users = await _context.Users.Where(u => u.IsActive).AsNoTracking().ToListAsync();
+            var users = await _context.Users.AsNoTracking().Where(u => u.IsActive).ToListAsync();
             System.Console.WriteLine(users.Count);
         }");
 
@@ -298,7 +299,7 @@ namespace TestApp
         var fixedSource = BuildSource(@"
         public async Task Test()
         {
-            var users = await _context.Users.TagWith(""q"").AsNoTracking().ToListAsync();
+            var users = await _context.Users.AsNoTracking().TagWith(""q"").ToListAsync();
             System.Console.WriteLine(users.Count);
         }");
 
@@ -340,6 +341,36 @@ namespace TestApp
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA031Analyzer, DSA031CodeFixProvider>
                 .Diagnostic(DSA031Analyzer.DiagnosticId).WithLocation(0).WithArguments("ToListAsync"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixesReadOnly_SelectDistinctTagWithCallSite_InsertsAfterSource()
+    {
+        var source = BuildSource(@"
+        public async Task Test()
+        {
+            IQueryable<User> tasksDeleteQuery = _context.Users.Where(u => u.IsActive);
+            var ids = await {|#0:tasksDeleteQuery.Select(u => u.Id).Distinct().TagWithCallSite().ToArrayAsync()|};
+            System.Console.WriteLine(ids.Length);
+        }");
+
+        var fixedSource = BuildSource(@"
+        public async Task Test()
+        {
+            IQueryable<User> tasksDeleteQuery = _context.Users.Where(u => u.IsActive);
+            var ids = await tasksDeleteQuery.AsNoTracking().Select(u => u.Id).Distinct().TagWithCallSite().ToArrayAsync();
+            System.Console.WriteLine(ids.Length);
+        }");
+
+        var test = new CSharpCodeFixVerifier<DSA031Analyzer, DSA031CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.CodeActionEquivalenceKey = DSA031CodeFixProvider.EquivalenceKey;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA031Analyzer, DSA031CodeFixProvider>
+                .Diagnostic(DSA031Analyzer.DiagnosticId).WithLocation(0).WithArguments("ToArrayAsync"));
         await test.RunAsync().ConfigureAwait(false);
     }
 }

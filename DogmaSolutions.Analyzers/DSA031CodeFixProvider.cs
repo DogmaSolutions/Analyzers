@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace DogmaSolutions.Analyzers;
 
 /// <summary>
-/// Code fix provider for DSA031: inserts .AsNoTracking() before the terminal materialization method.
+/// Code fix provider for DSA031: inserts .AsNoTracking() after the IQueryable source, before LINQ operators.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DSA031CodeFixProvider))]
 [Shared]
@@ -61,21 +61,31 @@ public sealed class DSA031CodeFixProvider : CodeFixProvider
         if (root == null)
             return document;
 
-        if (invocation.Expression is not MemberAccessExpressionSyntax terminalAccess)
+        var source = FindQueryableSource(invocation);
+        if (source == null)
             return document;
-
-        var receiver = terminalAccess.Expression;
 
         var trackingCall = SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
-                receiver,
-                SyntaxFactory.IdentifierName("AsNoTracking")));
+                source.WithoutTrailingTrivia(),
+                SyntaxFactory.IdentifierName("AsNoTracking")))
+            .WithTrailingTrivia(source.GetTrailingTrivia());
 
-        var newTerminalAccess = terminalAccess.WithExpression(trackingCall);
-        var newInvocation = invocation.WithExpression(newTerminalAccess);
-
-        var newRoot = root.ReplaceNode(invocation, newInvocation);
+        var newRoot = root.ReplaceNode(source, trackingCall);
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static ExpressionSyntax FindQueryableSource(InvocationExpressionSyntax invocation)
+    {
+        ExpressionSyntax current = invocation;
+
+        while (current is InvocationExpressionSyntax inv &&
+               inv.Expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            current = memberAccess.Expression;
+        }
+
+        return current;
     }
 }
