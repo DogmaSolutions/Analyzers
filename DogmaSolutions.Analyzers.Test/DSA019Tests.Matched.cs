@@ -298,6 +298,42 @@ public partial class DSA019Tests
             "outer.Middle.Inner.Deep",
             2
         ],
+        [
+            "Same chain in separate object initializers inside array",
+            @"
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            namespace TestApp
+            {
+                public class Tenant { public int Id; }
+                public class UserInfo { public Tenant Tenant; }
+                public class TestCtx { public UserInfo CurrentUser; }
+                public class WsDto { public int TenantId; public string Name; }
+                public class MyService
+                {
+                    public static Task<IReadOnlyCollection<WsDto>> GetWorkingEnvs(TestCtx testContext)
+                    {
+                        return Task.FromResult<IReadOnlyCollection<WsDto>>(
+                            new[]
+                            {
+                                new WsDto
+                                {
+                                    TenantId = {|#0:testContext.CurrentUser.Tenant.Id|},
+                                    Name = ""Test 1""
+                                },
+                                new WsDto
+                                {
+                                    TenantId = {|#1:testContext.CurrentUser.Tenant.Id|},
+                                    Name = ""Test 2""
+                                }
+                            });
+                    }
+                }
+            }",
+            "testContext.CurrentUser.Tenant.Id",
+            2
+        ],
     ];
 
     [TestMethod]

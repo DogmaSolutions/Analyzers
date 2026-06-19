@@ -59,9 +59,23 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: $"Extract '{displayFragment}' to local variable",
-                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct),
+                title: $"Extract '{displayFragment}' to short variable",
+                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Short),
                 equivalenceKey: DSA019Analyzer.DiagnosticId),
+            diagnostic);
+
+        context.RegisterCodeFix(
+            CodeAction.Create(
+                title: $"Extract '{displayFragment}' to long variable",
+                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Long),
+                equivalenceKey: DSA019Analyzer.DiagnosticId + "_Long"),
+            diagnostic);
+
+        context.RegisterCodeFix(
+            CodeAction.Create(
+                title: $"Extract '{displayFragment}' to compact variable",
+                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Compact),
+                equivalenceKey: DSA019Analyzer.DiagnosticId + "_Compact"),
             diagnostic);
 
         if (targetExpression is MemberAccessExpressionSyntax targetMa &&
@@ -108,7 +122,8 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         Document document,
         ExpressionSyntax targetExpression,
         CancellationToken cancellationToken,
-        int? thresholdOverride = null)
+        int? thresholdOverride = null,
+        VariableNameStyle nameStyle = VariableNameStyle.Short)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         if (root == null)
@@ -132,7 +147,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         // Determine what to extract and what to replace
         var (nodesToReplace, expressionToExtract) = DetermineExtractionTarget(allOccurrences, targetExpression);
 
-        var variableName = GenerateVariableName(expressionToExtract);
+        var variableName = GenerateVariableName(expressionToExtract, nameStyle);
 
         // Check if the scope is an expression-body lambda that needs conversion to block
         var lambdaParent = FindExpressionBodyLambda(targetExpression);
@@ -355,7 +370,17 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         return false;
     }
 
-    private static string GenerateVariableName(ExpressionSyntax expression)
+    private static string GenerateVariableName(ExpressionSyntax expression, VariableNameStyle style = VariableNameStyle.Short)
+    {
+        if (style == VariableNameStyle.Long)
+            return GenerateLongVariableName(expression);
+        if (style == VariableNameStyle.Compact)
+            return GenerateCompactVariableName(expression);
+
+        return GenerateShortVariableName(expression);
+    }
+
+    private static string GenerateShortVariableName(ExpressionSyntax expression)
     {
         string name = null;
 
@@ -372,7 +397,6 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         }
         else if (expression is ElementAccessExpressionSyntax elementAccess)
         {
-            // Walk down to find the last named member in the chain
             var current = elementAccess.Expression;
             while (current is ElementAccessExpressionSyntax nested)
                 current = nested.Expression;
@@ -383,6 +407,112 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                 name = id.Identifier.ValueText;
         }
 
+        return SanitizeVariableName(name);
+    }
+
+    private static string GenerateLongVariableName(ExpressionSyntax expression)
+    {
+        var parts = CollectChainIdentifiers(expression);
+        if (parts.Count == 0)
+            return SanitizeVariableName(null);
+
+        var sb = new StringBuilder();
+        for (var i = 0; i < parts.Count; i++)
+        {
+            var part = parts[i];
+            if (i == 0)
+                sb.Append(char.ToLowerInvariant(part[0]) + part.Substring(1));
+            else
+                sb.Append(char.ToUpperInvariant(part[0]) + part.Substring(1));
+        }
+
+        return SanitizeVariableName(sb.ToString());
+    }
+
+    private static string GenerateCompactVariableName(ExpressionSyntax expression)
+    {
+        var parts = CollectChainIdentifiers(expression);
+        if (parts.Count == 0)
+            return SanitizeVariableName(null);
+
+        var sb = new StringBuilder();
+        for (var i = 0; i < parts.Count; i++)
+        {
+            var word = ExtractFirstWord(parts[i]);
+            if (i == 0)
+                sb.Append(char.ToLowerInvariant(word[0]) + word.Substring(1));
+            else
+                sb.Append(char.ToUpperInvariant(word[0]) + word.Substring(1));
+        }
+
+        return SanitizeVariableName(sb.ToString());
+    }
+
+    private static List<string> CollectChainIdentifiers(ExpressionSyntax expression)
+    {
+        var parts = new List<string>();
+        CollectChainIdentifiersRecursive(expression, parts);
+        return parts;
+    }
+
+    private static void CollectChainIdentifiersRecursive(ExpressionSyntax expression, List<string> parts)
+    {
+        if (expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            CollectChainIdentifiersRecursive(memberAccess.Expression, parts);
+            parts.Add(memberAccess.Name.Identifier.ValueText);
+        }
+        else if (expression is InvocationExpressionSyntax invocation)
+        {
+            CollectChainIdentifiersRecursive(invocation.Expression, parts);
+        }
+        else if (expression is ElementAccessExpressionSyntax elementAccess)
+        {
+            CollectChainIdentifiersRecursive(elementAccess.Expression, parts);
+        }
+        else if (expression is IdentifierNameSyntax identifier)
+        {
+            parts.Add(identifier.Identifier.ValueText);
+        }
+        else if (expression is ParenthesizedExpressionSyntax paren)
+        {
+            CollectChainIdentifiersRecursive(paren.Expression, parts);
+        }
+        else if (expression is AwaitExpressionSyntax awaitExpr)
+        {
+            CollectChainIdentifiersRecursive(awaitExpr.Expression, parts);
+        }
+        else if (expression is CastExpressionSyntax castExpr)
+        {
+            CollectChainIdentifiersRecursive(castExpr.Expression, parts);
+        }
+    }
+
+    private static string ExtractFirstWord(string pascalCaseIdentifier)
+    {
+        if (string.IsNullOrEmpty(pascalCaseIdentifier))
+            return pascalCaseIdentifier;
+
+        // Handle leading underscore
+        var start = 0;
+        while (start < pascalCaseIdentifier.Length && pascalCaseIdentifier[start] == '_')
+            start++;
+
+        if (start >= pascalCaseIdentifier.Length)
+            return pascalCaseIdentifier;
+
+        // Find where the first word ends (next uppercase letter)
+        for (var i = start + 1; i < pascalCaseIdentifier.Length; i++)
+        {
+            if (char.IsUpper(pascalCaseIdentifier[i]))
+                return pascalCaseIdentifier.Substring(start, i - start);
+        }
+
+        return pascalCaseIdentifier.Substring(start);
+    }
+
+    private static string SanitizeVariableName(string name)
+    {
         if (string.IsNullOrEmpty(name))
             name = "value";
 
@@ -396,6 +526,13 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
             name = "value";
 
         return name;
+    }
+
+    internal enum VariableNameStyle
+    {
+        Short,
+        Long,
+        Compact,
     }
 
     private static string ResolveNameConflicts(string baseName, SyntaxNode scope)
