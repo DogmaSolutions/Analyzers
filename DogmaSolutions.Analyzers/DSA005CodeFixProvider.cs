@@ -35,16 +35,13 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         var diagnosticSpan = diagnostic.Location.SourceSpan;
 
         var node = root.FindNode(diagnosticSpan);
-        var method = node as MethodDeclarationSyntax
-            ?? node.AncestorsAndSelf().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+        var method = node as MethodDeclarationSyntax ?? node.AncestorsAndSelf().OfType<MethodDeclarationSyntax>().FirstOrDefault();
 
         if (method?.Body == null)
             return;
 
         var expressions = FindMatchingExpressions(method.Body);
-        var hasExtractableGroup = expressions
-            .GroupBy(BuildKey)
-            .Any(g => g.Count() >= 2);
+        var hasExtractableGroup = expressions.GroupBy(BuildKey).Any(g => g.Count() >= 2);
 
         if (!hasExtractableGroup)
             return;
@@ -95,7 +92,12 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
                 diagnostic);
         }
 
-        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA005Analyzer.DiagnosticId, nameof(Resources.DSA005ReviewComment));
+        ReviewCommentCodeFix.Register(
+            context,
+            diagnostic,
+            node,
+            DSA005Analyzer.DiagnosticId,
+            nameof(Resources.DSA005ReviewComment));
     }
 
     #region Extract to variable (existing fix)
@@ -111,10 +113,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
 
         var body = method.Body;
         var expressions = FindMatchingExpressions(body);
-        var extractableGroups = expressions
-            .GroupBy(BuildKey)
-            .Where(g => g.Count() >= 2)
-            .ToList();
+        var extractableGroups = expressions.GroupBy(BuildKey).Where(g => g.Count() >= 2).ToList();
 
         if (extractableGroups.Count == 0)
             return document;
@@ -131,13 +130,13 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         }
 
         var expressionsToReplace = extractableGroups.SelectMany(g => g).ToList();
-        var newBody = body.ReplaceNodes(expressionsToReplace, (original, rewritten) =>
-        {
-            var key = BuildKey(original);
-            return SyntaxFactory.IdentifierName(nameMap[key])
-                .WithLeadingTrivia(rewritten.GetLeadingTrivia())
-                .WithTrailingTrivia(rewritten.GetTrailingTrivia());
-        });
+        var newBody = body.ReplaceNodes(
+            expressionsToReplace,
+            (original, rewritten) =>
+            {
+                var key = BuildKey(original);
+                return SyntaxFactory.IdentifierName(nameMap[key]).WithLeadingTrivia(rewritten.GetLeadingTrivia()).WithTrailingTrivia(rewritten.GetTrailingTrivia());
+            });
 
         var firstStmtTrivia = body.Statements.First().GetLeadingTrivia();
         var eolTrivia = GetEndOfLineTrivia(body);
@@ -150,12 +149,13 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
                     SyntaxFactory.VariableDeclaration(
                         SyntaxFactory.IdentifierName("var"),
                         SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.VariableDeclarator(varName)
-                                .WithInitializer(SyntaxFactory.EqualsValueClause(
-                                    group.First().WithoutTrivia())))))
-                .NormalizeWhitespace()
-                .WithLeadingTrivia(firstStmtTrivia)
-                .WithTrailingTrivia(eolTrivia);
+                            SyntaxFactory.VariableDeclarator(varName).
+                                WithInitializer(
+                                    SyntaxFactory.EqualsValueClause(
+                                        group.First().WithoutTrivia()))))).
+                NormalizeWhitespace().
+                WithLeadingTrivia(firstStmtTrivia).
+                WithTrailingTrivia(eolTrivia);
 
             declarations.Add(declaration);
         }
@@ -179,7 +179,8 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         MethodDeclarationSyntax method,
         CancellationToken cancellationToken)
         => ReplaceWithTimingPatternAsync(
-            document, method,
+            document,
+            method,
             CreateStopwatchStartNewExpression,
             CreateElapsedAccessExpression,
             CreateElapsedVarDeclaration,
@@ -190,7 +191,8 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         MethodDeclarationSyntax method,
         CancellationToken cancellationToken)
         => ReplaceWithTimingPatternAsync(
-            document, method,
+            document,
+            method,
             CreateGetTimestampExpression,
             CreateGetElapsedTimeExpression,
             CreateGetElapsedTimeVarDeclaration,
@@ -255,13 +257,13 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
             }
         }
 
-        var newRoot = root.ReplaceNodes(replacements.Keys, (original, rewritten) =>
-        {
-            var replacement = replacements[original];
-            return replacement
-                .WithLeadingTrivia(rewritten.GetLeadingTrivia())
-                .WithTrailingTrivia(rewritten.GetTrailingTrivia());
-        });
+        var newRoot = root.ReplaceNodes(
+            replacements.Keys,
+            (original, rewritten) =>
+            {
+                var replacement = replacements[original];
+                return replacement.WithLeadingTrivia(rewritten.GetLeadingTrivia()).WithTrailingTrivia(rewritten.GetTrailingTrivia());
+            });
 
         while (true)
         {
@@ -277,9 +279,9 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
             if (annotatedNode == null)
                 continue;
 
-            var newDecl = createElapsedVarDecl(entry.ElapsedVarName, entry.StartVarName)
-                .WithLeadingTrivia(annotatedNode.GetLeadingTrivia())
-                .WithTrailingTrivia(annotatedNode.GetTrailingTrivia());
+            var newDecl = createElapsedVarDecl(entry.ElapsedVarName, entry.StartVarName).
+                WithLeadingTrivia(annotatedNode.GetLeadingTrivia()).
+                WithTrailingTrivia(annotatedNode.GetTrailingTrivia());
             newRoot = newRoot.ReplaceNode(annotatedNode, newDecl);
         }
 
@@ -300,12 +302,13 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
                     memberAccess.Expression is IdentifierNameSyntax { Identifier.ValueText: "DateTime" or "DateTimeOffset" } typeSyntax &&
                     memberAccess.Name?.Identifier.ValueText is "Now" or "UtcNow")
                 {
-                    dateTimeVars.Add(new DateTimeVarInfo(
-                        declarator,
-                        localDecl,
-                        memberAccess,
-                        memberAccess.Name.Identifier.ValueText,
-                        typeSyntax.Identifier.ValueText));
+                    dateTimeVars.Add(
+                        new DateTimeVarInfo(
+                            declarator,
+                            localDecl,
+                            memberAccess,
+                            memberAccess.Name.Identifier.ValueText,
+                            typeSyntax.Identifier.ValueText));
                 }
             }
         }
@@ -333,22 +336,28 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
                 if (subtractions.Count == 0)
                     continue;
 
-                if (!AreVariablesOnlyUsedInSubtractions(body, startVar.Declarator, endVar.Declarator, subtractions, model))
+                if (!AreVariablesOnlyUsedInSubtractions(
+                        body,
+                        startVar.Declarator,
+                        endVar.Declarator,
+                        subtractions,
+                        model))
                     continue;
 
                 usedDeclarators.Add(startVar.Declarator);
                 usedDeclarators.Add(endVar.Declarator);
 
-                pairs.Add(new ElapsedTimePairInfo(
-                    startVar.Declarator,
-                    endVar.Declarator,
-                    endVar.Statement,
-                    startVar.InitializerExpression,
-                    startVar.Declarator.Identifier.ValueText,
-                    endVar.Declarator.Identifier.ValueText,
-                    startVar.DateTimeProperty,
-                    startVar.TypeName,
-                    subtractions));
+                pairs.Add(
+                    new ElapsedTimePairInfo(
+                        startVar.Declarator,
+                        endVar.Declarator,
+                        endVar.Statement,
+                        startVar.InitializerExpression,
+                        startVar.Declarator.Identifier.ValueText,
+                        endVar.Declarator.Identifier.ValueText,
+                        startVar.DateTimeProperty,
+                        startVar.TypeName,
+                        subtractions));
 
                 break;
             }
@@ -361,25 +370,35 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
                 continue;
 
             var inlineSubtractions = FindInlineSubtractionExpressions(
-                body, startVar.Declarator, startVar.DateTimeProperty, startVar.TypeName, model);
+                body,
+                startVar.Declarator,
+                startVar.DateTimeProperty,
+                startVar.TypeName,
+                model);
             if (inlineSubtractions.Count == 0)
                 continue;
 
-            if (!AreVariablesOnlyUsedInSubtractions(body, startVar.Declarator, null, inlineSubtractions, model))
+            if (!AreVariablesOnlyUsedInSubtractions(
+                    body,
+                    startVar.Declarator,
+                    null,
+                    inlineSubtractions,
+                    model))
                 continue;
 
             usedDeclarators.Add(startVar.Declarator);
 
-            pairs.Add(new ElapsedTimePairInfo(
-                startVar.Declarator,
-                null,
-                null,
-                startVar.InitializerExpression,
-                startVar.Declarator.Identifier.ValueText,
-                null,
-                startVar.DateTimeProperty,
-                startVar.TypeName,
-                inlineSubtractions));
+            pairs.Add(
+                new ElapsedTimePairInfo(
+                    startVar.Declarator,
+                    null,
+                    null,
+                    startVar.InitializerExpression,
+                    startVar.Declarator.Identifier.ValueText,
+                    null,
+                    startVar.DateTimeProperty,
+                    startVar.TypeName,
+                    inlineSubtractions));
         }
 
         return pairs;
@@ -398,8 +417,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
 
         var result = new List<SubtractionMatch>();
 
-        foreach (var binary in body.DescendantNodes().OfType<BinaryExpressionSyntax>()
-                     .Where(b => b.IsKind(SyntaxKind.SubtractExpression)))
+        foreach (var binary in body.DescendantNodes().OfType<BinaryExpressionSyntax>().Where(b => b.IsKind(SyntaxKind.SubtractExpression)))
         {
             var leftSymbol = model.GetSymbolInfo(binary.Left).Symbol;
             var rightSymbol = model.GetSymbolInfo(binary.Right).Symbol;
@@ -429,8 +447,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
 
         var result = new List<SubtractionMatch>();
 
-        foreach (var binary in body.DescendantNodes().OfType<BinaryExpressionSyntax>()
-                     .Where(b => b.IsKind(SyntaxKind.SubtractExpression)))
+        foreach (var binary in body.DescendantNodes().OfType<BinaryExpressionSyntax>().Where(b => b.IsKind(SyntaxKind.SubtractExpression)))
         {
             if (binary.Left is MemberAccessExpressionSyntax memberAccess &&
                 memberAccess.Expression is IdentifierNameSyntax { Identifier.ValueText: "DateTime" or "DateTimeOffset" } leftType &&
@@ -500,16 +517,18 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
     }
 
     private static LocalDeclarationStatementSyntax CreateElapsedVarDeclaration(
-        string elapsedVarName, string startVarName)
+        string elapsedVarName,
+        string startVarName)
     {
         return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),
                     SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.VariableDeclarator(elapsedVarName)
-                            .WithInitializer(SyntaxFactory.EqualsValueClause(
-                                CreateElapsedAccessExpression(startVarName))))))
-            .NormalizeWhitespace();
+                        SyntaxFactory.VariableDeclarator(elapsedVarName).
+                            WithInitializer(
+                                SyntaxFactory.EqualsValueClause(
+                                    CreateElapsedAccessExpression(startVarName)))))).
+            NormalizeWhitespace();
     }
 
     private static ExpressionSyntax CreateGetTimestampExpression()
@@ -535,16 +554,18 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
     }
 
     private static LocalDeclarationStatementSyntax CreateGetElapsedTimeVarDeclaration(
-        string elapsedVarName, string startVarName)
+        string elapsedVarName,
+        string startVarName)
     {
         return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),
                     SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.VariableDeclarator(elapsedVarName)
-                            .WithInitializer(SyntaxFactory.EqualsValueClause(
-                                CreateGetElapsedTimeExpression(startVarName))))))
-            .NormalizeWhitespace();
+                        SyntaxFactory.VariableDeclarator(elapsedVarName).
+                            WithInitializer(
+                                SyntaxFactory.EqualsValueClause(
+                                    CreateGetElapsedTimeExpression(startVarName)))))).
+            NormalizeWhitespace();
     }
 
     private static string DeriveElapsedVariableName(string startVarName, HashSet<string> existingNames)
@@ -588,9 +609,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
             name = SyntaxFactory.QualifiedName(name, SyntaxFactory.IdentifierName(parts[i]));
 
         var eol = GetEndOfLineTrivia(compilationUnit);
-        var usingDirective = SyntaxFactory.UsingDirective(name)
-            .NormalizeWhitespace()
-            .WithTrailingTrivia(eol);
+        var usingDirective = SyntaxFactory.UsingDirective(name).NormalizeWhitespace().WithTrailingTrivia(eol);
 
         return compilationUnit.AddUsings(usingDirective);
     }
@@ -630,11 +649,11 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
 
     private static List<MemberAccessExpressionSyntax> FindMatchingExpressions(SyntaxNode container)
     {
-        return container.DescendantNodes()
-            .OfType<MemberAccessExpressionSyntax>()
-            .Where(m => m.Expression is IdentifierNameSyntax { Identifier.ValueText: "DateTime" or "DateTimeOffset" } &&
-                        m.Name?.Identifier.ValueText is "Now" or "UtcNow")
-            .ToList();
+        return container.DescendantNodes().
+            OfType<MemberAccessExpressionSyntax>().
+            Where(m => m.Expression is IdentifierNameSyntax { Identifier.ValueText: "DateTime" or "DateTimeOffset" } &&
+                       m.Name?.Identifier.ValueText is "Now" or "UtcNow").
+            ToList();
     }
 
     private static string BuildKey(MemberAccessExpressionSyntax expr)
@@ -647,9 +666,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
     private static HashSet<string> CollectExistingNames(SyntaxNode scope)
     {
         var names = new HashSet<string>(
-            scope.DescendantNodes()
-                .OfType<VariableDeclaratorSyntax>()
-                .Select(v => v.Identifier.ValueText));
+            scope.DescendantNodes().OfType<VariableDeclaratorSyntax>().Select(v => v.Identifier.ValueText));
 
         foreach (var param in scope.DescendantNodes().OfType<ParameterSyntax>())
             names.Add(param.Identifier.ValueText);
@@ -732,11 +749,11 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         }
 
         public VariableDeclaratorSyntax StartDeclarator { get; }
-        public VariableDeclaratorSyntax EndDeclarator { get; }  // null for inline pattern
-        public LocalDeclarationStatementSyntax EndStatement { get; }  // null for inline pattern
+        public VariableDeclaratorSyntax EndDeclarator { get; } // null for inline pattern
+        public LocalDeclarationStatementSyntax EndStatement { get; } // null for inline pattern
         public MemberAccessExpressionSyntax StartInitializerExpression { get; }
         public string StartVarName { get; }
-        public string EndVarName { get; }  // null for inline pattern
+        public string EndVarName { get; } // null for inline pattern
         public string DateTimeProperty { get; }
         public string TypeName { get; }
         public List<SubtractionMatch> Subtractions { get; }

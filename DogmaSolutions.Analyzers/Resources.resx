@@ -674,6 +674,20 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  * Microsoft: Performance - No-tracking queries - https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying#tracking-no-tracking-and-identity-resolution
  */</value>
   </data>
+  <data name="DSA033AnalyzerDescription" xml:space="preserve">
+    <value>The file exceeds the configured maximum number of lines. Large files are harder to navigate, review, and maintain. Consider splitting the file so that each top-level type resides in its own file. The maximum line count is configurable via 'dotnet_diagnostic.DSA033.max_lines' (default: 500) (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA033.md).</value>
+  </data>
+  <data name="DSA033AnalyzerMessageFormat" xml:space="preserve">
+    <value>File '{0}' has {1} lines, exceeding the maximum of {2}. Consider splitting it into smaller files.</value>
+  </data>
+  <data name="DSA033AnalyzerTitle" xml:space="preserve">
+    <value>File exceeds maximum line count</value>
+  </data>
+  <data name="DSA033ReviewComment" xml:space="preserve">
+    <value>/* [DSA033 / QA + Code Smell]: File exceeds maximum line count (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA033.md)
+ * CWE-1080: Source Code File with Excessive Number of Lines of Code - https://cwe.mitre.org/data/definitions/1080.html
+ */</value>
+  </data>
   <data name="DSA032ReviewComment" xml:space="preserve">
     <value>/* [DSA032 / CySec + QA + Code Smell]: Avoid duplicated string literals in the same method body (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA032.md)
  * CWE-1041: Use of Redundant Code - https://cwe.mitre.org/data/definitions/1041.html

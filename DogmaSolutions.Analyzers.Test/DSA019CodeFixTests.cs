@@ -1816,13 +1816,13 @@ namespace TestApp
                 .WithLocation(0).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithSpan(12, 21, 12, 107).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem.Id", 2));
+                .WithSpan(12, 21, 12, 73).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem.Id", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
                 .WithLocation(1).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithSpan(13, 21, 13, 107).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem.Id", 2));
+                .WithSpan(13, 21, 13, 73).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem.Id", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
@@ -1915,9 +1915,9 @@ namespace TestApp
     {
         public void Process(ScenarioData scenario)
         {
-            var scenarioDetailsRecordUser = scenario.Details.MyEnvironmentDescriptor.DataItem;
-            var x = scenarioDetailsRecordUser.Id;
-            var y = scenarioDetailsRecordUser.Id;
+            var scenarioDetailsMyData = scenario.Details.MyEnvironmentDescriptor.DataItem;
+            var x = scenarioDetailsMyData.Id;
+            var y = scenarioDetailsMyData.Id;
         }
     }
 }";
@@ -1932,13 +1932,13 @@ namespace TestApp
                 .WithLocation(0).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithSpan(12, 21, 12, 107).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem.Id", 2));
+                .WithSpan(12, 21, 12, 73).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem.Id", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
                 .WithLocation(1).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem", 2));
         test.ExpectedDiagnostics.Add(
             CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
-                .WithSpan(13, 21, 13, 107).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem.Id", 2));
+                .WithSpan(13, 21, 13, 73).WithArguments("scenario.Details.MyEnvironmentDescriptor.DataItem.Id", 2));
 
         await test.RunAsync().ConfigureAwait(false);
     }
