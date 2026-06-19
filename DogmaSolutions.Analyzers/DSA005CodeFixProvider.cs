@@ -49,7 +49,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         if (!hasExtractableGroup)
             return;
 
-        var stopwatchFixRegistered = false;
+        var elapsedTimePairFound = false;
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel != null)
         {
@@ -58,21 +58,34 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
             {
                 var dateTimeProp = pairs[0].DateTimeProperty;
                 var typeName = pairs[0].TypeName;
-                var title = dateTimeProp == "UtcNow"
+
+                var stopwatchTitle = dateTimeProp == "UtcNow"
                     ? $"Replace {typeName}.UtcNow with Stopwatch"
                     : $"Replace {typeName}.Now with Stopwatch";
 
                 context.RegisterCodeFix(
                     CodeAction.Create(
-                        title: title,
+                        title: stopwatchTitle,
                         createChangedDocument: ct => ReplaceWithStopwatchAsync(context.Document, method, ct),
                         equivalenceKey: DSA005Analyzer.DiagnosticId + "_Stopwatch"),
                     diagnostic);
-                stopwatchFixRegistered = true;
+
+                var getTimestampTitle = dateTimeProp == "UtcNow"
+                    ? $"Replace {typeName}.UtcNow with Stopwatch.GetTimestamp"
+                    : $"Replace {typeName}.Now with Stopwatch.GetTimestamp";
+
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        title: getTimestampTitle,
+                        createChangedDocument: ct => ReplaceWithGetTimestampAsync(context.Document, method, ct),
+                        equivalenceKey: DSA005Analyzer.DiagnosticId + "_GetTimestamp"),
+                    diagnostic);
+
+                elapsedTimePairFound = true;
             }
         }
 
-        if (!stopwatchFixRegistered)
+        if (!elapsedTimePairFound)
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
@@ -159,11 +172,36 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
 
     #endregion
 
-    #region Replace with Stopwatch
+    #region Replace with timing pattern
 
-    private static async Task<Document> ReplaceWithStopwatchAsync(
+    private static Task<Document> ReplaceWithStopwatchAsync(
         Document document,
         MethodDeclarationSyntax method,
+        CancellationToken cancellationToken)
+        => ReplaceWithTimingPatternAsync(
+            document, method,
+            CreateStopwatchStartNewExpression,
+            CreateElapsedAccessExpression,
+            CreateElapsedVarDeclaration,
+            cancellationToken);
+
+    private static Task<Document> ReplaceWithGetTimestampAsync(
+        Document document,
+        MethodDeclarationSyntax method,
+        CancellationToken cancellationToken)
+        => ReplaceWithTimingPatternAsync(
+            document, method,
+            CreateGetTimestampExpression,
+            CreateGetElapsedTimeExpression,
+            CreateGetElapsedTimeVarDeclaration,
+            cancellationToken);
+
+    private static async Task<Document> ReplaceWithTimingPatternAsync(
+        Document document,
+        MethodDeclarationSyntax method,
+        Func<ExpressionSyntax> createStartExpression,
+        Func<string, ExpressionSyntax> createElapsedExpression,
+        Func<string, string, LocalDeclarationStatementSyntax> createElapsedVarDecl,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -186,13 +224,12 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
 
         foreach (var pair in pairs)
         {
-            replacements[pair.StartInitializerExpression] = CreateStopwatchStartNewExpression();
+            replacements[pair.StartInitializerExpression] = createStartExpression();
 
             if (pair.EndStatement == null)
             {
-                // Inline pattern: DateTime.UtcNow - startVar (no end variable)
                 foreach (var sub in pair.Subtractions)
-                    replacements[sub.Expression] = CreateElapsedAccessExpression(pair.StartVarName);
+                    replacements[sub.Expression] = createElapsedExpression(pair.StartVarName);
             }
             else
             {
@@ -200,7 +237,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
 
                 if (singleAssigned)
                 {
-                    replacements[pair.Subtractions[0].Expression] = CreateElapsedAccessExpression(pair.StartVarName);
+                    replacements[pair.Subtractions[0].Expression] = createElapsedExpression(pair.StartVarName);
                     replacements[pair.EndStatement] = pair.EndStatement.WithAdditionalAnnotations(removeAnnotation);
                 }
                 else
@@ -240,7 +277,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
             if (annotatedNode == null)
                 continue;
 
-            var newDecl = CreateElapsedVarDeclaration(entry.ElapsedVarName, entry.StartVarName)
+            var newDecl = createElapsedVarDecl(entry.ElapsedVarName, entry.StartVarName)
                 .WithLeadingTrivia(annotatedNode.GetLeadingTrivia())
                 .WithTrailingTrivia(annotatedNode.GetTrailingTrivia());
             newRoot = newRoot.ReplaceNode(annotatedNode, newDecl);
@@ -472,6 +509,41 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
                         SyntaxFactory.VariableDeclarator(elapsedVarName)
                             .WithInitializer(SyntaxFactory.EqualsValueClause(
                                 CreateElapsedAccessExpression(startVarName))))))
+            .NormalizeWhitespace();
+    }
+
+    private static ExpressionSyntax CreateGetTimestampExpression()
+    {
+        return SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName("Stopwatch"),
+                SyntaxFactory.IdentifierName("GetTimestamp")));
+    }
+
+    private static ExpressionSyntax CreateGetElapsedTimeExpression(string startVarName)
+    {
+        return SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName("Stopwatch"),
+                SyntaxFactory.IdentifierName("GetElapsedTime")),
+            SyntaxFactory.ArgumentList(
+                SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Argument(
+                        SyntaxFactory.IdentifierName(startVarName)))));
+    }
+
+    private static LocalDeclarationStatementSyntax CreateGetElapsedTimeVarDeclaration(
+        string elapsedVarName, string startVarName)
+    {
+        return SyntaxFactory.LocalDeclarationStatement(
+                SyntaxFactory.VariableDeclaration(
+                    SyntaxFactory.IdentifierName("var"),
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator(elapsedVarName)
+                            .WithInitializer(SyntaxFactory.EqualsValueClause(
+                                CreateGetElapsedTimeExpression(startVarName))))))
             .NormalizeWhitespace();
     }
 
