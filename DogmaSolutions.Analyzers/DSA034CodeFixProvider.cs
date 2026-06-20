@@ -288,6 +288,7 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
 
         var usingsNodes = root.DescendantNodes().OfType<UsingDirectiveSyntax>().ToList();
         var namespaceDecl = typeDecl.Parent as BaseNamespaceDeclarationSyntax;
+        var eol = root.SyntaxTree.GetText().ToString().Contains("\r\n") ? "\r\n" : "\n";
 
         var isFirst = true;
         foreach (var kvp in partialFiles)
@@ -300,7 +301,7 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
                 partialMembers,
                 includeBaseTypes && isFirst);
 
-            var compilationUnit = BuildCompilationUnit(usingsNodes, namespaceDecl, partialType);
+            var compilationUnit = BuildCompilationUnit(usingsNodes, namespaceDecl, partialType, eol);
 
             if (isFirst)
             {
@@ -330,7 +331,7 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
             var fileName = $"{typeName}.{nestedName}.cs";
 
             var partialType = CreatePartialTypeWithNestedOnly(typeDecl, nested);
-            var compilationUnit = BuildCompilationUnit(usingsNodes, namespaceDecl, partialType);
+            var compilationUnit = BuildCompilationUnit(usingsNodes, namespaceDecl, partialType, eol);
 
             if (isFirst)
             {
@@ -450,7 +451,8 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
     private static CompilationUnitSyntax BuildCompilationUnit(
         List<UsingDirectiveSyntax> usings,
         BaseNamespaceDeclarationSyntax namespaceDecl,
-        TypeDeclarationSyntax partialType)
+        TypeDeclarationSyntax partialType,
+        string eol)
     {
         MemberDeclarationSyntax memberToAdd;
 
@@ -479,7 +481,7 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
         var compilationUnit = SyntaxFactory.CompilationUnit()
             .WithUsings(SyntaxFactory.List(usings))
             .WithMembers(SyntaxFactory.List(new[] { memberToAdd }))
-            .NormalizeWhitespace(eol: "\n");
+            .NormalizeWhitespace(eol: eol);
 
         return compilationUnit;
     }
