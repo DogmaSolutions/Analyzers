@@ -27,17 +27,9 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
    internal const string IgnoredFileNamesFileName = "DSA032_IgnoredFileNames.txt";
    internal const string StringReplacementsFileName = "DSA032_StringReplacements.txt";
 
-   internal static readonly ImmutableArray<string> DefaultIgnoredFilePatterns = ImmutableArray.Create(
-      "*.Designer.cs",
-      "*.generated.cs",
-      "*.g.cs",
-      "*.g.i.cs");
+   internal static readonly ImmutableArray<string> DefaultIgnoredFilePatterns = AnalyzersUtils.DefaultExcludedFilePatterns;
 
-   internal static readonly ImmutableArray<string> DefaultIgnoredBaseTypes = ImmutableArray.Create(
-      "Microsoft.EntityFrameworkCore.Migrations.Migration",
-      "Microsoft.EntityFrameworkCore.Infrastructure.ModelSnapshot",
-      "System.Data.Entity.Migrations.DbMigration",
-      "Microsoft.EntityFrameworkCore.DbContext");
+   internal static readonly ImmutableArray<string> DefaultIgnoredBaseTypes = AnalyzersUtils.DefaultExcludedBaseTypes;
 
    // Base types whose specific methods should be ignored (method name → base types).
    // Unlike DefaultIgnoredBaseTypes which ignores ALL methods in the class, this only
@@ -187,81 +179,16 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
       return patterns.ToImmutableArray();
    }
 
-   internal static bool MatchesGlobPattern(string text, string pattern)
-   {
-      var textIdx = 0;
-      var patIdx = 0;
-      var starTextIdx = -1;
-      var starPatIdx = -1;
+   internal static bool MatchesGlobPattern(string text, string pattern) => AnalyzersUtils.MatchesGlobPattern(text, pattern);
 
-      while (textIdx < text.Length)
-      {
-         if (patIdx < pattern.Length &&
-             pattern[patIdx] != '*' &&
-             char.ToUpperInvariant(pattern[patIdx]) == char.ToUpperInvariant(text[textIdx]))
-         {
-            textIdx++;
-            patIdx++;
-         }
-         else if (patIdx < pattern.Length && pattern[patIdx] == '*')
-         {
-            starTextIdx = textIdx;
-            starPatIdx = patIdx;
-            patIdx++;
-         }
-         else if (starPatIdx >= 0)
-         {
-            starTextIdx++;
-            textIdx = starTextIdx;
-            patIdx = starPatIdx + 1;
-         }
-         else
-         {
-            return false;
-         }
-      }
-
-      while (patIdx < pattern.Length && pattern[patIdx] == '*')
-         patIdx++;
-
-      return patIdx == pattern.Length;
-   }
-
-   private static bool IsFileIgnored(string filePath, ImmutableArray<string> patterns)
-   {
-      if (string.IsNullOrEmpty(filePath))
-         return false;
-
-      var fileName = Path.GetFileName(filePath);
-      foreach (var pattern in patterns)
-      {
-         if (MatchesGlobPattern(fileName, pattern))
-            return true;
-      }
-
-      return false;
-   }
+   private static bool IsFileIgnored(string filePath, ImmutableArray<string> patterns) => AnalyzersUtils.IsFileExcluded(filePath, patterns);
 
    private static bool IsContainedInIgnoredBaseType(SyntaxNodeAnalysisContext context)
    {
       var containingType = context.ContainingSymbol?.ContainingType;
       if (containingType == null)
          return false;
-
-      var baseType = containingType.BaseType;
-      while (baseType != null)
-      {
-         var fullName = baseType.ToDisplayString();
-         foreach (var ignoredType in DefaultIgnoredBaseTypes)
-         {
-            if (string.Equals(fullName, ignoredType, StringComparison.Ordinal))
-               return true;
-         }
-
-         baseType = baseType.BaseType;
-      }
-
-      return false;
+      return AnalyzersUtils.InheritsFromAny(containingType, DefaultIgnoredBaseTypes);
    }
 
    private static bool IsIgnoredMethodInBaseType(SyntaxNodeAnalysisContext context)

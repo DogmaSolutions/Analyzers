@@ -25,3 +25,15 @@ DSA019  | Code Smells   | Warning  | DSA019Analyzer
 DSA020  | Code Smells   | Warning  | DSA020Analyzer
 DSA021  | Best Practice | Warning  | DSA021Analyzer
 DSA022  | Performance   | Warning  | DSA022Analyzer
+DSA023  | Best Practice | Warning  | DSA023Analyzer
+DSA024  | Best Practice | Warning  | DSA024Analyzer
+DSA025  | Performance   | Warning  | DSA025Analyzer
+DSA026  | Bug           | Warning  | DSA026Analyzer
+DSA027  | Performance   | Warning  | DSA027Analyzer
+DSA028  | Performance   | Warning  | DSA028Analyzer
+DSA029  | Bug           | Warning  | DSA029Analyzer
+DSA030  | Best Practice | Info     | DSA030Analyzer
+DSA031  | Performance   | Warning  | DSA031Analyzer
+DSA032  | Code Smells   | Warning  | DSA032Analyzer
+DSA033  | Code Smells   | Warning  | DSA033Analyzer
+DSA034  | Code Smells   | Warning  | DSA034Analyzer

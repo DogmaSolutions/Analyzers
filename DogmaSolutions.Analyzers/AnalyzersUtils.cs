@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
@@ -122,6 +125,117 @@ namespace DogmaSolutions.Analyzers
                 return IsWebApiControllerClass(typeSymbol.BaseType);
 
             return false;
+        }
+
+        internal static readonly ImmutableArray<string> DefaultExcludedFilePatterns = ImmutableArray.Create(
+            "*.Designer.cs",
+            "*.generated.cs",
+            "*.g.cs",
+            "*.g.i.cs");
+
+        internal static readonly ImmutableArray<string> DefaultExcludedBaseTypes = ImmutableArray.Create(
+            "Microsoft.EntityFrameworkCore.Migrations.Migration",
+            "Microsoft.EntityFrameworkCore.Infrastructure.ModelSnapshot",
+            "System.Data.Entity.Migrations.DbMigration",
+            "Microsoft.EntityFrameworkCore.DbContext");
+
+        internal static bool MatchesGlobPattern(string text, string pattern)
+        {
+            var textIdx = 0;
+            var patIdx = 0;
+            var starTextIdx = -1;
+            var starPatIdx = -1;
+
+            while (textIdx < text.Length)
+            {
+                if (patIdx < pattern.Length &&
+                    pattern[patIdx] != '*' &&
+                    char.ToUpperInvariant(pattern[patIdx]) == char.ToUpperInvariant(text[textIdx]))
+                {
+                    textIdx++;
+                    patIdx++;
+                }
+                else if (patIdx < pattern.Length && pattern[patIdx] == '*')
+                {
+                    starTextIdx = textIdx;
+                    starPatIdx = patIdx;
+                    patIdx++;
+                }
+                else if (starPatIdx >= 0)
+                {
+                    starTextIdx++;
+                    textIdx = starTextIdx;
+                    patIdx = starPatIdx + 1;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            while (patIdx < pattern.Length && pattern[patIdx] == '*')
+                patIdx++;
+
+            return patIdx == pattern.Length;
+        }
+
+        internal static bool IsFileExcluded(string filePath, IReadOnlyList<string> patterns)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return false;
+
+            var fileName = Path.GetFileName(filePath);
+            foreach (var pattern in patterns)
+            {
+                if (MatchesGlobPattern(fileName, pattern))
+                    return true;
+            }
+
+            return false;
+        }
+
+        internal static bool InheritsFromAny(INamedTypeSymbol typeSymbol, IReadOnlyCollection<string> excludedBaseTypes)
+        {
+            var baseType = typeSymbol.BaseType;
+            while (baseType != null)
+            {
+                var fullName = baseType.ToDisplayString();
+                foreach (var excludedType in excludedBaseTypes)
+                {
+                    if (string.Equals(fullName, excludedType, StringComparison.Ordinal))
+                        return true;
+                }
+
+                baseType = baseType.BaseType;
+            }
+
+            return false;
+        }
+
+        internal static IReadOnlyList<string> ParseExcludedFilePatterns(AnalyzerConfigOptions options, string optionKey)
+        {
+            if (options.TryGetValue(optionKey, out var value) && !string.IsNullOrWhiteSpace(value))
+            {
+                return value.Split(',')
+                    .Select(s => s.Trim())
+                    .Where(s => s.Length > 0)
+                    .ToList();
+            }
+
+            return DefaultExcludedFilePatterns;
+        }
+
+        internal static IReadOnlyList<string> ParseExcludedBaseTypes(AnalyzerConfigOptions options, string optionKey)
+        {
+            if (options.TryGetValue(optionKey, out var value) && !string.IsNullOrWhiteSpace(value))
+            {
+                return value.Split(',')
+                    .Select(s => s.Trim())
+                    .Where(s => s.Length > 0)
+                    .ToList();
+            }
+
+            return DefaultExcludedBaseTypes;
         }
     }
 }

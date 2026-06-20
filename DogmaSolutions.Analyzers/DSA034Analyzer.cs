@@ -8,37 +8,23 @@ namespace DogmaSolutions.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 // ReSharper disable once InconsistentNaming
-public sealed class DSA033Analyzer : DiagnosticAnalyzer
+public sealed class DSA034Analyzer : DiagnosticAnalyzer
 {
-    public const string DiagnosticId = "DSA033";
-    internal const string MaxLinesOptionKey = "dotnet_diagnostic.DSA033.max_lines";
+    public const string DiagnosticId = "DSA034";
+    internal const string MaxLinesOptionKey = "dotnet_diagnostic.DSA034.max_lines";
     internal const int DefaultMaxLines = 500;
-    internal const string ExcludedFilePatternsOptionKey = "dotnet_diagnostic.DSA033.excluded_file_patterns";
-    internal const string ExcludedBaseTypesOptionKey = "dotnet_diagnostic.DSA033.excluded_base_types";
+    internal const string ExcludedFilePatternsOptionKey = "dotnet_diagnostic.DSA034.excluded_file_patterns";
+    internal const string ExcludedBaseTypesOptionKey = "dotnet_diagnostic.DSA034.excluded_base_types";
 
-    private static readonly LocalizableString _title = new LocalizableResourceString(nameof(Resources.DSA033AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
-
-    private static readonly LocalizableString _messageFormat = new LocalizableResourceString(
-        nameof(Resources.DSA033AnalyzerMessageFormat),
-        Resources.ResourceManager,
-        typeof(Resources));
-
-    private static readonly LocalizableString _description = new LocalizableResourceString(
-        nameof(Resources.DSA033AnalyzerDescription),
-        Resources.ResourceManager,
-        typeof(Resources));
-
+    private static readonly LocalizableString _title = new LocalizableResourceString(nameof(Resources.DSA034AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
+    private static readonly LocalizableString _messageFormat = new LocalizableResourceString(nameof(Resources.DSA034AnalyzerMessageFormat), Resources.ResourceManager, typeof(Resources));
+    private static readonly LocalizableString _description = new LocalizableResourceString(nameof(Resources.DSA034AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
     private const string Category = RuleCategories.CodeSmell;
 
     private static readonly DiagnosticDescriptor _rule = new(
-        DiagnosticId,
-        _title,
-        _messageFormat,
-        Category,
-        DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: _description,
-        helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA033.md");
+        DiagnosticId, _title, _messageFormat, Category,
+        DiagnosticSeverity.Warning, isEnabledByDefault: true, description: _description,
+        helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA034.md");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
 
@@ -59,42 +45,40 @@ public sealed class DSA033Analyzer : DiagnosticAnalyzer
     {
         var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Tree);
 
-        // 1. Check file name exclusion FIRST (cheapest)
+        // 1. File name exclusion
         var excludedPatterns = AnalyzersUtils.ParseExcludedFilePatterns(options, ExcludedFilePatternsOptionKey);
         if (AnalyzersUtils.IsFileExcluded(context.Tree.FilePath, excludedPatterns))
             return;
 
-        // 2. Check line count
+        // 2. Line count
         var text = context.Tree.GetText(context.CancellationToken);
         var lineCount = text.Lines.Count;
-
         var maxLines = DefaultMaxLines;
         if (options.TryGetValue(MaxLinesOptionKey, out var value) &&
-            int.TryParse(value, out var parsed) &&
-            parsed > 0)
+            int.TryParse(value, out var parsed) && parsed > 0)
         {
             maxLines = parsed;
         }
-
         if (lineCount <= maxLines)
             return;
 
-        // 3. Check base type exclusion (needs semantic model)
+        // 3. Single-type check
+        var root = context.Tree.GetRoot(context.CancellationToken);
+        var topLevelTypes = DSA033CodeFixProvider.GetTopLevelTypeDeclarations(root);
+        if (topLevelTypes.Count != 1)
+            return;
+
+        // 4. Base type exclusion
         var excludedBaseTypes = AnalyzersUtils.ParseExcludedBaseTypes(options, ExcludedBaseTypesOptionKey);
         if (excludedBaseTypes.Count > 0)
         {
             var semanticModel = compilation.GetSemanticModel(context.Tree);
-            var root = context.Tree.GetRoot(context.CancellationToken);
-            var topLevelTypes = DSA033CodeFixProvider.GetTopLevelTypeDeclarations(root);
-            foreach (var typeDecl in topLevelTypes)
-            {
-                if (semanticModel.GetDeclaredSymbol(typeDecl, context.CancellationToken) is INamedTypeSymbol typeSymbol &&
-                    AnalyzersUtils.InheritsFromAny(typeSymbol, excludedBaseTypes))
-                    return;
-            }
+            if (semanticModel.GetDeclaredSymbol(topLevelTypes[0], context.CancellationToken) is INamedTypeSymbol typeSymbol &&
+                AnalyzersUtils.InheritsFromAny(typeSymbol, excludedBaseTypes))
+                return;
         }
 
-        // 4. Report diagnostic
+        // 5. Report diagnostic
         var filePath = context.Tree.FilePath;
         var fileName = string.IsNullOrEmpty(filePath)
             ? "unknown"

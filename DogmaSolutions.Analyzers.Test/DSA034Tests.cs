@@ -7,12 +7,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace DogmaSolutions.Analyzers.Test;
 
 [TestClass]
-public class DSA033Tests
+public class DSA034Tests
 {
-   #region Matched (file exceeds threshold)
+   #region Matched (single-type file exceeds threshold)
 
    [TestMethod]
-   public async Task Flags_FileExceedingDefaultThreshold()
+   public async Task Flags_SingleClassFileExceedingDefaultThreshold()
    {
       var lines = new string[502];
       lines[0] = "namespace TestApp {";
@@ -23,12 +23,12 @@ public class DSA033Tests
       lines[501] = "}";
       var source = string.Join("\n", lines);
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
       test.ExpectedDiagnostics.Add(
-         CSharpAnalyzerVerifier<DSA033Analyzer>.Diagnostic(DSA033Analyzer.DiagnosticId)
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
             .WithSpan(1, 1, 1, 20)
             .WithArguments("Test0.cs", 502, 500));
 
@@ -36,32 +36,32 @@ public class DSA033Tests
    }
 
    [TestMethod]
-   public async Task Flags_FileExceedingCustomThreshold()
+   public async Task Flags_SingleClassFileExceedingCustomThreshold()
    {
       var source = @"
 namespace TestApp
 {
-    public class ClassA
+    public class MyService
     {
-        public int A { get; set; }
-        public int B { get; set; }
-        public int C { get; set; }
-        public int D { get; set; }
-        public int E { get; set; }
+        public int Alpha { get; set; }
+        public int Beta { get; set; }
+        public int Gamma { get; set; }
+        public int Delta { get; set; }
+        public int Epsilon { get; set; }
     }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 5
+dotnet_diagnostic.DSA034.max_lines = 5
 "));
       test.ExpectedDiagnostics.Add(
-         CSharpAnalyzerVerifier<DSA033Analyzer>.Diagnostic(DSA033Analyzer.DiagnosticId)
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
             .WithSpan(1, 1, 1, 1)
             .WithArguments("Test0.cs", 12, 5));
 
@@ -70,7 +70,7 @@ dotnet_diagnostic.DSA033.max_lines = 5
 
    #endregion
 
-   #region Not matched (file under threshold)
+   #region Not matched
 
    [TestMethod]
    public async Task DoesNotFlag_FileUnderDefaultThreshold()
@@ -84,14 +84,42 @@ namespace TestApp
     }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       await test.RunAsync().ConfigureAwait(false);
    }
 
    [TestMethod]
-   public async Task DoesNotFlag_FileExactlyAtThreshold()
+   public async Task DoesNotFlag_MultiTypeFileOverThreshold()
+   {
+      var source = @"namespace TestApp
+{
+    public class ClassA
+    {
+        public int A { get; set; }
+    }
+
+    public class ClassB
+    {
+        public int B { get; set; }
+    }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
+      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA034.max_lines = 5
+"));
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task DoesNotFlag_SingleClassExactlyAtThreshold()
    {
       var lines = new string[500];
       lines[0] = "namespace TestApp {";
@@ -102,32 +130,9 @@ namespace TestApp
       lines[499] = "}";
       var source = string.Join("\n", lines);
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task DoesNotFlag_FileUnderCustomThreshold()
-   {
-      var source = @"
-namespace TestApp
-{
-    public class ClassA
-    {
-        public int A { get; set; }
-    }
-}";
-
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
-      test.TestCode = source;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
-root = true
-[*]
-dotnet_diagnostic.DSA033.max_lines = 100
-"));
       await test.RunAsync().ConfigureAwait(false);
    }
 
@@ -143,13 +148,13 @@ namespace TestApp
     }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = -1
+dotnet_diagnostic.DSA034.max_lines = -1
 "));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -166,13 +171,13 @@ namespace TestApp
     }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = abc
+dotnet_diagnostic.DSA034.max_lines = abc
 "));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -189,14 +194,208 @@ namespace TestApp
     }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 0
+dotnet_diagnostic.DSA034.max_lines = 0
 "));
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   #endregion
+
+   #region Type variety
+
+   [TestMethod]
+   public async Task Flags_SingleStructExceedingThreshold()
+   {
+      var editorConfig = @"
+root = true
+[*]
+dotnet_diagnostic.DSA034.max_lines = 5
+";
+      var source = @"namespace TestApp
+{
+    public struct MyPoint
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Z { get; set; }
+    }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
+      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
+      test.ExpectedDiagnostics.Add(
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
+            .WithSpan(1, 1, 1, 18)
+            .WithArguments("Test0.cs", 9, 5));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task Flags_SingleInterfaceExceedingThreshold()
+   {
+      var editorConfig = @"
+root = true
+[*]
+dotnet_diagnostic.DSA034.max_lines = 5
+";
+      var source = @"namespace TestApp
+{
+    public interface IMyWidget
+    {
+        int Width { get; }
+        int Height { get; }
+        void Render();
+    }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
+      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
+      test.ExpectedDiagnostics.Add(
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
+            .WithSpan(1, 1, 1, 18)
+            .WithArguments("Test0.cs", 9, 5));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task Flags_SingleRecordExceedingThreshold()
+   {
+      var editorConfig = @"
+root = true
+[*]
+dotnet_diagnostic.DSA034.max_lines = 5
+";
+      var source = @"namespace TestApp
+{
+    public record MyEvent
+    {
+        public int Id { get; init; }
+        public string Label { get; init; }
+        public double Amount { get; init; }
+    }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
+      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
+      test.ExpectedDiagnostics.Add(
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
+            .WithSpan(1, 1, 1, 18)
+            .WithArguments("Test0.cs", 9, 5));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task Flags_SingleEnumExceedingThreshold()
+   {
+      var editorConfig = @"
+root = true
+[*]
+dotnet_diagnostic.DSA034.max_lines = 5
+";
+      var source = @"namespace TestApp
+{
+    public enum Color
+    {
+        Red,
+        Green,
+        Blue,
+        Yellow,
+        Cyan,
+        Magenta
+    }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
+      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
+      test.ExpectedDiagnostics.Add(
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
+            .WithSpan(1, 1, 1, 18)
+            .WithArguments("Test0.cs", 12, 5));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   #endregion
+
+   #region Namespace variations
+
+   [TestMethod]
+   public async Task Flags_FileScopedNamespace()
+   {
+      var editorConfig = @"
+root = true
+[*]
+dotnet_diagnostic.DSA034.max_lines = 5
+";
+      var source = @"namespace TestApp;
+
+public class MyService
+{
+    public int Alpha { get; set; }
+    public int Beta { get; set; }
+    public int Gamma { get; set; }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
+      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
+      test.ExpectedDiagnostics.Add(
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
+            .WithSpan(1, 1, 1, 19)
+            .WithArguments("Test0.cs", 8, 5));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task Flags_NoNamespace()
+   {
+      var editorConfig = @"
+root = true
+[*]
+dotnet_diagnostic.DSA034.max_lines = 5
+";
+      var source = @"public class MyService
+{
+    public int Alpha { get; set; }
+    public int Beta { get; set; }
+    public int Gamma { get; set; }
+    public int Delta { get; set; }
+}";
+
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
+      test.TestCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
+      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
+      test.ExpectedDiagnostics.Add(
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
+            .WithSpan(1, 1, 1, 23)
+            .WithArguments("Test0.cs", 7, 5));
+
       await test.RunAsync().ConfigureAwait(false);
    }
 
@@ -216,7 +415,7 @@ dotnet_diagnostic.DSA033.max_lines = 0
       lines[501] = "}";
       var source = string.Join("\n", lines);
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestState.Sources.Add(("MyForm.Designer.cs", source));
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       await test.RunAsync().ConfigureAwait(false);
@@ -228,24 +427,24 @@ dotnet_diagnostic.DSA033.max_lines = 0
       var source = @"
 namespace TestApp
 {
-    public class ClassA
+    public class MyService
     {
-        public int A { get; set; }
-        public int B { get; set; }
-        public int C { get; set; }
-        public int D { get; set; }
-        public int E { get; set; }
+        public int Alpha { get; set; }
+        public int Beta { get; set; }
+        public int Gamma { get; set; }
+        public int Delta { get; set; }
+        public int Epsilon { get; set; }
     }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestState.Sources.Add(("MyReport.auto.cs", source));
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 10
-dotnet_diagnostic.DSA033.excluded_file_patterns = *.auto.cs
+dotnet_diagnostic.DSA034.max_lines = 10
+dotnet_diagnostic.DSA034.excluded_file_patterns = *.auto.cs
 "));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -266,47 +465,15 @@ namespace TestApp
     }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestState.Sources.Add(("MyReport.special.cs", source));
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 10
-dotnet_diagnostic.DSA033.excluded_file_patterns = *.auto.cs, *.special.cs, *.tmp.cs
+dotnet_diagnostic.DSA034.max_lines = 10
+dotnet_diagnostic.DSA034.excluded_file_patterns = *.auto.cs, *.special.cs, *.tmp.cs
 "));
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task Flags_CustomFilePatterns_OverrideDefaults()
-   {
-      // MyOutput.special.cs would NOT match any default pattern,
-      // but if the user sets custom patterns to *.auto.cs, the defaults
-      // are replaced and *.special.cs is also not excluded.
-      // This proves custom patterns replace rather than extend the defaults.
-      var lines = new string[502];
-      lines[0] = "namespace TestApp {";
-      lines[1] = "    public class MyOutputWidget {";
-      for (int i = 2; i < 500; i++)
-         lines[i] = $"        public int P{i} {{ get; set; }}";
-      lines[500] = "    }";
-      lines[501] = "}";
-      var source = string.Join("\n", lines);
-
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
-      test.TestState.Sources.Add(("MyOutput.special.cs", source));
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
-      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
-root = true
-[*]
-dotnet_diagnostic.DSA033.excluded_file_patterns = *.auto.cs
-"));
-      test.ExpectedDiagnostics.Add(
-         CSharpAnalyzerVerifier<DSA033Analyzer>.Diagnostic(DSA033Analyzer.DiagnosticId)
-            .WithSpan("MyOutput.special.cs", 1, 1, 1, 20)
-            .WithArguments("MyOutput.special.cs", 502, 500));
       await test.RunAsync().ConfigureAwait(false);
    }
 
@@ -326,13 +493,13 @@ dotnet_diagnostic.DSA033.excluded_file_patterns = *.auto.cs
       lines[501] = string.Empty;
       var source = string.Join("\n", lines);
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
+dotnet_diagnostic.DSA034.excluded_base_types = System.Exception
 "));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -349,17 +516,17 @@ dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
       lines[501] = string.Empty;
       var source = string.Join("\n", lines);
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.excluded_base_types = System.NotImplementedException
+dotnet_diagnostic.DSA034.excluded_base_types = System.NotImplementedException
 "));
       test.ExpectedDiagnostics.Add(
-         CSharpAnalyzerVerifier<DSA033Analyzer>.Diagnostic(DSA033Analyzer.DiagnosticId)
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
             .WithSpan(1, 1, 1, 44)
             .WithArguments("Test0.cs", 502, 500));
 
@@ -380,14 +547,14 @@ dotnet_diagnostic.DSA033.excluded_base_types = System.NotImplementedException
       lines[501] = string.Empty;
       var derivedSource = string.Join("\n", lines);
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestState.Sources.Add(("/0/Base.cs", baseSource));
       test.TestState.Sources.Add(("/0/Test0.cs", derivedSource));
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
+dotnet_diagnostic.DSA034.excluded_base_types = System.Exception
 "));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -405,63 +572,10 @@ dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
       lines[501] = string.Empty;
       var source = string.Join("\n", lines);
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestState.Sources.Add(("/0/FakeEf.cs", baseSource));
       test.TestState.Sources.Add(("/0/Test0.cs", source));
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task DoesNotFlag_MultiTypeFile_OneInheritsExcluded()
-   {
-      var lines = new string[502];
-      lines[0] = "public class MyErrorHandler : System.Exception {";
-      lines[1] = "    public MyErrorHandler() : base() { }";
-      for (int i = 2; i < 250; i++)
-         lines[i] = $"        public int P{i} {{ get; set; }}";
-      lines[250] = "}";
-      lines[251] = "public class MyPlainWidget {";
-      for (int i = 252; i < 500; i++)
-         lines[i] = $"        public int Q{i} {{ get; set; }}";
-      lines[500] = "}";
-      lines[501] = string.Empty;
-      var source = string.Join("\n", lines);
-
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
-      test.TestCode = source;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
-root = true
-[*]
-dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
-"));
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task Flags_NoTypesInFile()
-   {
-      var lines = new string[502];
-      lines[0] = "using System;";
-      for (int i = 1; i < 501; i++)
-         lines[i] = $"// Line {i}";
-      lines[501] = string.Empty;
-      var source = string.Join("\n", lines);
-
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
-      test.TestCode = source;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
-      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
-root = true
-[*]
-dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
-"));
-      test.ExpectedDiagnostics.Add(
-         CSharpAnalyzerVerifier<DSA033Analyzer>.Diagnostic(DSA033Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 14)
-            .WithArguments("Test0.cs", 502, 500));
       await test.RunAsync().ConfigureAwait(false);
    }
 
@@ -481,14 +595,14 @@ public class MyFaultHandler : System.Exception
     public int Eta { get; set; }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 10
-dotnet_diagnostic.DSA033.excluded_base_types = System.IO.IOException, System.Exception
+dotnet_diagnostic.DSA034.max_lines = 10
+dotnet_diagnostic.DSA034.excluded_base_types = System.IO.IOException, System.Exception
 "));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -508,18 +622,18 @@ public interface IMyContract
     int Eta { get; set; }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 10
-dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
+dotnet_diagnostic.DSA034.max_lines = 10
+dotnet_diagnostic.DSA034.excluded_base_types = System.Exception
 "));
       test.ExpectedDiagnostics.Add(
-         CSharpAnalyzerVerifier<DSA033Analyzer>.Diagnostic(DSA033Analyzer.DiagnosticId)
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
             .WithSpan(1, 1, 1, 1)
             .WithArguments("Test0.cs", 11, 10));
       await test.RunAsync().ConfigureAwait(false);
@@ -540,20 +654,50 @@ public struct MyDataPoint
     public int T { get; set; }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 10
-dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
+dotnet_diagnostic.DSA034.max_lines = 10
+dotnet_diagnostic.DSA034.excluded_base_types = System.Exception
 "));
       test.ExpectedDiagnostics.Add(
-         CSharpAnalyzerVerifier<DSA033Analyzer>.Diagnostic(DSA033Analyzer.DiagnosticId)
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
             .WithSpan(1, 1, 1, 1)
             .WithArguments("Test0.cs", 11, 10));
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task Flags_CustomFilePatterns_OverrideDefaults()
+   {
+      // MyOutput.special.cs does not match the custom pattern *.auto.cs,
+      // proving custom patterns replace the defaults (not extend them).
+      var lines = new string[502];
+      lines[0] = "namespace TestApp {";
+      lines[1] = "    public class MyOutputWidget {";
+      for (int i = 2; i < 500; i++)
+         lines[i] = $"        public int P{i} {{ get; set; }}";
+      lines[500] = "    }";
+      lines[501] = "}";
+      var source = string.Join("\n", lines);
+
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
+      test.TestState.Sources.Add(("MyOutput.special.cs", source));
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
+      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
+root = true
+[*]
+dotnet_diagnostic.DSA034.excluded_file_patterns = *.auto.cs
+"));
+      test.ExpectedDiagnostics.Add(
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
+            .WithSpan("MyOutput.special.cs", 1, 1, 1, 20)
+            .WithArguments("MyOutput.special.cs", 502, 500));
       await test.RunAsync().ConfigureAwait(false);
    }
 
@@ -576,15 +720,15 @@ public class MyReportGenerator
     public int Eta { get; set; }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestState.Sources.Add(("MyReport.special.cs", source));
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 10
-dotnet_diagnostic.DSA033.excluded_file_patterns = *.special.cs
-dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
+dotnet_diagnostic.DSA034.max_lines = 10
+dotnet_diagnostic.DSA034.excluded_file_patterns = *.special.cs
+dotnet_diagnostic.DSA034.excluded_base_types = System.Exception
 "));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -605,15 +749,15 @@ public class MyFaultHandler : System.Exception
     public int Eta { get; set; }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 10
-dotnet_diagnostic.DSA033.excluded_file_patterns = *.auto.cs
-dotnet_diagnostic.DSA033.excluded_base_types = System.Exception
+dotnet_diagnostic.DSA034.max_lines = 10
+dotnet_diagnostic.DSA034.excluded_file_patterns = *.auto.cs
+dotnet_diagnostic.DSA034.excluded_base_types = System.Exception
 "));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -634,19 +778,19 @@ public class MyFaultHandler : System.Exception
     public int Eta { get; set; }
 }";
 
-      var test = new CSharpAnalyzerVerifier<DSA033Analyzer>.Test();
+      var test = new CSharpAnalyzerVerifier<DSA034Analyzer>.Test();
       test.TestCode = source;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", @"
 root = true
 [*]
-dotnet_diagnostic.DSA033.max_lines = 10
-dotnet_diagnostic.DSA033.excluded_file_patterns = *.auto.cs
-dotnet_diagnostic.DSA033.excluded_base_types = System.NotImplementedException
+dotnet_diagnostic.DSA034.max_lines = 10
+dotnet_diagnostic.DSA034.excluded_file_patterns = *.auto.cs
+dotnet_diagnostic.DSA034.excluded_base_types = System.NotImplementedException
 "));
       test.ExpectedDiagnostics.Add(
-         CSharpAnalyzerVerifier<DSA033Analyzer>.Diagnostic(DSA033Analyzer.DiagnosticId)
+         CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
             .WithSpan(1, 1, 1, 1)
             .WithArguments("Test0.cs", 12, 10));
       await test.RunAsync().ConfigureAwait(false);
