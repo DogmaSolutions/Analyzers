@@ -31,7 +31,7 @@ public sealed class DSA033CodeFixProvider : CodeFixProvider
         if (root == null)
             return;
 
-        var topLevelTypes = GetTopLevelTypeDeclarations(root);
+        var topLevelTypes = AnalyzersUtils.GetTopLevelTypeDeclarations(root);
         if (topLevelTypes.Count < 2)
             return;
 
@@ -51,7 +51,7 @@ public sealed class DSA033CodeFixProvider : CodeFixProvider
         if (root == null)
             return document.Project.Solution;
 
-        var topLevelTypes = GetTopLevelTypeDeclarations(root);
+        var topLevelTypes = AnalyzersUtils.GetTopLevelTypeDeclarations(root);
         if (topLevelTypes.Count < 2)
             return document.Project.Solution;
 
@@ -95,19 +95,6 @@ public sealed class DSA033CodeFixProvider : CodeFixProvider
         }
 
         return solution;
-    }
-
-    internal static List<BaseTypeDeclarationSyntax> GetTopLevelTypeDeclarations(SyntaxNode root)
-    {
-        var types = new List<BaseTypeDeclarationSyntax>();
-
-        foreach (var member in root.DescendantNodes().OfType<BaseTypeDeclarationSyntax>())
-        {
-            if (member.Parent is BaseNamespaceDeclarationSyntax || member.Parent is CompilationUnitSyntax)
-                types.Add(member);
-        }
-
-        return types;
     }
 
     private static IEnumerable<string> GetDocumentFolders(Document document)

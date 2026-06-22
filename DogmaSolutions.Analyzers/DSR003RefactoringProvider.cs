@@ -23,7 +23,7 @@ public sealed class DSR003RefactoringProvider : CodeRefactoringProvider
         if (root == null)
             return;
 
-        var topLevelTypes = DSA033CodeFixProvider.GetTopLevelTypeDeclarations(root);
+        var topLevelTypes = AnalyzersUtils.GetTopLevelTypeDeclarations(root);
         if (topLevelTypes.Count < 2)
             return;
 

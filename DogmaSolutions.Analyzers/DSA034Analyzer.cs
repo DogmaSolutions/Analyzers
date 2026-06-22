@@ -64,7 +64,7 @@ public sealed class DSA034Analyzer : DiagnosticAnalyzer
 
         // 3. Single-type check
         var root = context.Tree.GetRoot(context.CancellationToken);
-        var topLevelTypes = DSA033CodeFixProvider.GetTopLevelTypeDeclarations(root);
+        var topLevelTypes = AnalyzersUtils.GetTopLevelTypeDeclarations(root);
         if (topLevelTypes.Count != 1)
             return;
 

@@ -64,7 +64,7 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
         if (root == null)
             return;
 
-        var topLevelTypes = DSA033CodeFixProvider.GetTopLevelTypeDeclarations(root);
+        var topLevelTypes = AnalyzersUtils.GetTopLevelTypeDeclarations(root);
         if (topLevelTypes.Count != 1)
             return;
 
@@ -95,7 +95,7 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
         if (root == null)
             return document.Project.Solution;
 
-        var topLevelTypes = DSA033CodeFixProvider.GetTopLevelTypeDeclarations(root);
+        var topLevelTypes = AnalyzersUtils.GetTopLevelTypeDeclarations(root);
         if (topLevelTypes.Count != 1 || topLevelTypes[0] is not TypeDeclarationSyntax typeDecl)
             return document.Project.Solution;
 
@@ -150,7 +150,7 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
         if (root == null)
             return document.Project.Solution;
 
-        var topLevelTypes = DSA033CodeFixProvider.GetTopLevelTypeDeclarations(root);
+        var topLevelTypes = AnalyzersUtils.GetTopLevelTypeDeclarations(root);
         if (topLevelTypes.Count != 1 || topLevelTypes[0] is not TypeDeclarationSyntax typeDecl)
             return document.Project.Solution;
 

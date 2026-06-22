@@ -85,7 +85,7 @@ public sealed class DSA033Analyzer : DiagnosticAnalyzer
         {
             var semanticModel = compilation.GetSemanticModel(context.Tree);
             var root = context.Tree.GetRoot(context.CancellationToken);
-            var topLevelTypes = DSA033CodeFixProvider.GetTopLevelTypeDeclarations(root);
+            var topLevelTypes = AnalyzersUtils.GetTopLevelTypeDeclarations(root);
             foreach (var typeDecl in topLevelTypes)
             {
                 if (semanticModel.GetDeclaredSymbol(typeDecl, context.CancellationToken) is INamedTypeSymbol typeSymbol &&

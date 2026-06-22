@@ -237,5 +237,18 @@ namespace DogmaSolutions.Analyzers
 
             return DefaultExcludedBaseTypes;
         }
+
+        internal static List<BaseTypeDeclarationSyntax> GetTopLevelTypeDeclarations(SyntaxNode root)
+        {
+            var types = new List<BaseTypeDeclarationSyntax>();
+
+            foreach (var member in root.DescendantNodes().OfType<BaseTypeDeclarationSyntax>())
+            {
+                if (member.Parent is BaseNamespaceDeclarationSyntax || member.Parent is CompilationUnitSyntax)
+                    types.Add(member);
+            }
+
+            return types;
+        }
     }
 }
