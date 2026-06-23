@@ -2574,5 +2574,109 @@ dotnet_diagnostic.DSA034.max_lines = 12
       await test.RunAsync().ConfigureAwait(false);
    }
 
+   [TestMethod]
+   public async Task Topic_PreservesBaseListOnCtorsFile()
+   {
+      var editorConfig = @"
+root = true
+[*]
+dotnet_diagnostic.DSA034.max_lines = 13
+";
+      // 14 lines, threshold 13. Ctors file gets base list (: ServiceBase).
+      // Topics: Order(2), Cache(2). Alpha, Beta → Misc.
+      var baseSource = @"namespace TestApp
+{
+    public abstract class ServiceBase { }
+}";
+
+      var source = @"namespace TestApp
+{
+    public class {|#0:MyProcessor|} : ServiceBase
+    {
+        public MyProcessor() { }
+
+        public void ImportOrder() { }
+        public void ExportOrder() { }
+        public void ClearCache() { }
+        public void WarmCache() { }
+        public void Alpha() { }
+        public void Beta() { }
+    }
+}";
+
+      var fixedCtors = @"namespace TestApp
+{
+    public partial class MyProcessor : ServiceBase
+    {
+        public MyProcessor()
+        {
+        }
+    }
+}";
+
+      var fixedCache = @"namespace TestApp
+{
+    public partial class MyProcessor
+    {
+        public void ClearCache()
+        {
+        }
+
+        public void WarmCache()
+        {
+        }
+    }
+}";
+
+      var fixedOrder = @"namespace TestApp
+{
+    public partial class MyProcessor
+    {
+        public void ImportOrder()
+        {
+        }
+
+        public void ExportOrder()
+        {
+        }
+    }
+}";
+
+      var fixedMisc = @"namespace TestApp
+{
+    public partial class MyProcessor
+    {
+        public void Alpha()
+        {
+        }
+
+        public void Beta()
+        {
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Test();
+      test.TestState.Sources.Add(source);
+      test.TestState.Sources.Add(("ServiceBase.cs", baseSource));
+      test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
+      test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipFixAllCheck;
+      test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
+            .WithSpan(1, 1, 1, 18)
+            .WithArguments("Test0.cs", 14, 13));
+      test.CodeActionEquivalenceKey = DSA034CodeFixProvider.TopicEquivalenceKey;
+      test.FixedState.Sources.Add(("MyProcessor.Ctors.cs", fixedCtors));
+      test.FixedState.Sources.Add(("ServiceBase.cs", baseSource));
+      test.FixedState.Sources.Add(("/0/MyProcessor.Cache.cs", fixedCache));
+      test.FixedState.Sources.Add(("/0/MyProcessor.Order.cs", fixedOrder));
+      test.FixedState.Sources.Add(("/0/MyProcessor.Misc.cs", fixedMisc));
+      test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+      test.FixedState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
    #endregion
 }

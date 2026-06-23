@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -270,7 +271,7 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
         if (miscGroup.Count > 0)
             partialFiles[$"{typeName}.Misc"] = miscGroup;
 
-        return BuildPartialSolution(document, root, typeDecl, partialFiles, nestedTypes, includeBaseTypes: false);
+        return BuildPartialSolution(document, root, typeDecl, partialFiles, nestedTypes, includeBaseTypes: true);
     }
 
     internal static Solution BuildPartialSolution(
@@ -284,6 +285,9 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
         var solution = document.Project.Solution;
         var project = document.Project;
         var folders = document.Folders;
+        var sourceDir = !string.IsNullOrEmpty(document.FilePath)
+            ? Path.GetDirectoryName(document.FilePath)
+            : null;
         var typeName = typeDecl.Identifier.ValueText;
 
         var usingsNodes = root.DescendantNodes().OfType<UsingDirectiveSyntax>().ToList();
@@ -311,11 +315,16 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
             }
             else
             {
+                var newFilePath = !string.IsNullOrEmpty(sourceDir)
+                    ? Path.Combine(sourceDir, fileName)
+                    : null;
+
                 solution = solution.AddDocument(
                     DocumentId.CreateNewId(project.Id),
                     fileName,
                     compilationUnit,
-                    folders: folders);
+                    folders: folders,
+                    filePath: newFilePath);
             }
         }
 
@@ -341,11 +350,16 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
             }
             else
             {
+                var newFilePath = !string.IsNullOrEmpty(sourceDir)
+                    ? Path.Combine(sourceDir, fileName)
+                    : null;
+
                 solution = solution.AddDocument(
                     DocumentId.CreateNewId(project.Id),
                     fileName,
                     compilationUnit,
-                    folders: folders);
+                    folders: folders,
+                    filePath: newFilePath);
             }
         }
 

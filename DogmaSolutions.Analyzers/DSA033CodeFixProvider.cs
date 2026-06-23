@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,6 +59,9 @@ public sealed class DSA033CodeFixProvider : CodeFixProvider
         var solution = document.Project.Solution;
         var project = document.Project;
         var existingFolder = GetDocumentFolders(document);
+        var sourceDir = !string.IsNullOrEmpty(document.FilePath)
+            ? Path.GetDirectoryName(document.FilePath)
+            : null;
 
         var firstType = true;
         BaseTypeDeclarationSyntax keepType = null;
@@ -74,12 +78,16 @@ public sealed class DSA033CodeFixProvider : CodeFixProvider
             var newFileName = typeDecl.Identifier.ValueText + ".cs";
             var typesToRemove = topLevelTypes.Where(t => t != typeDecl).ToList();
             var newRoot = root.RemoveNodes(typesToRemove, SyntaxRemoveOptions.KeepNoTrivia);
+            var newFilePath = !string.IsNullOrEmpty(sourceDir)
+                ? Path.Combine(sourceDir, newFileName)
+                : null;
 
             solution = solution.AddDocument(
                 DocumentId.CreateNewId(project.Id),
                 newFileName,
                 newRoot,
-                folders: existingFolder);
+                folders: existingFolder,
+                filePath: newFilePath);
         }
 
         if (keepType != null)
