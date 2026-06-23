@@ -254,6 +254,16 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
                 miscGroup.Add(member);
         }
 
+        foreach (var topic in topTopics.ToList())
+        {
+            var group = topicGroups[topic];
+            if (IsViableTopicGroup(group))
+                continue;
+
+            miscGroup.AddRange(group);
+            topicGroups[topic].Clear();
+        }
+
         var partialFiles = new Dictionary<string, List<MemberDeclarationSyntax>>(StringComparer.Ordinal);
 
         if (ctorsGroup.Count > 0)
@@ -515,6 +525,21 @@ public sealed class DSA034CodeFixProvider : CodeFixProvider
         return member is ConstructorDeclarationSyntax
             || member is DestructorDeclarationSyntax
             || IsDisposeMethod(member);
+    }
+
+    internal static bool IsViableTopicGroup(List<MemberDeclarationSyntax> group)
+    {
+        var methods = 0;
+        var nonMethods = 0;
+        foreach (var member in group)
+        {
+            if (member is MethodDeclarationSyntax)
+                methods++;
+            else
+                nonMethods++;
+        }
+
+        return methods >= 1 || nonMethods >= 2;
     }
 
     private static bool IsDisposeMethod(MemberDeclarationSyntax member)
