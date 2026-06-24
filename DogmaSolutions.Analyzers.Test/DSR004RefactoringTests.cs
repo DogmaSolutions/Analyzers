@@ -1151,6 +1151,208 @@ public partial class MyFacade
    }
 
    [TestMethod]
+   public async Task Topic_UnderscoreSplittingViaRefactoring()
+   {
+      // Underscore-bearing member names should split correctly in the refactoring path.
+      // Load_Widget, Save_Widget → Widget(2). Check_Invoice, Get_Invoice → Invoice(2).
+      var source = @"namespace TestApp
+{
+    public class [|MyBridge|]
+    {
+        public MyBridge() { }
+
+        public void Load_Widget() { }
+        public void Save_Widget() { }
+        public void Check_Invoice() { }
+        public void Get_Invoice() { }
+    }
+}";
+
+      var fixedCtors = @"namespace TestApp
+{
+    public partial class MyBridge
+    {
+        public MyBridge()
+        {
+        }
+    }
+}";
+
+      var fixedInvoice = @"namespace TestApp
+{
+    public partial class MyBridge
+    {
+        public void Check_Invoice()
+        {
+        }
+
+        public void Get_Invoice()
+        {
+        }
+    }
+}";
+
+      var fixedWidget = @"namespace TestApp
+{
+    public partial class MyBridge
+    {
+        public void Load_Widget()
+        {
+        }
+
+        public void Save_Widget()
+        {
+        }
+    }
+}";
+
+      var test = new CSharpCodeRefactoringVerifier<DSR004RefactoringProvider>.Test();
+      test.TestState.Sources.Add(source);
+      test.CodeActionEquivalenceKey = DSR004RefactoringProvider.TopicEquivalenceKey;
+      test.FixedState.Sources.Add(("MyBridge.Ctors.cs", fixedCtors));
+      test.FixedState.Sources.Add(("/0/MyBridge.Invoice.cs", fixedInvoice));
+      test.FixedState.Sources.Add(("/0/MyBridge.Widget.cs", fixedWidget));
+      test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task Topic_PluralNormalizationViaRefactoring()
+   {
+      // Plural and singular forms merge into the same topic.
+      // ProcessOrders + ImportOrder → Order(2). RenderWidgets + PaintWidget → Widget(2).
+      var source = @"namespace TestApp
+{
+    public class [|MyDirector|]
+    {
+        public MyDirector() { }
+
+        public void ProcessOrders() { }
+        public void ImportOrder() { }
+        public void RenderWidgets() { }
+        public void PaintWidget() { }
+    }
+}";
+
+      var fixedCtors = @"namespace TestApp
+{
+    public partial class MyDirector
+    {
+        public MyDirector()
+        {
+        }
+    }
+}";
+
+      var fixedOrder = @"namespace TestApp
+{
+    public partial class MyDirector
+    {
+        public void ProcessOrders()
+        {
+        }
+
+        public void ImportOrder()
+        {
+        }
+    }
+}";
+
+      var fixedWidget = @"namespace TestApp
+{
+    public partial class MyDirector
+    {
+        public void RenderWidgets()
+        {
+        }
+
+        public void PaintWidget()
+        {
+        }
+    }
+}";
+
+      var test = new CSharpCodeRefactoringVerifier<DSR004RefactoringProvider>.Test();
+      test.TestState.Sources.Add(source);
+      test.CodeActionEquivalenceKey = DSR004RefactoringProvider.TopicEquivalenceKey;
+      test.FixedState.Sources.Add(("MyDirector.Ctors.cs", fixedCtors));
+      test.FixedState.Sources.Add(("/0/MyDirector.Order.cs", fixedOrder));
+      test.FixedState.Sources.Add(("/0/MyDirector.Widget.cs", fixedWidget));
+      test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task Topic_UnderscoreAndPluralCombinedViaRefactoring()
+   {
+      // Both underscore splitting and plural normalization together.
+      // Load_Widgets → [Load(excl), Widget]. Save_Widget → [Save(excl), Widget].
+      // Get_Invoices → [Get(excl), Invoice]. Check_Invoice → [Check(excl), Invoice].
+      var source = @"namespace TestApp
+{
+    public class [|MyAdapter|]
+    {
+        public MyAdapter() { }
+
+        public void Load_Widgets() { }
+        public void Save_Widget() { }
+        public void Get_Invoices() { }
+        public void Check_Invoice() { }
+    }
+}";
+
+      var fixedCtors = @"namespace TestApp
+{
+    public partial class MyAdapter
+    {
+        public MyAdapter()
+        {
+        }
+    }
+}";
+
+      var fixedInvoice = @"namespace TestApp
+{
+    public partial class MyAdapter
+    {
+        public void Get_Invoices()
+        {
+        }
+
+        public void Check_Invoice()
+        {
+        }
+    }
+}";
+
+      var fixedWidget = @"namespace TestApp
+{
+    public partial class MyAdapter
+    {
+        public void Load_Widgets()
+        {
+        }
+
+        public void Save_Widget()
+        {
+        }
+    }
+}";
+
+      var test = new CSharpCodeRefactoringVerifier<DSR004RefactoringProvider>.Test();
+      test.TestState.Sources.Add(source);
+      test.CodeActionEquivalenceKey = DSR004RefactoringProvider.TopicEquivalenceKey;
+      test.FixedState.Sources.Add(("MyAdapter.Ctors.cs", fixedCtors));
+      test.FixedState.Sources.Add(("/0/MyAdapter.Invoice.cs", fixedInvoice));
+      test.FixedState.Sources.Add(("/0/MyAdapter.Widget.cs", fixedWidget));
+      test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
    public async Task Visibility_PreservesBaseListViaRefactoring()
    {
       // Base class should be preserved on the Ctors file for visibility split too.
