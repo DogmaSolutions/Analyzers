@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -90,11 +89,11 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         var symbolKey = GetReceiverSymbolKey(invocation, context.SemanticModel);
         var key = BuildKey(receiverText, methodName, argsText, symbolKey);
 
-        var scope = GetContainingScope(invocation);
+        var scope = SyntaxUtils.GetContainingScope(invocation);
         if (scope == null)
             return;
 
-        var normalizedArgs = NormalizeWhitespace(argsText);
+        var normalizedArgs = SyntaxUtils.NormalizeWhitespace(argsText);
 
         // Count how many invocations in the same scope have the same key (including self)
         var count = 1; // count self
@@ -109,7 +108,7 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
             if (!string.Equals(sibMethod, methodName, StringComparison.Ordinal))
                 continue;
 
-            if (NormalizeWhitespace(sibArgs) != normalizedArgs)
+            if (SyntaxUtils.NormalizeWhitespace(sibArgs) != normalizedArgs)
                 continue;
 
             if (IsStaticMethodCall(sibling, context.SemanticModel))
@@ -179,8 +178,8 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
 
     private static string BuildKey(string receiverText, string methodName, string argsText, string symbolKey)
     {
-        var receiver = symbolKey ?? NormalizeWhitespace(receiverText);
-        return $"{receiver}|{methodName}|{NormalizeWhitespace(argsText)}";
+        var receiver = symbolKey ?? SyntaxUtils.NormalizeWhitespace(receiverText);
+        return $"{receiver}|{methodName}|{SyntaxUtils.NormalizeWhitespace(argsText)}";
     }
 
     private static string GetReceiverSymbolKey(InvocationExpressionSyntax invocation, SemanticModel model)
@@ -233,54 +232,10 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         return null;
     }
 
-    /// <summary>
-    /// Finds the innermost enclosing scope (method body, lambda body, local function body,
-    /// constructor body, accessor body, or compilation unit for top-level statements).
-    /// </summary>
-    private static SyntaxNode GetContainingScope(SyntaxNode node)
-    {
-        var current = node.Parent;
-        while (current != null)
-        {
-            if (current is SimpleLambdaExpressionSyntax simpleLambda)
-                return simpleLambda.Body;
-            if (current is ParenthesizedLambdaExpressionSyntax parenLambda)
-                return parenLambda.Body;
-            if (current is AnonymousMethodExpressionSyntax anonMethod)
-                return anonMethod.Body;
-            if (current is LocalFunctionStatementSyntax localFunc)
-                return (SyntaxNode)localFunc.Body ?? localFunc.ExpressionBody?.Expression;
-            if (current is MethodDeclarationSyntax method)
-                return (SyntaxNode)method.Body ?? method.ExpressionBody?.Expression;
-            if (current is ConstructorDeclarationSyntax ctor)
-                return (SyntaxNode)ctor.Body ?? ctor.ExpressionBody?.Expression;
-            if (current is AccessorDeclarationSyntax accessor)
-                return (SyntaxNode)accessor.Body ?? accessor.ExpressionBody?.Expression;
-            if (current is CompilationUnitSyntax compilationUnit)
-                return compilationUnit;
-
-            current = current.Parent;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Returns all invocation expressions within the given scope, but does NOT descend
-    /// into nested lambdas or local functions (those are separate scopes).
-    /// </summary>
     private static IEnumerable<InvocationExpressionSyntax> GetInvocationsInScope(SyntaxNode scope)
     {
-        return scope.DescendantNodes(n => !IsNestedScope(n))
+        return scope.DescendantNodes(n => !SyntaxUtils.IsNestedScope(n))
             .OfType<InvocationExpressionSyntax>();
-    }
-
-    private static bool IsNestedScope(SyntaxNode node)
-    {
-        return node is SimpleLambdaExpressionSyntax ||
-               node is ParenthesizedLambdaExpressionSyntax ||
-               node is AnonymousMethodExpressionSyntax ||
-               node is LocalFunctionStatementSyntax;
     }
 
     /// <summary>
@@ -402,27 +357,4 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         return -1;
     }
 
-    private static string NormalizeWhitespace(string text)
-    {
-        var sb = new StringBuilder(text.Length);
-        var lastWasSpace = false;
-        foreach (var c in text)
-        {
-            if (char.IsWhiteSpace(c))
-            {
-                if (!lastWasSpace)
-                {
-                    sb.Append(' ');
-                    lastWasSpace = true;
-                }
-            }
-            else
-            {
-                sb.Append(c);
-                lastWasSpace = false;
-            }
-        }
-
-        return sb.ToString().Trim();
-    }
 }

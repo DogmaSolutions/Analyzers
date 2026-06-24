@@ -229,32 +229,6 @@ internal static class StringConstantHelper
       return SyntaxFactory.TriviaList(result);
    }
 
-   internal static SyntaxTrivia GetEndOfLineTrivia(SyntaxNode node)
-   {
-      for (var current = node; current != null; current = current.Parent)
-      {
-         foreach (var trivia in current.GetLeadingTrivia())
-         {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-               return trivia;
-         }
-
-         foreach (var trivia in current.GetTrailingTrivia())
-         {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-               return trivia;
-         }
-      }
-
-      var firstEol = node.SyntaxTree.GetRoot().DescendantTokens()
-         .SelectMany(t => t.TrailingTrivia)
-         .FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
-      if (firstEol != default)
-         return firstEol;
-
-      return SyntaxFactory.LineFeed;
-   }
-
    internal static async Task<Document> ExtractToLocalConstAsync(
       Document document,
       LiteralExpressionSyntax targetLiteral,
@@ -316,7 +290,7 @@ internal static class StringConstantHelper
       if (containingBlock == null)
          return document.WithSyntaxRoot(newRoot);
 
-      var eolTrivia = GetEndOfLineTrivia(finalInsertion);
+      var eolTrivia = SyntaxUtils.GetEndOfLineTrivia(finalInsertion);
       var constDecl = CreateLocalConstDeclaration(constName, stringValue, finalInsertion, eolTrivia);
 
       var idx = containingBlock.Statements.IndexOf(finalInsertion);
@@ -383,7 +357,7 @@ internal static class StringConstantHelper
       if (updatedType == null)
          return document;
 
-      var eolTrivia = GetEndOfLineTrivia(updatedType);
+      var eolTrivia = SyntaxUtils.GetEndOfLineTrivia(updatedType);
       var fieldDecl = CreateClassFieldDeclaration(constName, stringValue, updatedType, eolTrivia);
 
       var newType = InsertFieldBeforeFirstMethod(updatedType, fieldDecl);
@@ -440,7 +414,7 @@ internal static class StringConstantHelper
       if (updatedType == null)
          return document;
 
-      var eolTrivia = GetEndOfLineTrivia(updatedType);
+      var eolTrivia = SyntaxUtils.GetEndOfLineTrivia(updatedType);
       var fieldDecl = CreateClassFieldDeclaration(constName, stringValue, updatedType, eolTrivia);
 
       var newType = InsertFieldBeforeFirstMethod(updatedType, fieldDecl);

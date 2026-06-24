@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -144,13 +143,13 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         if (IsInsideExpressionTreeLambda(memberAccess, context.SemanticModel))
             return;
 
-        var key = NormalizeWhitespace(memberAccess.ToString());
+        var key = SyntaxUtils.NormalizeWhitespace(memberAccess.ToString());
 
         // Check if the chain starts with an excluded prefix
         if (MatchesExcludedPrefix(key, context))
             return;
 
-        var scope = GetContainingScope(memberAccess);
+        var scope = SyntaxUtils.GetContainingScope(memberAccess);
         if (scope == null)
             return;
 
@@ -171,7 +170,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
             if (sibEffectiveDepth < threshold)
                 continue;
 
-            var sibKey = NormalizeWhitespace(sibling.ToString());
+            var sibKey = SyntaxUtils.NormalizeWhitespace(sibling.ToString());
             if (sibKey == key && AreSemanticallySame(memberAccess, sibling, context.SemanticModel))
                 count++;
         }
@@ -211,13 +210,13 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         if (IsInsideExpressionTreeLambda(elementAccess, context.SemanticModel))
             return;
 
-        var key = NormalizeWhitespace(elementAccess.ToString());
+        var key = SyntaxUtils.NormalizeWhitespace(elementAccess.ToString());
 
         // Check if the chain starts with an excluded prefix
         if (MatchesExcludedPrefix(key, context))
             return;
 
-        var scope = GetContainingScope(elementAccess);
+        var scope = SyntaxUtils.GetContainingScope(elementAccess);
         if (scope == null)
             return;
 
@@ -238,7 +237,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
             if (sibEffectiveDepth < threshold)
                 continue;
 
-            var sibKey = NormalizeWhitespace(sibling.ToString());
+            var sibKey = SyntaxUtils.NormalizeWhitespace(sibling.ToString());
             if (sibKey == key && AreSemanticallySame(elementAccess, sibling, context.SemanticModel))
                 count++;
         }
@@ -518,75 +517,15 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static SyntaxNode GetContainingScope(SyntaxNode node)
-    {
-        var current = node.Parent;
-        while (current != null)
-        {
-            if (current is SimpleLambdaExpressionSyntax simpleLambda)
-                return simpleLambda.Body;
-            if (current is ParenthesizedLambdaExpressionSyntax parenLambda)
-                return parenLambda.Body;
-            if (current is AnonymousMethodExpressionSyntax anonMethod)
-                return anonMethod.Body;
-            if (current is LocalFunctionStatementSyntax localFunc)
-                return (SyntaxNode)localFunc.Body ?? localFunc.ExpressionBody?.Expression;
-            if (current is MethodDeclarationSyntax method)
-                return (SyntaxNode)method.Body ?? method.ExpressionBody?.Expression;
-            if (current is ConstructorDeclarationSyntax ctor)
-                return (SyntaxNode)ctor.Body ?? ctor.ExpressionBody?.Expression;
-            if (current is AccessorDeclarationSyntax accessor)
-                return (SyntaxNode)accessor.Body ?? accessor.ExpressionBody?.Expression;
-            if (current is CompilationUnitSyntax compilationUnit)
-                return compilationUnit;
-
-            current = current.Parent;
-        }
-
-        return null;
-    }
-
     internal static IEnumerable<ElementAccessExpressionSyntax> GetElementAccessesInScope(SyntaxNode scope)
     {
-        return scope.DescendantNodes(n => !IsNestedScope(n))
+        return scope.DescendantNodes(n => !SyntaxUtils.IsNestedScope(n))
             .OfType<ElementAccessExpressionSyntax>();
     }
 
     private static IEnumerable<MemberAccessExpressionSyntax> GetMemberAccessesInScope(SyntaxNode scope)
     {
-        return scope.DescendantNodes(n => !IsNestedScope(n))
+        return scope.DescendantNodes(n => !SyntaxUtils.IsNestedScope(n))
             .OfType<MemberAccessExpressionSyntax>();
-    }
-
-    private static bool IsNestedScope(SyntaxNode node)
-    {
-        return node is SimpleLambdaExpressionSyntax ||
-               node is ParenthesizedLambdaExpressionSyntax ||
-               node is AnonymousMethodExpressionSyntax ||
-               node is LocalFunctionStatementSyntax;
-    }
-
-    private static string NormalizeWhitespace(string text)
-    {
-        var sb = new StringBuilder(text.Length);
-        var lastWasSpace = false;
-        foreach (var c in text)
-        {
-            if (char.IsWhiteSpace(c))
-            {
-                if (!lastWasSpace)
-                {
-                    sb.Append(' ');
-                    lastWasSpace = true;
-                }
-            }
-            else
-            {
-                sb.Append(c);
-                lastWasSpace = false;
-            }
-        }
-
-        return sb.ToString().Trim();
     }
 }

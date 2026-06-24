@@ -81,17 +81,17 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         if (targetExpression is MemberAccessExpressionSyntax targetMa &&
             targetMa.Expression is MemberAccessExpressionSyntax prefixMa)
         {
-            var scope = GetContainingScope(targetExpression);
+            var scope = SyntaxUtils.GetContainingScope(targetExpression);
             if (scope != null)
             {
-                var prefixKey = NormalizeWhitespace(prefixMa.ToString());
-                var targetKey = NormalizeWhitespace(targetExpression.ToString());
+                var prefixKey = SyntaxUtils.NormalizeWhitespace(prefixMa.ToString());
+                var targetKey = SyntaxUtils.NormalizeWhitespace(targetExpression.ToString());
 
                 var prefixCount = 0;
                 var targetCount = 0;
                 foreach (var ma in GetMemberAccessesInScope(scope))
                 {
-                    var text = NormalizeWhitespace(ma.ToString());
+                    var text = SyntaxUtils.NormalizeWhitespace(ma.ToString());
                     if (text == prefixKey) prefixCount++;
                     if (text == targetKey) targetCount++;
                 }
@@ -131,11 +131,11 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
 
         var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
 
-        var targetKey = NormalizeWhitespace(targetExpression.ToString());
+        var targetKey = SyntaxUtils.NormalizeWhitespace(targetExpression.ToString());
         var threshold = thresholdOverride ?? DSA019Analyzer.DefaultMaxDepth;
 
         // Find the containing scope
-        var scope = GetContainingScope(targetExpression);
+        var scope = SyntaxUtils.GetContainingScope(targetExpression);
         if (scope == null)
             return document;
 
@@ -166,7 +166,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         variableName = ResolveNameConflicts(variableName, scope);
 
         // Build the variable declaration
-        var eolTrivia = GetEndOfLineTrivia(insertionStatement);
+        var eolTrivia = SyntaxUtils.GetEndOfLineTrivia(insertionStatement);
         var variableDeclaration = CreateVariableDeclaration(variableName, expressionToExtract, insertionStatement, eolTrivia);
 
         var identifierName = SyntaxFactory.IdentifierName(variableName);
@@ -567,7 +567,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         {
             return GetMemberAccessesInScope(scope)
                 .Where(ma => DSA019Analyzer.ComputeChainDepth(ma) >= threshold &&
-                             NormalizeWhitespace(ma.ToString()) == targetKey &&
+                             SyntaxUtils.NormalizeWhitespace(ma.ToString()) == targetKey &&
                              (ReferenceEquals(ma, targetExpression) ||
                               semanticModel == null ||
                               DSA019Analyzer.AreSemanticallySame(targetExpression, ma, semanticModel)))
@@ -579,7 +579,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         {
             return DSA019Analyzer.GetElementAccessesInScope(scope)
                 .Where(ea => DSA019Analyzer.ComputeChainDepth(ea) >= threshold &&
-                             NormalizeWhitespace(ea.ToString()) == targetKey &&
+                             SyntaxUtils.NormalizeWhitespace(ea.ToString()) == targetKey &&
                              (ReferenceEquals(ea, targetExpression) ||
                               semanticModel == null ||
                               DSA019Analyzer.AreSemanticallySame(targetExpression, ea, semanticModel)))
@@ -604,7 +604,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         if (targetExpression is MemberAccessExpressionSyntax targetMemberAccess &&
             targetMemberAccess.Parent is InvocationExpressionSyntax targetInvocation)
         {
-            var targetArgsText = NormalizeWhitespace(targetInvocation.ArgumentList.ToString());
+            var targetArgsText = SyntaxUtils.NormalizeWhitespace(targetInvocation.ArgumentList.ToString());
             var allAreInvocations = allOccurrences.All(o =>
                 o is MemberAccessExpressionSyntax ma && ma.Parent is InvocationExpressionSyntax);
 
@@ -613,7 +613,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                 var allHaveSameArgs = allOccurrences.All(o =>
                     o is MemberAccessExpressionSyntax ma &&
                     ma.Parent is InvocationExpressionSyntax inv &&
-                    NormalizeWhitespace(inv.ArgumentList.ToString()) == targetArgsText);
+                    SyntaxUtils.NormalizeWhitespace(inv.ArgumentList.ToString()) == targetArgsText);
 
                 if (allHaveSameArgs)
                 {
@@ -655,108 +655,16 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                             .WithInitializer(SyntaxFactory.EqualsValueClause(
                                 expression.WithoutTrivia())))))
             .NormalizeWhitespace(eol: eolStr)
-            .WithLeadingTrivia(GetIndentationTrivia(insertBeforeStatement))
+            .WithLeadingTrivia(SyntaxUtils.GetIndentationTrivia(insertBeforeStatement))
             .WithTrailingTrivia(eolTrivia);
-    }
-
-    private static SyntaxTriviaList GetIndentationTrivia(SyntaxNode node)
-    {
-        var leading = node.GetLeadingTrivia();
-        var startIndex = leading.Count;
-
-        for (var i = leading.Count - 1; i >= 0; i--)
-        {
-            var kind = leading[i].Kind();
-            if (kind == SyntaxKind.WhitespaceTrivia || kind == SyntaxKind.EndOfLineTrivia)
-                startIndex = i;
-            else
-                break;
-        }
-
-        if (startIndex >= leading.Count)
-            return SyntaxTriviaList.Empty;
-
-        var result = new List<SyntaxTrivia>();
-        for (var i = startIndex; i < leading.Count; i++)
-            result.Add(leading[i]);
-
-        return SyntaxFactory.TriviaList(result);
-    }
-
-    private static SyntaxNode GetContainingScope(SyntaxNode node)
-    {
-        var current = node.Parent;
-        while (current != null)
-        {
-            if (current is SimpleLambdaExpressionSyntax simpleLambda)
-                return simpleLambda.Body;
-            if (current is ParenthesizedLambdaExpressionSyntax parenLambda)
-                return parenLambda.Body;
-            if (current is AnonymousMethodExpressionSyntax anonMethod)
-                return anonMethod.Body;
-            if (current is LocalFunctionStatementSyntax localFunc)
-                return (SyntaxNode)localFunc.Body ?? localFunc.ExpressionBody?.Expression;
-            if (current is MethodDeclarationSyntax method)
-                return (SyntaxNode)method.Body ?? method.ExpressionBody?.Expression;
-            if (current is ConstructorDeclarationSyntax ctor)
-                return (SyntaxNode)ctor.Body ?? ctor.ExpressionBody?.Expression;
-            if (current is AccessorDeclarationSyntax accessor)
-                return (SyntaxNode)accessor.Body ?? accessor.ExpressionBody?.Expression;
-            if (current is CompilationUnitSyntax compilationUnit)
-                return compilationUnit;
-
-            current = current.Parent;
-        }
-
-        return null;
     }
 
     private static IEnumerable<MemberAccessExpressionSyntax> GetMemberAccessesInScope(SyntaxNode scope)
     {
-        return scope.DescendantNodes(n => !IsNestedScope(n))
+        return scope.DescendantNodes(n => !SyntaxUtils.IsNestedScope(n))
             .OfType<MemberAccessExpressionSyntax>();
     }
 
-    private static bool IsNestedScope(SyntaxNode node)
-    {
-        return node is SimpleLambdaExpressionSyntax ||
-               node is ParenthesizedLambdaExpressionSyntax ||
-               node is AnonymousMethodExpressionSyntax ||
-               node is LocalFunctionStatementSyntax;
-    }
-
-    /// <summary>
-    /// Extracts the end-of-line trivia from an existing node to match the file's line ending style.
-    /// </summary>
-    private static SyntaxTrivia GetEndOfLineTrivia(SyntaxNode node)
-    {
-        for (var current = node; current != null; current = current.Parent)
-        {
-            foreach (var trivia in current.GetLeadingTrivia())
-            {
-                if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-                    return trivia;
-            }
-
-            foreach (var trivia in current.GetTrailingTrivia())
-            {
-                if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-                    return trivia;
-            }
-        }
-
-        var firstEol = node.SyntaxTree.GetRoot().DescendantTokens()
-            .SelectMany(t => t.TrailingTrivia)
-            .FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
-        if (firstEol != default)
-            return firstEol;
-
-        return SyntaxFactory.LineFeed;
-    }
-
-    /// <summary>
-    /// Returns the end-of-line string ("\n" or "\r\n") used by the file containing the given node.
-    /// </summary>
     private static string GetEndOfLineString(SyntaxNode node)
     {
         foreach (var trivia in node.DescendantTrivia())
@@ -768,27 +676,4 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         return "\n";
     }
 
-    private static string NormalizeWhitespace(string text)
-    {
-        var sb = new StringBuilder(text.Length);
-        var lastWasSpace = false;
-        foreach (var c in text)
-        {
-            if (char.IsWhiteSpace(c))
-            {
-                if (!lastWasSpace)
-                {
-                    sb.Append(' ');
-                    lastWasSpace = true;
-                }
-            }
-            else
-            {
-                sb.Append(c);
-                lastWasSpace = false;
-            }
-        }
-
-        return sb.ToString().Trim();
-    }
 }

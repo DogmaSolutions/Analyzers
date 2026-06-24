@@ -111,7 +111,7 @@ public sealed class DSA027CodeFixProvider : CodeFixProvider
         if (loopIndex < 0)
             return document;
 
-        var eol = GetEndOfLineTrivia(block);
+        var eol = SyntaxUtils.GetEndOfLineTrivia(block);
         var leadingTrivia = ((StatementSyntax)loop).GetLeadingTrivia();
 
         var sbDecl = SyntaxFactory.LocalDeclarationStatement(
@@ -293,14 +293,4 @@ public sealed class DSA027CodeFixProvider : CodeFixProvider
         return baseName + suffix;
     }
 
-    private static SyntaxTrivia GetEndOfLineTrivia(SyntaxNode node)
-    {
-        foreach (var trivia in node.DescendantTrivia())
-        {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-                return trivia;
-        }
-
-        return SyntaxFactory.LineFeed;
-    }
 }

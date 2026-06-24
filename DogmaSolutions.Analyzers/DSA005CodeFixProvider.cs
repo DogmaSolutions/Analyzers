@@ -139,7 +139,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
             });
 
         var firstStmtTrivia = body.Statements.First().GetLeadingTrivia();
-        var eolTrivia = GetEndOfLineTrivia(body);
+        var eolTrivia = SyntaxUtils.GetEndOfLineTrivia(body);
 
         var declarations = new List<StatementSyntax>();
         foreach (var group in extractableGroups)
@@ -608,7 +608,7 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
         for (var i = 1; i < parts.Length; i++)
             name = SyntaxFactory.QualifiedName(name, SyntaxFactory.IdentifierName(parts[i]));
 
-        var eol = GetEndOfLineTrivia(compilationUnit);
+        var eol = SyntaxUtils.GetEndOfLineTrivia(compilationUnit);
         var usingDirective = SyntaxFactory.UsingDirective(name).NormalizeWhitespace().WithTrailingTrivia(eol);
 
         return compilationUnit.AddUsings(usingDirective);
@@ -684,17 +684,6 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
             suffix++;
 
         return baseName + suffix;
-    }
-
-    private static SyntaxTrivia GetEndOfLineTrivia(SyntaxNode node)
-    {
-        foreach (var trivia in node.DescendantTrivia())
-        {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-                return trivia;
-        }
-
-        return SyntaxFactory.LineFeed;
     }
 
     #endregion

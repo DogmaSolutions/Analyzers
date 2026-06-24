@@ -72,7 +72,7 @@ public sealed class DSA022CodeFixProvider : CodeFixProvider
         var variableName = GenerateVariableName(expression);
         variableName = ResolveNameConflicts(variableName, loopNode.Parent);
 
-        var expressionText = NormalizeWhitespace(expression.ToString());
+        var expressionText = SyntaxUtils.NormalizeWhitespace(expression.ToString());
         var loopBody = GetLoopBody(loopNode);
         if (loopBody == null)
             return document;
@@ -83,7 +83,7 @@ public sealed class DSA022CodeFixProvider : CodeFixProvider
             var body = GetLoopBody(newLoop);
             var current = body?.DescendantNodesAndSelf()
                 .OfType<BinaryExpressionSyntax>()
-                .FirstOrDefault(b => NormalizeWhitespace(b.ToString()) == expressionText);
+                .FirstOrDefault(b => SyntaxUtils.NormalizeWhitespace(b.ToString()) == expressionText);
 
             if (current == null)
                 break;
@@ -95,7 +95,7 @@ public sealed class DSA022CodeFixProvider : CodeFixProvider
         }
 
         var loopLeadingTrivia = loopStatement.GetLeadingTrivia();
-        var eolTrivia = GetEndOfLineTrivia(loopStatement);
+        var eolTrivia = SyntaxUtils.GetEndOfLineTrivia(loopStatement);
 
         var variableDeclaration = SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
@@ -185,38 +185,4 @@ public sealed class DSA022CodeFixProvider : CodeFixProvider
         return baseName + suffix;
     }
 
-    private static SyntaxTrivia GetEndOfLineTrivia(SyntaxNode node)
-    {
-        foreach (var trivia in node.DescendantTrivia())
-        {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-                return trivia;
-        }
-
-        return SyntaxFactory.LineFeed;
-    }
-
-    private static string NormalizeWhitespace(string text)
-    {
-        var chars = new List<char>(text.Length);
-        var lastWasSpace = false;
-        foreach (var c in text)
-        {
-            if (char.IsWhiteSpace(c))
-            {
-                if (!lastWasSpace)
-                {
-                    chars.Add(' ');
-                    lastWasSpace = true;
-                }
-            }
-            else
-            {
-                chars.Add(c);
-                lastWasSpace = false;
-            }
-        }
-
-        return new string(chars.ToArray()).Trim();
-    }
 }

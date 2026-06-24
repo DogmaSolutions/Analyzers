@@ -333,27 +333,7 @@ internal static class CheckThenActUtils
         if (receiver == null)
             return string.Empty;
 
-        var text = receiver.ToString();
-        var sb = new System.Text.StringBuilder(text.Length);
-        var lastWasSpace = false;
-        foreach (var c in text)
-        {
-            if (char.IsWhiteSpace(c))
-            {
-                if (!lastWasSpace)
-                {
-                    sb.Append(' ');
-                    lastWasSpace = true;
-                }
-            }
-            else
-            {
-                sb.Append(c);
-                lastWasSpace = false;
-            }
-        }
-
-        return sb.ToString().Trim();
+        return SyntaxUtils.NormalizeWhitespace(receiver.ToString());
     }
 
     private static bool IsFalseLiteral(ExpressionSyntax expression)
