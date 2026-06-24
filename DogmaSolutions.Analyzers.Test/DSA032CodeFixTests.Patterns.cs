@@ -6,15 +6,181 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace DogmaSolutions.Analyzers.Test;
 
-[TestClass]
 public partial class DSA032CodeFixTests
 {
+
+   [TestMethod]
+   public async Task ClassField_StringInNestedBlocks()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process(bool a, bool b)
+        {
+            if (a)
+            {
+                if (b)
+                {
+                    var x = {|#0:""repeated value""|};
+                }
+                var y = {|#1:""repeated value""|};
+            }
+            var z = {|#2:""repeated value""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        private const string RepeatedValue = ""repeated value"";
+        public void Process(bool a, bool b)
+        {
+            if (a)
+            {
+                if (b)
+                {
+                    var x = RepeatedValue;
+                }
+                var y = RepeatedValue;
+            }
+            var z = RepeatedValue;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.ClassFieldEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("repeated value", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("repeated value", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("repeated value", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
    // ──────────────────────────────────────────────────────────────────────────
-   //  Local constant fix
+   //  Naming edge cases
    // ──────────────────────────────────────────────────────────────────────────
 
    [TestMethod]
-   public async Task LocalConst_BasicExtraction()
+   public async Task LocalConst_StringWithSpecialChars()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""key=value;host=prod""|};
+            var b = {|#1:""key=value;host=prod""|};
+            var c = {|#2:""key=value;host=prod""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            const string KeyValueHostProd = ""key=value;host=prod"";
+            var a = KeyValueHostProd;
+            var b = KeyValueHostProd;
+            var c = KeyValueHostProd;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("key=value;host=prod", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("key=value;host=prod", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("key=value;host=prod", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task LocalConst_StringWithDots()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""app.settings.value""|};
+            var b = {|#1:""app.settings.value""|};
+            var c = {|#2:""app.settings.value""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            const string AppSettingsValue = ""app.settings.value"";
+            var a = AppSettingsValue;
+            var b = AppSettingsValue;
+            var c = AppSettingsValue;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("app.settings.value", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("app.settings.value", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("app.settings.value", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   // ──────────────────────────────────────────────────────────────────────────
+   //  Known replacement fix — file optionality
+   // ──────────────────────────────────────────────────────────────────────────
+
+   [TestMethod]
+   public async Task UseReplacement_FileNotPresent_StandardFixesStillWork()
    {
       var source = @"
 namespace TestApp
@@ -64,7 +230,7 @@ namespace TestApp
    }
 
    [TestMethod]
-   public async Task LocalConst_StringWithSpaces()
+   public async Task UseReplacement_EmptyFile_StandardFixesStillWork()
    {
       var source = @"
 namespace TestApp
@@ -73,57 +239,6 @@ namespace TestApp
     {
         public void Process()
         {
-            var a = {|#0:""hello world value""|};
-            var b = {|#1:""hello world value""|};
-            var c = {|#2:""hello world value""|};
-        }
-    }
-}";
-
-      var fixedSource = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            const string HelloWorldValue = ""hello world value"";
-            var a = HelloWorldValue;
-            var b = HelloWorldValue;
-            var c = HelloWorldValue;
-        }
-    }
-}";
-
-      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
-      test.TestCode = source;
-      test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("hello world value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("hello world value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("hello world value", 3));
-
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task LocalConst_NameConflictResolution()
-   {
-      var source = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            var ConnectionStringsSecret = ""other"";
             var a = {|#0:""ConnectionStrings:Secret""|};
             var b = {|#1:""ConnectionStrings:Secret""|};
             var c = {|#2:""ConnectionStrings:Secret""|};
@@ -137,107 +252,6 @@ namespace TestApp
     public class MyService
     {
         public void Process()
-        {
-            var ConnectionStringsSecret = ""other"";
-            const string ConnectionStringsSecret1 = ""ConnectionStrings:Secret"";
-            var a = ConnectionStringsSecret1;
-            var b = ConnectionStringsSecret1;
-            var c = ConnectionStringsSecret1;
-        }
-    }
-}";
-
-      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
-      test.TestCode = source;
-      test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
-
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task LocalConst_InMethodArguments()
-   {
-      var source = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            System.Console.WriteLine({|#0:""repeated value""|});
-            System.Console.WriteLine({|#1:""repeated value""|});
-            System.Console.WriteLine({|#2:""repeated value""|});
-        }
-    }
-}";
-
-      var fixedSource = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            const string RepeatedValue = ""repeated value"";
-            System.Console.WriteLine(RepeatedValue);
-            System.Console.WriteLine(RepeatedValue);
-            System.Console.WriteLine(RepeatedValue);
-        }
-    }
-}";
-
-      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
-      test.TestCode = source;
-      test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("repeated value", 3));
-
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task LocalConst_InConstructor()
-   {
-      var source = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public MyService()
-        {
-            var a = {|#0:""ConnectionStrings:Secret""|};
-            var b = {|#1:""ConnectionStrings:Secret""|};
-            var c = {|#2:""ConnectionStrings:Secret""|};
-        }
-    }
-}";
-
-      var fixedSource = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public MyService()
         {
             const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
             var a = ConnectionStringsSecret;
@@ -252,6 +266,8 @@ namespace TestApp
       test.FixedCode = fixedSource;
       test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, string.Empty));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, string.Empty));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
             .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
@@ -265,12 +281,8 @@ namespace TestApp
       await test.RunAsync().ConfigureAwait(false);
    }
 
-   // ──────────────────────────────────────────────────────────────────────────
-   //  Multiline statement scenarios
-   // ──────────────────────────────────────────────────────────────────────────
-
    [TestMethod]
-   public async Task LocalConst_MultilineAssignment()
+   public async Task UseReplacement_CommentsOnlyFile_StandardFixesStillWork()
    {
       var source = @"
 namespace TestApp
@@ -279,12 +291,9 @@ namespace TestApp
     {
         public void Process()
         {
-            var a =
-                {|#0:""ConnectionStrings:Secret""|};
-            var b =
-                {|#1:""ConnectionStrings:Secret""|};
-            var c =
-                {|#2:""ConnectionStrings:Secret""|};
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
         }
     }
 }";
@@ -297,21 +306,24 @@ namespace TestApp
         public void Process()
         {
             const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
-            var a =
-                ConnectionStringsSecret;
-            var b =
-                ConnectionStringsSecret;
-            var c =
-                ConnectionStringsSecret;
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
         }
     }
 }";
+
+      var fileContent = @"# This file is intentionally left with comments only
+# No actual replacements
+";
 
       var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
       test.TestCode = source;
       test.FixedCode = fixedSource;
       test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, fileContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, fileContent));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
             .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
@@ -326,26 +338,18 @@ namespace TestApp
    }
 
    [TestMethod]
-   public async Task LocalConst_MultilineMethodCall()
+   public async Task UseReplacement_NoMatchingEntry_StandardFixesStillWork()
    {
       var source = @"
 namespace TestApp
 {
     public class MyService
     {
-        private string Combine(string a, string b) => a + b;
-
         public void Process()
         {
-            var a = Combine(
-                {|#0:""repeated value""|},
-                ""other"");
-            var b = Combine(
-                {|#1:""repeated value""|},
-                ""other2"");
-            var c = Combine(
-                {|#2:""repeated value""|},
-                ""other3"");
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
         }
     }
 }";
@@ -355,20 +359,12 @@ namespace TestApp
 {
     public class MyService
     {
-        private string Combine(string a, string b) => a + b;
-
         public void Process()
         {
-            const string RepeatedValue = ""repeated value"";
-            var a = Combine(
-                RepeatedValue,
-                ""other"");
-            var b = Combine(
-                RepeatedValue,
-                ""other2"");
-            var c = Combine(
-                RepeatedValue,
-                ""other3"");
+            const string ConnectionStringsSecret = ""ConnectionStrings:Secret"";
+            var a = ConnectionStringsSecret;
+            var b = ConnectionStringsSecret;
+            var c = ConnectionStringsSecret;
         }
     }
 }";
@@ -378,26 +374,39 @@ namespace TestApp
       test.FixedCode = fixedSource;
       test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`SomeUnrelatedString` -> `Replacement.Value`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`SomeUnrelatedString` -> `Replacement.Value`"));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("repeated value", 3));
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("repeated value", 3));
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("repeated value", 3));
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
 
       await test.RunAsync().ConfigureAwait(false);
    }
 
    // ──────────────────────────────────────────────────────────────────────────
-   //  Whitespace and newline variations
+   //  Known replacement fix — code chunk replacements
    // ──────────────────────────────────────────────────────────────────────────
 
    [TestMethod]
-   public async Task LocalConst_ExtraBlankLinesBetweenStatements()
+   public async Task UseReplacement_MemberAccessExpression()
    {
+      var stubs = @"
+namespace TestApp
+{
+    public static class MyConstants
+    {
+        public const string SecretConnection = ""ConnectionStrings:Secret"";
+    }
+}";
+
       var source = @"
 namespace TestApp
 {
@@ -405,11 +414,9 @@ namespace TestApp
     {
         public void Process()
         {
-            var a = {|#0:""repeated value""|};
-
-            var b = {|#1:""repeated value""|};
-
-            var c = {|#2:""repeated value""|};
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
         }
     }
 }";
@@ -421,12 +428,9 @@ namespace TestApp
     {
         public void Process()
         {
-            const string RepeatedValue = ""repeated value"";
-            var a = RepeatedValue;
-
-            var b = RepeatedValue;
-
-            var c = RepeatedValue;
+            var a = MyConstants.SecretConnection;
+            var b = MyConstants.SecretConnection;
+            var c = MyConstants.SecretConnection;
         }
     }
 }";
@@ -434,23 +438,86 @@ namespace TestApp
       var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
       test.TestCode = source;
       test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":MyConstants.SecretConnection";
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.SecretConnection`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `MyConstants.SecretConnection`"));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("repeated value", 3));
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("repeated value", 3));
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("repeated value", 3));
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
 
       await test.RunAsync().ConfigureAwait(false);
    }
 
    [TestMethod]
-   public async Task LocalConst_StringsWithLeadingWhitespace()
+   public async Task UseReplacement_SimpleIdentifier()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        private const string SecretConnectionString = ""ConnectionStrings:Secret"";
+
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        private const string SecretConnectionString = ""ConnectionStrings:Secret"";
+
+        public void Process()
+        {
+            var a = SecretConnectionString;
+            var b = SecretConnectionString;
+            var c = SecretConnectionString;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":SecretConnectionString";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `SecretConnectionString`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `SecretConnectionString`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_StringLiteralCodeChunk()
    {
       var source = @"
 namespace TestApp
@@ -459,9 +526,9 @@ namespace TestApp
     {
         public void Process()
         {
-            var a =     {|#0:""repeated value""|};
-            var b =     {|#1:""repeated value""|};
-            var c =     {|#2:""repeated value""|};
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
         }
     }
 }";
@@ -473,10 +540,9 @@ namespace TestApp
     {
         public void Process()
         {
-            const string RepeatedValue = ""repeated value"";
-            var a =     RepeatedValue;
-            var b =     RepeatedValue;
-            var c =     RepeatedValue;
+            var a = ""ReplacedValue"";
+            var b = ""ReplacedValue"";
+            var c = ""ReplacedValue"";
         }
     }
 }";
@@ -484,28 +550,175 @@ namespace TestApp
       var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
       test.TestCode = source;
       test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + @":""ReplacedValue""";
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.NumberOfFixAllIterations = 1;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         @"`ConnectionStrings:Secret` -> `""ReplacedValue""`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         @"`ConnectionStrings:Secret` -> `""ReplacedValue""`"));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("repeated value", 3));
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("repeated value", 3));
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("repeated value", 3));
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
+      test.FixedState.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithSpan(8, 21, 8, 36).WithArguments("ReplacedValue", 3));
+      test.FixedState.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithSpan(9, 21, 9, 36).WithArguments("ReplacedValue", 3));
+      test.FixedState.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithSpan(10, 21, 10, 36).WithArguments("ReplacedValue", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_NameofExpression()
+   {
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""MyService""|};
+            var b = {|#1:""MyService""|};
+            var c = {|#2:""MyService""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = nameof(MyService);
+            var b = nameof(MyService);
+            var c = nameof(MyService);
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":nameof(MyService)";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`MyService` -> `nameof(MyService)`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`MyService` -> `nameof(MyService)`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("MyService", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("MyService", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("MyService", 3));
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task UseReplacement_DeepMemberAccess()
+   {
+      var stubs = @"
+namespace TestApp
+{
+    public static class Config
+    {
+        public static class Keys
+        {
+            public const string Secret = ""ConnectionStrings:Secret"";
+        }
+    }
+}";
+
+      var source = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
+        }
+    }
+}";
+
+      var fixedSource = @"
+namespace TestApp
+{
+    public class MyService
+    {
+        public void Process()
+        {
+            var a = Config.Keys.Secret;
+            var b = Config.Keys.Secret;
+            var c = Config.Keys.Secret;
+        }
+    }
+}";
+
+      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = fixedSource;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":Config.Keys.Secret";
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `Config.Keys.Secret`"));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName,
+         "`ConnectionStrings:Secret` -> `Config.Keys.Secret`"));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
+      test.ExpectedDiagnostics.Add(
+         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
 
       await test.RunAsync().ConfigureAwait(false);
    }
 
    // ──────────────────────────────────────────────────────────────────────────
-   //  Comment scenarios
+   //  Known replacement fix — multiple replacements for same string
    // ──────────────────────────────────────────────────────────────────────────
 
    [TestMethod]
-   public async Task LocalConst_CommentOnPreviousLine()
+   public async Task UseReplacement_MultipleReplacementsForSameString_FirstOption()
    {
+      var stubs = @"
+namespace TestApp
+{
+    public static class ConstantsA
+    {
+        public const string Secret = ""ConnectionStrings:Secret"";
+    }
+    public static class ConstantsB
+    {
+        public const string ConnStr = ""ConnectionStrings:Secret"";
+    }
+}";
+
       var source = @"
 namespace TestApp
 {
@@ -513,12 +726,9 @@ namespace TestApp
     {
         public void Process()
         {
-            // This is the first usage
-            var a = {|#0:""repeated value""|};
-            // This is the second usage
-            var b = {|#1:""repeated value""|};
-            // This is the third usage
-            var c = {|#2:""repeated value""|};
+            var a = {|#0:""ConnectionStrings:Secret""|};
+            var b = {|#1:""ConnectionStrings:Secret""|};
+            var c = {|#2:""ConnectionStrings:Secret""|};
         }
     }
 }";
@@ -530,241 +740,34 @@ namespace TestApp
     {
         public void Process()
         {
-            const string RepeatedValue = ""repeated value"";
-            // This is the first usage
-            var a = RepeatedValue;
-            // This is the second usage
-            var b = RepeatedValue;
-            // This is the third usage
-            var c = RepeatedValue;
+            var a = ConstantsA.Secret;
+            var b = ConstantsA.Secret;
+            var c = ConstantsA.Secret;
         }
     }
 }";
+
+      var replacementsContent = @"`ConnectionStrings:Secret` -> `ConstantsA.Secret`
+`ConnectionStrings:Secret` -> `ConstantsB.ConnStr`";
 
       var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
       test.TestCode = source;
       test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
+      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.UseReplacementEquivalenceKey + ":ConstantsA.Secret";
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+      test.TestState.Sources.Add(("Stubs.cs", stubs));
+      test.FixedState.Sources.Add(("Stubs.cs", stubs));
+      test.TestState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
+      test.FixedState.AdditionalFiles.Add((DSA032Analyzer.StringReplacementsFileName, replacementsContent));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("repeated value", 3));
+            .WithLocation(0).WithArguments("ConnectionStrings:Secret", 3));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("repeated value", 3));
+            .WithLocation(1).WithArguments("ConnectionStrings:Secret", 3));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("repeated value", 3));
-
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task LocalConst_CommentOnNextLine()
-   {
-      var source = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            var a = {|#0:""repeated value""|};
-            // comment after first
-            var b = {|#1:""repeated value""|};
-            // comment after second
-            var c = {|#2:""repeated value""|};
-            // comment after third
-        }
-    }
-}";
-
-      var fixedSource = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            const string RepeatedValue = ""repeated value"";
-            var a = RepeatedValue;
-            // comment after first
-            var b = RepeatedValue;
-            // comment after second
-            var c = RepeatedValue;
-            // comment after third
-        }
-    }
-}";
-
-      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
-      test.TestCode = source;
-      test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("repeated value", 3));
-
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task LocalConst_InlineCommentAfterString()
-   {
-      var source = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            var a = {|#0:""repeated value""|}; // inline comment
-            var b = {|#1:""repeated value""|}; // another inline comment
-            var c = {|#2:""repeated value""|}; // yet another
-        }
-    }
-}";
-
-      var fixedSource = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            const string RepeatedValue = ""repeated value"";
-            var a = RepeatedValue; // inline comment
-            var b = RepeatedValue; // another inline comment
-            var c = RepeatedValue; // yet another
-        }
-    }
-}";
-
-      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
-      test.TestCode = source;
-      test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("repeated value", 3));
-
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task LocalConst_BlockCommentBeforeString()
-   {
-      var source = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            var a = /* before */ {|#0:""repeated value""|};
-            var b = /* before */ {|#1:""repeated value""|};
-            var c = /* before */ {|#2:""repeated value""|};
-        }
-    }
-}";
-
-      var fixedSource = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            const string RepeatedValue = ""repeated value"";
-            var a = /* before */ RepeatedValue;
-            var b = /* before */ RepeatedValue;
-            var c = /* before */ RepeatedValue;
-        }
-    }
-}";
-
-      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
-      test.TestCode = source;
-      test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("repeated value", 3));
-
-      await test.RunAsync().ConfigureAwait(false);
-   }
-
-   [TestMethod]
-   public async Task LocalConst_MixedComments()
-   {
-      var source = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            // comment on previous line
-            var a = {|#0:""repeated value""|};
-            var b = /* before */ {|#1:""repeated value""|}; // after
-            var c = {|#2:""repeated value""|};
-            // comment on next line
-        }
-    }
-}";
-
-      var fixedSource = @"
-namespace TestApp
-{
-    public class MyService
-    {
-        public void Process()
-        {
-            const string RepeatedValue = ""repeated value"";
-            // comment on previous line
-            var a = RepeatedValue;
-            var b = /* before */ RepeatedValue; // after
-            var c = RepeatedValue;
-            // comment on next line
-        }
-    }
-}";
-
-      var test = new CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Test();
-      test.TestCode = source;
-      test.FixedCode = fixedSource;
-      test.CodeActionEquivalenceKey = DSA032CodeFixProvider.LocalConstEquivalenceKey;
-      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(0).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(1).WithArguments("repeated value", 3));
-      test.ExpectedDiagnostics.Add(
-         CSharpCodeFixVerifier<DSA032Analyzer, DSA032CodeFixProvider>.Diagnostic(DSA032Analyzer.DiagnosticId)
-            .WithLocation(2).WithArguments("repeated value", 3));
+            .WithLocation(2).WithArguments("ConnectionStrings:Secret", 3));
 
       await test.RunAsync().ConfigureAwait(false);
    }
