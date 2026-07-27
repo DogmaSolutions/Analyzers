@@ -56,7 +56,11 @@ public sealed class DSA035CodeFixProvider : CodeFixProvider
         if (root == null)
             return document;
 
-        var loopNode = DSA022CodeFixProvider.FindContainingLoop(expression);
+        ExpressionSyntax hoistTarget = expression.Parent is ConditionalAccessExpressionSyntax ca
+            ? ca
+            : expression;
+
+        var loopNode = DSA022CodeFixProvider.FindContainingLoop(hoistTarget);
         if (loopNode == null)
             return document;
 
@@ -71,18 +75,25 @@ public sealed class DSA035CodeFixProvider : CodeFixProvider
         var variableName = GenerateVariableName(expression);
         variableName = DSA022CodeFixProvider.ResolveNameConflicts(variableName, loopNode.Parent);
 
-        var expressionText = SyntaxUtils.NormalizeWhitespace(expression.ToString());
+        var targetText = SyntaxUtils.NormalizeWhitespace(hoistTarget.ToString());
         var loopBody = DSA022CodeFixProvider.GetLoopBody(loopNode);
         if (loopBody == null)
             return document;
 
+        var isConditionalAccess = hoistTarget is ConditionalAccessExpressionSyntax;
         var newLoop = loopNode;
         for (;;)
         {
             var body = DSA022CodeFixProvider.GetLoopBody(newLoop);
-            var current = body?.DescendantNodesAndSelf()
-                .OfType<InvocationExpressionSyntax>()
-                .FirstOrDefault(inv => SyntaxUtils.NormalizeWhitespace(inv.ToString()) == expressionText);
+            SyntaxNode current;
+            if (isConditionalAccess)
+                current = body?.DescendantNodesAndSelf()
+                    .OfType<ConditionalAccessExpressionSyntax>()
+                    .FirstOrDefault(n => SyntaxUtils.NormalizeWhitespace(n.ToString()) == targetText);
+            else
+                current = body?.DescendantNodesAndSelf()
+                    .OfType<InvocationExpressionSyntax>()
+                    .FirstOrDefault(inv => SyntaxUtils.NormalizeWhitespace(inv.ToString()) == targetText);
 
             if (current == null)
                 break;
@@ -102,7 +113,7 @@ public sealed class DSA035CodeFixProvider : CodeFixProvider
                     SyntaxFactory.SingletonSeparatedList(
                         SyntaxFactory.VariableDeclarator(variableName)
                             .WithInitializer(SyntaxFactory.EqualsValueClause(
-                                expression.WithoutTrivia())))))
+                                hoistTarget.WithoutTrivia())))))
             .NormalizeWhitespace()
             .WithLeadingTrivia(loopLeadingTrivia)
             .WithTrailingTrivia(eolTrivia);
@@ -133,6 +144,13 @@ public sealed class DSA035CodeFixProvider : CodeFixProvider
             else if (memberAccess.Expression is InvocationExpressionSyntax chainedCall &&
                      chainedCall.Expression is MemberAccessExpressionSyntax chainedMember)
                 receiverName = chainedMember.Name.Identifier.ValueText;
+        }
+        else if (invocation.Expression is MemberBindingExpressionSyntax memberBinding &&
+                 invocation.Parent is ConditionalAccessExpressionSyntax ca)
+        {
+            methodName = memberBinding.Name.Identifier.ValueText;
+            if (ca.Expression is IdentifierNameSyntax caReceiver)
+                receiverName = caReceiver.Identifier.ValueText;
         }
 
         if (receiverName != null && methodName != null)
