@@ -19,6 +19,20 @@
         <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.CodeRefactoring.Testing.MSTest" Version="1.*" />
     </ItemGroup>
 
+    <!-- CI reporting: coverlet.collector provides the "XPlat Code Coverage" collector; JUnitXml.TestLogger
+         emits the per-assembly JUnit report GitLab's Tests tab parses. Both ship their assets into the
+         test output so they are discoverable at `dotnet test` time without a rebuild. -->
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="JUnitXml.TestLogger" Version="3.1.12">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\DogmaSolutions.Analyzers\DogmaSolutions.Analyzers.csproj" />
     </ItemGroup>
