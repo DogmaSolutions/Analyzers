@@ -16,6 +16,7 @@ include:
       - '/templates/security.yml'              # nuget-audit + OWASP dependency-check (pre/post deploy)
       - '/templates/deploy.yml'                # publish-nuget (-> GitLab registry) + git-tag
       - '/templates/git-notes.yml'             # combine-notes (.post): CI results as git notes
+      - '/templates/signing.yml'               # verify-strong-name gate (+ opt-in Authenticode)
 
 variables:
   CI_TEMPLATES_REF: 'main'
