@@ -5,7 +5,7 @@
 # (3) it ships a NuGet analyzer package -> GitLab Package Registry (no nuget.org, per locked arch).
 include:
   - project: 'global/ci-templates'
-    ref: feat/test-by-version
+    ref: main
     file:
       - '/templates/workflow.yml'              # vars, GIT_CLONE_PATH (shared checkout), cache
       - '/templates/branch-rules.yml'          # GitFlow version rules
@@ -18,7 +18,7 @@ include:
       - '/templates/git-notes.yml'             # combine-notes (.post): CI results as git notes
 
 variables:
-  CI_TEMPLATES_REF: 'feat/test-by-version'
+  CI_TEMPLATES_REF: 'main'
   # main is the active branch here (develop is stale); both map to the stable version rule.
   PACKAGE_VERSION_MAJOR_MINOR_DEVELOP: '1.2'
   PACKAGE_VERSION_MAJOR_MINOR_STABLE: '1.2'
