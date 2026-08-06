@@ -726,4 +726,21 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  * Wikipedia: Reflection (computer programming) - https://en.wikipedia.org/wiki/Reflection_(computer_programming)
  */</value>
   </data>
+  <data name="DSA036AnalyzerDescription" xml:space="preserve">
+    <value>A Regex object is created at runtime with a pattern (and options, timeout) that are compile-time constants or effectively immutable values. Each such creation allocates a new Regex instance and parses the pattern from scratch — an expensive operation involving finite automaton construction. When the pattern never changes, the Regex should be created once in a private static readonly field and reused across all invocations. This eliminates redundant allocations and parsing, particularly in hot paths and loops. The same applies to static Regex methods (IsMatch, Match, Replace, Split, etc.) which internally create and cache Regex instances with a bounded cache (15 entries by default) — exceeding that cache causes eviction and re-parsing. Pre-allocating a static readonly Regex field guarantees zero cache pressure and consistent O(1) instance retrieval. Security-wise, unbounded Regex allocations inside a tight loop or a request-processing pipeline can be exploited for denial-of-service: an attacker who can trigger the code path repeatedly forces the server to waste CPU cycles on redundant pattern parsing and increases GC pressure. In the context of IEC 62443 certification, this supports FR 7 (Resource Availability) by ensuring that computational resources are not wasted on redundant object construction (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md).</value>
+  </data>
+  <data name="DSA036AnalyzerMessageFormat" xml:space="preserve">
+    <value>'{0}' uses a constant pattern and should be extracted to a private static readonly field to avoid repeated allocation and parsing</value>
+  </data>
+  <data name="DSA036AnalyzerTitle" xml:space="preserve">
+    <value>Extract Regex with constant pattern to a static readonly field</value>
+  </data>
+  <data name="DSA036ReviewComment" xml:space="preserve">
+    <value>/* [DSA036 / CySec + QA + Performance]: Extract Regex with constant pattern to a static readonly field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md)
+ * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+ * MITRE, CWE-405: Asymmetric Resource Consumption (Amplification) - https://cwe.mitre.org/data/definitions/405.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ * Microsoft: .NET Regular Expression Best Practices - https://learn.microsoft.com/en-us/dotnet/standard/base-types/best-practices-regex
+ */</value>
+  </data>
 </root>
