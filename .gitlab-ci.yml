@@ -15,7 +15,7 @@ include:
       - '/templates/sbom.yml'                  # generate-sbom (SPDX) in the 'sbom' stage
       - '/templates/security.yml'              # nuget-audit + OWASP dependency-check (pre/post deploy)
       - '/templates/deploy.yml'                # publish-nuget (-> GitLab registry) + git-tag
-      - '/templates/git-notes.yml'             # combine-notes (.post): CI results as git notes
+      - '/templates/git-notes.yml'             # record-ci-results-as-git-notes (.post): CI results as git notes
       - '/templates/signing.yml'               # verify-strong-name gate (+ opt-in Authenticode)
 
 variables:
@@ -42,7 +42,7 @@ stages:
   - deploy
   - post-deploy-security-gate
   - pages
-  # .post (git-notes combine-notes + cleanup) runs implicitly last
+  # .post (git-notes record-ci-results-as-git-notes + cleanup) runs implicitly last
 
 # ---- single test job (net9.0, MSTest) — analyzer tests are single-TFM, so no version matrix ----
 test:
@@ -77,8 +77,12 @@ cleanup:
   image: ci-toolchain:net8
   variables:
     GIT_STRATEGY: none
+  # must run AFTER record-ci-results-as-git-notes: cleanup wipes C:\builds\<pid> (which holds the sibling
+  # ci-templates checkout that record-ci-results-as-git-notes needs). The job was renamed from 'combine-notes';
+  # the stale reference made this optional need never match, so cleanup DAG-jumped to the front and wiped the
+  # shared checkout mid-pipeline. optional -> still runs if record-ci-results-as-git-notes is skipped.
   needs:
-    - job: combine-notes
+    - job: record-ci-results-as-git-notes
       optional: true
   allow_failure: true
   rules:
