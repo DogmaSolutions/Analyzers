@@ -4,7 +4,7 @@
 # single `test` job replaces the per-.NET-version matrix (test-by-version.yml is NOT included);
 # (3) it ships a NuGet analyzer package -> GitLab Package Registry (no nuget.org, per locked arch).
 include:
-  - project: 'global/ci-templates'
+  - project: 'global/ci-tools/ci-templates'
     ref: main
     file:
       - '/templates/workflow.yml'              # vars, GIT_CLONE_PATH (shared checkout), cache
