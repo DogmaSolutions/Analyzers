@@ -221,6 +221,22 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
             return $"{leftKey}.{memberAccess.Name.Identifier.ValueText}";
         }
 
+        // An invocation inside the receiver chain (e.g. callSite.GetValue(nameof(Pippo)) in
+        // callSite.GetValue(nameof(Pippo)).First()) must be keyed by BOTH the invoked member and
+        // its arguments. Resolving it through the symbol fallback below keys it by the method
+        // symbol alone, discarding the arguments, so two calls differing only by their arguments
+        // (nameof(Pippo) vs nameof(Pluto)) would collapse to the same receiver key and be reported
+        // as false duplicates. Recurse into the invoked expression and append the normalized
+        // argument list so those calls stay distinct.
+        if (expr is InvocationExpressionSyntax invocation)
+        {
+            var targetKey = ResolveChainKey(invocation.Expression, model);
+            if (targetKey == null)
+                return null;
+
+            return $"{targetKey}{SyntaxUtils.NormalizeWhitespace(invocation.ArgumentList.ToString())}";
+        }
+
         var symbol = model.GetSymbolInfo(expr).Symbol;
         if (symbol == null)
             return null;
