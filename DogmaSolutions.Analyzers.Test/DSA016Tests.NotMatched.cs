@@ -362,6 +362,50 @@ public partial class DSA016Tests
             }"
         ],
         [
+            "Chained receiver: same tracked method, nested call differs only by a nameof() argument",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Pippo { public int Id; }
+                public class Pluto { public int Id; }
+                public class CallSite
+                {
+                    public IEnumerable<int> GetValue(string name) => new[] { 0 };
+                }
+                public class MyService
+                {
+                    public void Process(CallSite callSite)
+                    {
+                        var var1 = callSite.GetValue(nameof(Pippo)).First();
+                        var var2 = callSite.GetValue(nameof(Pluto)).First();
+                    }
+                }
+            }"
+        ],
+        [
+            "Chained receiver: same tracked method, nested call differs only by a string-literal argument",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class CallSite
+                {
+                    public IEnumerable<int> GetValue(string name) => new[] { 0 };
+                }
+                public class MyService
+                {
+                    public void Process(CallSite callSite)
+                    {
+                        var var1 = callSite.GetValue(""alpha"").First();
+                        var var2 = callSite.GetValue(""beta"").First();
+                    }
+                }
+            }"
+        ],
+        [
             "Same call in both branches of a ternary operator",
             @"
             using System.Collections.Generic;
