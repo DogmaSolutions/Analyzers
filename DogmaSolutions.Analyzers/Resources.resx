@@ -735,6 +735,15 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA036AnalyzerTitle" xml:space="preserve">
     <value>Extract Regex with constant pattern to a static readonly field</value>
   </data>
+  <data name="DSA037AnalyzerDescription" xml:space="preserve">
+    <value>A field marked with [ThreadStatic] and given a field initializer is a latent, hard-to-diagnose bug. A thread-static field initializer executes only for the single thread that first triggers the declaring type's static construction; on every other thread the field keeps its default value (null for a reference type such as System.Random), so the first use on those threads throws a NullReferenceException. The correct pattern is to leave the [ThreadStatic] field uninitialized and lazily assign a per-thread instance on first use (e.g. `_rnd ??= new Random();`), or to drop [ThreadStatic] entirely in favour of Random.Shared on .NET 6+. Because System.Random is not thread-safe, developers frequently reach for [ThreadStatic] to obtain a per-thread instance, which makes this a common footgun precisely in the code that was trying to be correct about threading (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md).</value>
+  </data>
+  <data name="DSA037AnalyzerMessageFormat" xml:space="preserve">
+    <value>The [ThreadStatic] field '{0}' has a field initializer, which runs only on the thread that first triggers static construction; every other thread will observe null. Remove the initializer and assign the Random per-thread on first use, or use Random.Shared.</value>
+  </data>
+  <data name="DSA037AnalyzerTitle" xml:space="preserve">
+    <value>A [ThreadStatic] Random field must not have a field initializer</value>
+  </data>
   <data name="DSA036ReviewComment" xml:space="preserve">
     <value>/* [DSA036 / CySec + QA + Performance]: Extract Regex with constant pattern to a static readonly field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md)
  * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html

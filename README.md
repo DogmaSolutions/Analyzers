@@ -91,6 +91,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA034](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA034.md) | Code Smell | Single-type file exceeds maximum line count | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA035](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA035.md) | Performance | Hoist loop-invariant reflection call out of loop | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA036](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md) | Performance | Extract Regex with constant pattern to a static readonly field | ℹ Info | ✅ | ✅ | ✅ |
+| [DSA037](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md) | Bug | A `[ThreadStatic]` `Random` field must not have a field initializer (only the first thread is initialized) | ⚠ Warning | ✅ | ❌ | ❌ |
 
 # Refactorings list
 
