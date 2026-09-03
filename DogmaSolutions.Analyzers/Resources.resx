@@ -735,6 +735,15 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA036AnalyzerTitle" xml:space="preserve">
     <value>Extract Regex with constant pattern to a static readonly field</value>
   </data>
+  <data name="DSA040AnalyzerDescription" xml:space="preserve">
+    <value>System.Random is a non-cryptographic pseudo-random generator: its output is fast but predictable, and must never be used to produce security-sensitive values such as tokens, passwords, salts, nonces, initialization vectors, session identifiers, API keys, OTPs or CSRF tokens. An attacker who can observe or reconstruct the generator state can predict future values and forge or guess these secrets. This rule flags Random output (any Next* method, including Random.Shared, and NextBytes into a buffer) that flows into a sink whose name matches a security term — a variable, field, property, parameter or return whose identifier contains a security word on a word boundary (so 'apiKey' and 'sessionId' match while 'keyboard' does not). It follows one assignment hop within a method and favours precision over recall: it is a lightweight name heuristic, not a taint engine. The fix is to use System.Security.Cryptography.RandomNumberGenerator (for example GetBytes or GetInt32). This complements the broad CA5394 with a low-noise, sink-aware signal (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA040.md).</value>
+  </data>
+  <data name="DSA040AnalyzerMessageFormat" xml:space="preserve">
+    <value>Do not use the non-cryptographic System.Random for a security-sensitive value; use System.Security.Cryptography.RandomNumberGenerator</value>
+  </data>
+  <data name="DSA040AnalyzerTitle" xml:space="preserve">
+    <value>Do not use System.Random for security-sensitive values</value>
+  </data>
   <data name="DSA036ReviewComment" xml:space="preserve">
     <value>/* [DSA036 / CySec + QA + Performance]: Extract Regex with constant pattern to a static readonly field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md)
  * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html

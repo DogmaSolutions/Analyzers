@@ -91,6 +91,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA034](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA034.md) | Code Smell | Single-type file exceeds maximum line count | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA035](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA035.md) | Performance | Hoist loop-invariant reflection call out of loop | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA036](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md) | Performance | Extract Regex with constant pattern to a static readonly field | ℹ Info | ✅ | ✅ | ✅ |
+| [DSA040](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA040.md) | Security | Do not use `System.Random` for security-sensitive values (token/salt/nonce/key); use `RandomNumberGenerator` | ⚠ Warning | ✅ | ❌ | ❌ |
 
 # Refactorings list
 
