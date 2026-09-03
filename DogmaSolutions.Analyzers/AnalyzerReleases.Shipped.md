@@ -42,3 +42,4 @@ DSA036  | Performance   | Info     | DSA036Analyzer
 DSA037  | Bug           | Warning  | DSA037Analyzer
 DSA038  | Bug           | Warning  | DSA038Analyzer
 DSA039  | Security      | Warning  | DSA039Analyzer
+DSA040  | Security      | Warning  | DSA040Analyzer
