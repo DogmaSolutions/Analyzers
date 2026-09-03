@@ -744,6 +744,15 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA037AnalyzerTitle" xml:space="preserve">
     <value>A [ThreadStatic] Random field must not have a field initializer</value>
   </data>
+  <data name="DSA038AnalyzerDescription" xml:space="preserve">
+    <value>Constructing System.Random with an explicit seed is almost always a mistake. When the seed is a time-based value such as Environment.TickCount or DateTime.UtcNow.Ticks, it merely reproduces what the parameterless `new Random()` constructor already does — but worse: the clock has low resolution, so two Random instances created within the same tick (for example inside a loop) are given the same seed and therefore produce the identical sequence of numbers. When the seed is a compile-time constant (for example `new Random(42)`), the sequence is fully deterministic and predictable, which is occasionally desirable for reproducible simulations or tests but is a defect in production code. Prefer the parameterless `new Random()` (or `Random.Shared` on .NET 6+), and reserve seeded construction for code that genuinely needs a reproducible sequence — where the rule can be downgraded per-path via .editorconfig. Never derive a seed from the current time by hand (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md).</value>
+  </data>
+  <data name="DSA038AnalyzerMessageFormat" xml:space="preserve">
+    <value>This Random is seeded with {0}. Prefer the parameterless 'new Random()' (or Random.Shared) unless a reproducible sequence is explicitly required.</value>
+  </data>
+  <data name="DSA038AnalyzerTitle" xml:space="preserve">
+    <value>Avoid seeding Random with a time-based or constant value</value>
+  </data>
   <data name="DSA036ReviewComment" xml:space="preserve">
     <value>/* [DSA036 / CySec + QA + Performance]: Extract Regex with constant pattern to a static readonly field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md)
  * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
