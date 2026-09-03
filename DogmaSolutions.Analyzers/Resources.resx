@@ -753,6 +753,15 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA038AnalyzerTitle" xml:space="preserve">
     <value>Avoid seeding Random with a time-based or constant value</value>
   </data>
+  <data name="DSA039AnalyzerDescription" xml:space="preserve">
+    <value>Bytes produced by System.Security.Cryptography.RandomNumberGenerator are uniformly distributed, but reducing them into a smaller range with the remainder operator (%) reintroduces bias unless the range size exactly divides the operand's value domain (e.g. 2^32 for an int). When it does not, the lower residues occur slightly more often than the higher ones, so the resulting value is no longer uniform — which silently weakens tokens, keys, PINs and other security-sensitive values and defeats the entire reason for choosing a cryptographic generator over System.Random. The correct API is RandomNumberGenerator.GetInt32(fromInclusive, toExclusive), which performs rejection sampling to produce an unbiased value in the requested range. This rule flags a % whose left operand is derived from RandomNumberGenerator output (via BitConverter conversion of, or indexing into, RNG-filled bytes, including a one-hop local buffer). It deliberately favours precision over recall and does not follow cross-method flow (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md).</value>
+  </data>
+  <data name="DSA039AnalyzerMessageFormat" xml:space="preserve">
+    <value>Reducing cryptographic random bytes with % introduces modulo bias; use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive)</value>
+  </data>
+  <data name="DSA039AnalyzerTitle" xml:space="preserve">
+    <value>Avoid modulo bias when reducing cryptographic random bytes into a range</value>
+  </data>
   <data name="DSA036ReviewComment" xml:space="preserve">
     <value>/* [DSA036 / CySec + QA + Performance]: Extract Regex with constant pattern to a static readonly field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md)
  * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
