@@ -120,6 +120,121 @@ public partial class DSA040Tests
                 }
             }"
         ],
+        [
+            "Security-named property with expression body",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    private Random rnd = new Random();
+                    public int SessionToken => {|#0:rnd.Next()|};
+                }
+            }"
+        ],
+        [
+            "Security-named property with block getter",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    private Random rnd = new Random();
+                    public int ApiKey { get { return {|#0:rnd.Next()|}; } }
+                }
+            }"
+        ],
+        [
+            "Security-named local function return",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public void M(Random rnd)
+                    {
+                        int GeneratePassword() => {|#0:rnd.Next()|};
+                        System.Console.WriteLine(GeneratePassword());
+                    }
+                }
+            }"
+        ],
+        [
+            "Random value as a named argument (token:)",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    private static void Consume(int token) { }
+                    public void M(Random rnd) => Consume(token: {|#0:rnd.Next()|});
+                }
+            }"
+        ],
+        [
+            "Random value as a positional argument to a security-named parameter",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    private static void Store(int password) { }
+                    public void M(Random rnd) => Store({|#0:rnd.Next()|});
+                }
+            }"
+        ],
+        [
+            "Assignment to a security-named member access target",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class Holder { public int Secret; }
+                public class MyType
+                {
+                    private Holder _h = new Holder();
+                    public void M(Random rnd) { _h.Secret = {|#0:rnd.Next()|}; }
+                }
+            }"
+        ],
+        [
+            "One-hop local returned from a security-named method",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public int NewToken(Random rnd)
+                    {
+                        var t = {|#0:rnd.Next()|};
+                        return t;
+                    }
+                }
+            }"
+        ],
+        [
+            "One-hop local passed to a security-named parameter",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    private static void Store(int password) { }
+                    public void M(Random rnd)
+                    {
+                        var t = {|#0:rnd.Next()|};
+                        Store(t);
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

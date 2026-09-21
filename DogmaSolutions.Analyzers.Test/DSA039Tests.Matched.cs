@@ -71,6 +71,64 @@ public partial class DSA039Tests
                 }
             }"
         ],
+        [
+            "Parenthesized RNG-derived operand (Unwrap parentheses)",
+            @"
+            using System;
+            using System.Security.Cryptography;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public int Roll(int n) => {|#0:(BitConverter.ToInt32(RandomNumberGenerator.GetBytes(4), 0)) % n|};
+                }
+            }"
+        ],
+        [
+            "Cast RNG-derived operand (Unwrap cast)",
+            @"
+            using System;
+            using System.Security.Cryptography;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public int Roll(int n) => {|#0:(int)BitConverter.ToInt64(RandomNumberGenerator.GetBytes(8), 0) % n|};
+                }
+            }"
+        ],
+        [
+            "Unchecked RNG-derived operand (Unwrap checked)",
+            @"
+            using System;
+            using System.Security.Cryptography;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public int Roll(int n) => {|#0:unchecked(BitConverter.ToInt32(RandomNumberGenerator.GetBytes(4), 0)) % n|};
+                }
+            }"
+        ],
+        [
+            "Instance GetNonZeroBytes fills the buffer",
+            @"
+            using System;
+            using System.Security.Cryptography;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public int Roll(int n)
+                    {
+                        byte[] b = new byte[4];
+                        using var rng = RandomNumberGenerator.Create();
+                        rng.GetNonZeroBytes(b);
+                        return {|#0:BitConverter.ToInt32(b, 0) % n|};
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

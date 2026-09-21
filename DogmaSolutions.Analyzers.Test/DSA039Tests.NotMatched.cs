@@ -62,6 +62,40 @@ public partial class DSA039Tests
                 }
             }"
         ],
+        [
+            "Local buffer never filled by an RNG (buffer-fill scan returns false)",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public int Roll(int n)
+                    {
+                        byte[] b = new byte[4];
+                        return BitConverter.ToInt32(b, 0) % n;
+                    }
+                }
+            }"
+        ],
+        [
+            "Buffer filled by a non-RNG method (IsRandomNumberGeneratorType returns false)",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    private static void Fill(byte[] buffer) { }
+                    public int Roll(int n)
+                    {
+                        byte[] b = new byte[4];
+                        Fill(b);
+                        return BitConverter.ToInt32(b, 0) % n;
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

@@ -72,7 +72,7 @@ namespace DogmaSolutions.Analyzers
             var randomType = context.SemanticModel.Compilation.GetTypeByMetadataName("System.Random");
             if (randomType == null || !SymbolEqualityComparer.Default.Equals(method.ContainingType, randomType))
                 return;
-            if (!method.Name.StartsWith("Next", StringComparison.Ordinal))
+            if (!IsNextMethodName(method.Name))
                 return;
 
             // NextBytes(buffer) returns void; its sink is the buffer argument's name.
@@ -95,10 +95,17 @@ namespace DogmaSolutions.Analyzers
                 additionalLocations: null,
                 properties: null));
 
-        private static bool FlowsToSecuritySensitiveSink(ExpressionSyntax value, SyntaxNodeAnalysisContext context)
+        /// <summary>Is <paramref name="name"/> a <c>System.Random</c> producer method (<c>Next</c>, <c>NextBytes</c>, …)?</summary>
+        internal static bool IsNextMethodName(string name) =>
+            !string.IsNullOrEmpty(name) && name.StartsWith("Next", StringComparison.Ordinal);
+
+        /// <summary>
+        /// Climbs from a produced value through the value-preserving wrappers around it — parentheses, casts, and
+        /// a member-access or invocation whose receiver IS the value (e.g. <c>rnd.Next().ToString()</c>) — so the
+        /// caller can inspect the real consumer. Pure over syntax; no semantic model needed.
+        /// </summary>
+        internal static ExpressionSyntax ClimbValuePreservingWrappers(ExpressionSyntax value)
         {
-            // Climb through parentheses/casts and value-preserving wrappers (e.g. rnd.Next().ToString())
-            // so the parent we inspect is the real consumer of the produced value.
             while (true)
             {
                 switch (value.Parent)
@@ -114,8 +121,13 @@ namespace DogmaSolutions.Analyzers
                         continue;
                 }
 
-                break;
+                return value;
             }
+        }
+
+        private static bool FlowsToSecuritySensitiveSink(ExpressionSyntax value, SyntaxNodeAnalysisContext context)
+        {
+            value = ClimbValuePreservingWrappers(value);
 
             var parent = value.Parent;
 
@@ -174,7 +186,7 @@ namespace DogmaSolutions.Analyzers
         private static string? GetSymbolName(ExpressionSyntax expression, SyntaxNodeAnalysisContext context) =>
             context.SemanticModel.GetSymbolInfo(expression, context.CancellationToken).Symbol?.Name;
 
-        private static string? NameOf(ExpressionSyntax expression) => expression switch
+        internal static string? NameOf(ExpressionSyntax expression) => expression switch
         {
             IdentifierNameSyntax id => id.Identifier.Text,
             MemberAccessExpressionSyntax member => member.Name.Identifier.Text,
@@ -219,7 +231,7 @@ namespace DogmaSolutions.Analyzers
             return method.Parameters[index].Name;
         }
 
-        private static bool IsSecuritySensitiveName(string? name)
+        internal static bool IsSecuritySensitiveName(string? name)
         {
             if (string.IsNullOrEmpty(name))
                 return false;
@@ -242,7 +254,7 @@ namespace DogmaSolutions.Analyzers
         }
 
         /// <summary>Splits an identifier into lowercase words at underscores and camelCase / letter-digit boundaries.</summary>
-        private static List<string> SplitIntoWords(string identifier)
+        internal static List<string> SplitIntoWords(string identifier)
         {
             var words = new List<string>();
             var start = 0;

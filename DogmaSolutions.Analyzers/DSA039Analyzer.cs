@@ -93,7 +93,7 @@ namespace DogmaSolutions.Analyzers
         /// </summary>
         private static bool IsRandomNumberGeneratorDerivedInteger(ExpressionSyntax expression, SyntaxNodeAnalysisContext context)
         {
-            expression = Unwrap(expression);
+            expression = SyntaxUtils.UnwrapParenthesesCastsAndChecked(expression);
 
             switch (expression)
             {
@@ -122,7 +122,7 @@ namespace DogmaSolutions.Analyzers
         /// </summary>
         private static bool IsRandomNumberGeneratorByteSource(ExpressionSyntax expression, SyntaxNodeAnalysisContext context)
         {
-            expression = Unwrap(expression);
+            expression = SyntaxUtils.UnwrapParenthesesCastsAndChecked(expression);
 
             if (expression is InvocationExpressionSyntax invocation
                 && context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
@@ -201,26 +201,5 @@ namespace DogmaSolutions.Analyzers
 
         private static bool IsDeclaredOn(ITypeSymbol? type, string metadataName, SyntaxNodeAnalysisContext context) =>
             SymbolEqualityComparer.Default.Equals(type, context.SemanticModel.Compilation.GetTypeByMetadataName(metadataName));
-
-        private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
-        {
-            while (true)
-            {
-                switch (expression)
-                {
-                    case ParenthesizedExpressionSyntax parenthesized:
-                        expression = parenthesized.Expression;
-                        continue;
-                    case CastExpressionSyntax cast:
-                        expression = cast.Expression;
-                        continue;
-                    case CheckedExpressionSyntax @checked:
-                        expression = @checked.Expression;
-                        continue;
-                    default:
-                        return expression;
-                }
-            }
-        }
     }
 }

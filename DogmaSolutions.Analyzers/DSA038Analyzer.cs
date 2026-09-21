@@ -75,7 +75,7 @@ namespace DogmaSolutions.Analyzers
             if (!SymbolEqualityComparer.Default.Equals(createdType, randomType))
                 return;
 
-            var seed = Unwrap(arguments.Value[0].Expression);
+            var seed = SyntaxUtils.UnwrapParenthesesCastsAndChecked(arguments.Value[0].Expression);
 
             // Order matters: a time-based value is a property/method call (never a compile-time constant),
             // so classify it first, then fall back to the constant check.
@@ -97,31 +97,6 @@ namespace DogmaSolutions.Analyzers
                 messageArgs: seedKind);
 
             context.ReportDiagnostic(diagnostic);
-        }
-
-        /// <summary>
-        /// Strips parentheses, casts and checked/unchecked wrappers so that e.g.
-        /// <c>unchecked((int)DateTime.Now.Ticks)</c> is classified by its inner member access.
-        /// </summary>
-        private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
-        {
-            while (true)
-            {
-                switch (expression)
-                {
-                    case ParenthesizedExpressionSyntax parenthesized:
-                        expression = parenthesized.Expression;
-                        continue;
-                    case CastExpressionSyntax cast:
-                        expression = cast.Expression;
-                        continue;
-                    case CheckedExpressionSyntax @checked:
-                        expression = @checked.Expression;
-                        continue;
-                    default:
-                        return expression;
-                }
-            }
         }
 
         private static bool IsTimeBasedSeed(ExpressionSyntax expression, SyntaxNodeAnalysisContext context)
