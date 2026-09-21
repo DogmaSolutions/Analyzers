@@ -39,13 +39,13 @@ Have an idea for a new analyzer or an improvement to an existing one? [Open a fe
 ### Building
 
 ```bash
-dotnet build DogmaSolutions.Analyzers.sln
+dotnet build DogmaSolutions.Analyzers.slnx
 ```
 
 ### Running Tests
 
 ```bash
-dotnet test DogmaSolutions.Analyzers.sln
+dotnet test DogmaSolutions.Analyzers.slnx
 ```
 
 ## Coding Guidelines
