@@ -353,6 +353,49 @@ public partial class MyFacade
    }
 
    [TestMethod]
+   public async Task NoRefactoring_CaretInsideMethodBody()
+   {
+      // Multiple members => would be offered if the caret were on the declaration line, but the caret is INSIDE a
+      // method body, so the split refactorings must NOT be offered.
+      var source = @"namespace TestApp
+{
+    public class MyWidget
+    {
+        public void Render() { [||]var x = 1; }
+        private void Reset() { }
+    }
+}";
+
+      var test = new CSharpCodeRefactoringVerifier<DSR004RefactoringProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
+   public async Task NoRefactoring_CaretOnMemberInsideBody()
+   {
+      // Caret on a member declaration (inside the body, past the opening brace) => not offered.
+      var source = @"namespace TestApp
+{
+    public class MyWidget
+    {
+        public void Render() { }
+        private void [||]Reset() { }
+    }
+}";
+
+      var test = new CSharpCodeRefactoringVerifier<DSR004RefactoringProvider>.Test();
+      test.TestCode = source;
+      test.FixedCode = source;
+      test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+
+      await test.RunAsync().ConfigureAwait(false);
+   }
+
+   [TestMethod]
    public async Task Topic_EventDeclarationClassified()
    {
       // EventDeclarationSyntax (explicit add/remove) → GetMemberName returns Identifier.
