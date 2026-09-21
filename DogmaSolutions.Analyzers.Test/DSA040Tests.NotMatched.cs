@@ -82,6 +82,18 @@ public partial class DSA040Tests
             }"
         ],
         [
+            "Random value as an element-access index (argument owner is not a method)",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public int Pick(int[] items, Random rnd) => items[rnd.Next(items.Length)];
+                }
+            }"
+        ],
+        [
             "Security term only as a substring (keyboard), not a word boundary",
             @"
             using System;
