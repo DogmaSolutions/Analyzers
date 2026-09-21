@@ -995,6 +995,30 @@ namespace DogmaSolutions.Analyzers {
             }
         }
 
+        internal static string DSA042AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA042AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        internal static string DSA042AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA042AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        internal static string DSA042AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA042AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        internal static string DSA042ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA042ReviewComment", resourceCulture);
+            }
+        }
+
         internal static string DSA036ReviewComment {
             get {
                 return ResourceManager.GetString("DSA036ReviewComment", resourceCulture);

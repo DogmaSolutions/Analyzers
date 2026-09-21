@@ -95,6 +95,7 @@ Every rule is accompanied by the following information and clues:
 | [DSA038](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md) | Bug | Avoid seeding `Random` with a time-based or constant value | ⚠ Warning | ✅ | ❌ | ❌ |
 | [DSA039](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md) | Security | Avoid modulo bias when reducing cryptographic random bytes into a range (use `RandomNumberGenerator.GetInt32`) | ⚠ Warning | ✅ | ❌ | ❌ |
 | [DSA040](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA040.md) | Security | Do not use `System.Random` for security-sensitive values (token/salt/nonce/key); use `RandomNumberGenerator` | ⚠ Warning | ✅ | ❌ | ❌ |
+| [DSA042](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA042.md) | Code Smell | Avoid repeating a segment in a namespace (e.g. `My.Project.Models.Models`) | ⚠ Warning | ✅ | ❌ | ✅ |
 
 # Refactorings list
 

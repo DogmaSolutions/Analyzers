@@ -779,4 +779,18 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  * Microsoft: .NET Regular Expression Best Practices - https://learn.microsoft.com/en-us/dotnet/standard/base-types/best-practices-regex
  */</value>
   </data>
+  <data name="DSA042AnalyzerTitle" xml:space="preserve">
+    <value>Avoid repeating a segment in a namespace</value>
+  </data>
+  <data name="DSA042AnalyzerMessageFormat" xml:space="preserve">
+    <value>The namespace '{0}' repeats the segment '{1}'; a repeated segment is a naming smell — rename or flatten the namespace</value>
+  </data>
+  <data name="DSA042AnalyzerDescription" xml:space="preserve">
+    <value>A namespace whose dotted path repeats the same segment — adjacent (My.Project.Models.Models) or not (My.Project.Models.Abstractions.Models) — is a naming smell: it is harder to read and usually signals a misplaced nesting level. Rename the offending segment or flatten the namespace so each segment is distinct (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA042.md).</value>
+  </data>
+  <data name="DSA042ReviewComment" xml:space="preserve">
+    <value>/* [DSA042 / QA + Code Smell]: Namespace repeats a segment (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA042.md)
+ * CWE-1078: Inappropriate Source Code Style or Formatting - https://cwe.mitre.org/data/definitions/1078.html
+ */</value>
+  </data>
 </root>
