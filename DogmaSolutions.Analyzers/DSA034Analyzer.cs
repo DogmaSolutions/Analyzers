@@ -96,9 +96,17 @@ public sealed class DSA034Analyzer : DiagnosticAnalyzer
             ? "unknown"
             : System.IO.Path.GetFileName(filePath);
 
+        // Anchor the diagnostic (and therefore all DSA034 code actions) at the type's identifier token, so the
+        // squiggle sits on the declaration line rather than at file line 0. Fall back to the whole declaration span
+        // for malformed/partial code whose identifier token is missing (never throw, never a zero-position squiggle).
+        var typeDeclaration = topLevelTypes[0];
+        var location = typeDeclaration.Identifier.IsMissing
+            ? typeDeclaration.GetLocation()
+            : typeDeclaration.Identifier.GetLocation();
+
         var diagnostic = Diagnostic.Create(
             _rule,
-            Location.Create(context.Tree, text.Lines[0].Span),
+            location,
             fileName,
             lineCount,
             maxLines);
