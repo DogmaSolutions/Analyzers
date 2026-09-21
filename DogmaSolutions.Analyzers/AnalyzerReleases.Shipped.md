@@ -44,3 +44,4 @@ DSA038  | Bug           | Warning  | DSA038Analyzer
 DSA039  | Security      | Warning  | DSA039Analyzer
 DSA040  | Security      | Warning  | DSA040Analyzer
 DSA041  | Code Smell    | Warning  | DSA041Analyzer
+DSA042  | Code Smell    | Warning  | DSA042Analyzer
