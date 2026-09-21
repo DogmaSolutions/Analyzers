@@ -29,6 +29,28 @@ public partial class DSA042Tests
             "My.Api.Api",
             "Api"
         ],
+        [
+            // Single declaration whose repeat is NOT the trailing segment: must still fire.
+            "Repeated segment before the last segment",
+            "namespace {|#0:Dup.Dup.Middle|} { public class C { } }",
+            "Dup.Dup.Middle",
+            "Dup"
+        ],
+        [
+            // Physically nested: the OUTER declaration introduces the repeat and is the only one flagged;
+            // the inner `Inner` must NOT re-report the inherited "Dup" repetition (regression guard).
+            "Nested declaration does not re-report an ancestor's repeat",
+            "namespace {|#0:Dup.Dup|} { namespace Inner { public class C { } } }",
+            "Dup.Dup",
+            "Dup"
+        ],
+        [
+            // Physically nested: a repeat the INNER declaration itself introduces still fires on the inner.
+            "Nested declaration reports a repeat it introduces itself",
+            "namespace Outer { namespace {|#0:Repeat.Repeat|} { public class C { } } }",
+            "Outer.Repeat.Repeat",
+            "Repeat"
+        ],
     ];
 
     [TestMethod]

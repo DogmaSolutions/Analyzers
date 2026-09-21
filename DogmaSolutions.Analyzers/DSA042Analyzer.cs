@@ -59,7 +59,12 @@ namespace DogmaSolutions.Analyzers
                 return;
 
             var fullName = namespaceSymbol.ToDisplayString();
-            var repeated = FindRepeatedSegment(fullName);
+
+            // Only the segments THIS declaration introduces (its own dotted name) can make it the culprit. A
+            // physically nested declaration (`namespace A.A { namespace B { } }`) must not re-report the "A"
+            // repetition inherited from its enclosing namespace — that is reported on the ancestor `A.A` itself.
+            var firstOwnSegmentIndex = CountSegments(fullName) - CountSegments(declaration.Name.ToString());
+            var repeated = FindRepeatedSegment(fullName, firstOwnSegmentIndex);
             if (repeated == null)
                 return;
 
@@ -74,16 +79,34 @@ namespace DogmaSolutions.Analyzers
             context.ReportDiagnostic(diagnostic);
         }
 
-        /// <summary>Returns the first dot-separated segment of <paramref name="fullName"/> that occurs more than once (ordinal), else null.</summary>
-        internal static string FindRepeatedSegment(string fullName)
+        /// <summary>Number of non-empty dot-separated segments in <paramref name="dottedName"/>.</summary>
+        internal static int CountSegments(string dottedName) =>
+            string.IsNullOrEmpty(dottedName) ? 0 : dottedName.Split('.').Length;
+
+        /// <summary>
+        /// Returns the first dot-separated segment of <paramref name="fullName"/> whose DUPLICATE occurrence is at
+        /// or after <paramref name="firstOwnSegmentIndex"/> — the boundary between the segments inherited from the
+        /// enclosing namespace and the ones this declaration itself introduces (ordinal comparison), else null. So a
+        /// nested declaration does not re-report a repetition inherited from an ancestor (reported on the ancestor),
+        /// while a repetition the declaration itself introduces still fires.
+        /// </summary>
+        internal static string FindRepeatedSegment(string fullName, int firstOwnSegmentIndex)
         {
             if (string.IsNullOrEmpty(fullName))
                 return null;
 
+            if (firstOwnSegmentIndex < 0)
+                firstOwnSegmentIndex = 0;
+
+            var segments = fullName.Split('.');
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var segment in fullName.Split('.'))
+            for (var index = 0; index < segments.Length; index++)
             {
-                if (segment.Length > 0 && !seen.Add(segment))
+                var segment = segments[index];
+                if (segment.Length == 0)
+                    continue;
+
+                if (!seen.Add(segment) && index >= firstOwnSegmentIndex)
                     return segment;
             }
 
