@@ -28,6 +28,60 @@ public partial class DSA040Tests
             }"
         ],
         [
+            "Non-Next method on Random is ignored",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public string M(Random rnd) => rnd.ToString();
+                }
+            }"
+        ],
+        [
+            "Random value in a bare non-sink position (default: not a sink)",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    public void M(Random rnd)
+                    {
+                        rnd.Next();
+                    }
+                }
+            }"
+        ],
+        [
+            "Random value assigned to a non-security member access target",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class Holder { public int Count; }
+                public class MyType
+                {
+                    private Holder _h = new Holder();
+                    public void M(Random rnd) { _h.Count = rnd.Next(); }
+                }
+            }"
+        ],
+        [
+            "Random value positional to a non-security parameter",
+            @"
+            using System;
+            namespace TestApp
+            {
+                public class MyType
+                {
+                    private static void Log(int value) { }
+                    public void M(Random rnd) => Log(rnd.Next());
+                }
+            }"
+        ],
+        [
             "Security term only as a substring (keyboard), not a word boundary",
             @"
             using System;
