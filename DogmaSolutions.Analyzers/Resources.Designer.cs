@@ -923,6 +923,78 @@ namespace DogmaSolutions.Analyzers {
             }
         }
 
+        internal static string DSA037AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA037AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        internal static string DSA037AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA037AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        internal static string DSA037AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA037AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        internal static string DSA038AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA038AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        internal static string DSA038AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA038AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        internal static string DSA038AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA038AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        internal static string DSA039AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA039AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        internal static string DSA039AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA039AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        internal static string DSA039AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA039AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        internal static string DSA040AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA040AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        internal static string DSA040AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA040AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        internal static string DSA040AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA040AnalyzerTitle", resourceCulture);
+            }
+        }
+
         internal static string DSA036ReviewComment {
             get {
                 return ResourceManager.GetString("DSA036ReviewComment", resourceCulture);

@@ -735,6 +735,42 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA036AnalyzerTitle" xml:space="preserve">
     <value>Extract Regex with constant pattern to a static readonly field</value>
   </data>
+  <data name="DSA037AnalyzerDescription" xml:space="preserve">
+    <value>A field marked with [ThreadStatic] and given a field initializer is a latent, hard-to-diagnose bug. A thread-static field initializer executes only for the single thread that first triggers the declaring type's static construction; on every other thread the field keeps its default value (null for a reference type such as System.Random), so the first use on those threads throws a NullReferenceException. The correct pattern is to leave the [ThreadStatic] field uninitialized and lazily assign a per-thread instance on first use (e.g. `_rnd ??= new Random();`), or to drop [ThreadStatic] entirely in favour of Random.Shared on .NET 6+. Because System.Random is not thread-safe, developers frequently reach for [ThreadStatic] to obtain a per-thread instance, which makes this a common footgun precisely in the code that was trying to be correct about threading (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md).</value>
+  </data>
+  <data name="DSA037AnalyzerMessageFormat" xml:space="preserve">
+    <value>The [ThreadStatic] field '{0}' has a field initializer, which runs only on the thread that first triggers static construction; every other thread will observe null. Remove the initializer and assign the Random per-thread on first use, or use Random.Shared.</value>
+  </data>
+  <data name="DSA037AnalyzerTitle" xml:space="preserve">
+    <value>A [ThreadStatic] Random field must not have a field initializer</value>
+  </data>
+  <data name="DSA038AnalyzerDescription" xml:space="preserve">
+    <value>Constructing System.Random with an explicit seed is almost always a mistake. When the seed is a time-based value such as Environment.TickCount or DateTime.UtcNow.Ticks, it merely reproduces what the parameterless `new Random()` constructor already does — but worse: the clock has low resolution, so two Random instances created within the same tick (for example inside a loop) are given the same seed and therefore produce the identical sequence of numbers. When the seed is a compile-time constant (for example `new Random(42)`), the sequence is fully deterministic and predictable, which is occasionally desirable for reproducible simulations or tests but is a defect in production code. Prefer the parameterless `new Random()` (or `Random.Shared` on .NET 6+), and reserve seeded construction for code that genuinely needs a reproducible sequence — where the rule can be downgraded per-path via .editorconfig. Never derive a seed from the current time by hand (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md).</value>
+  </data>
+  <data name="DSA038AnalyzerMessageFormat" xml:space="preserve">
+    <value>This Random is seeded with {0}. Prefer the parameterless 'new Random()' (or Random.Shared) unless a reproducible sequence is explicitly required.</value>
+  </data>
+  <data name="DSA038AnalyzerTitle" xml:space="preserve">
+    <value>Avoid seeding Random with a time-based or constant value</value>
+  </data>
+  <data name="DSA039AnalyzerDescription" xml:space="preserve">
+    <value>Bytes produced by System.Security.Cryptography.RandomNumberGenerator are uniformly distributed, but reducing them into a smaller range with the remainder operator (%) reintroduces bias unless the range size exactly divides the operand's value domain (e.g. 2^32 for an int). When it does not, the lower residues occur slightly more often than the higher ones, so the resulting value is no longer uniform — which silently weakens tokens, keys, PINs and other security-sensitive values and defeats the entire reason for choosing a cryptographic generator over System.Random. The correct API is RandomNumberGenerator.GetInt32(fromInclusive, toExclusive), which performs rejection sampling to produce an unbiased value in the requested range. This rule flags a % whose left operand is derived from RandomNumberGenerator output (via BitConverter conversion of, or indexing into, RNG-filled bytes, including a one-hop local buffer). It deliberately favours precision over recall and does not follow cross-method flow (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md).</value>
+  </data>
+  <data name="DSA039AnalyzerMessageFormat" xml:space="preserve">
+    <value>Reducing cryptographic random bytes with % introduces modulo bias; use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive)</value>
+  </data>
+  <data name="DSA039AnalyzerTitle" xml:space="preserve">
+    <value>Avoid modulo bias when reducing cryptographic random bytes into a range</value>
+  </data>
+  <data name="DSA040AnalyzerDescription" xml:space="preserve">
+    <value>System.Random is a non-cryptographic pseudo-random generator: its output is fast but predictable, and must never be used to produce security-sensitive values such as tokens, passwords, salts, nonces, initialization vectors, session identifiers, API keys, OTPs or CSRF tokens. An attacker who can observe or reconstruct the generator state can predict future values and forge or guess these secrets. This rule flags Random output (any Next* method, including Random.Shared, and NextBytes into a buffer) that flows into a sink whose name matches a security term — a variable, field, property, parameter or return whose identifier contains a security word on a word boundary (so 'apiKey' and 'sessionId' match while 'keyboard' does not). It follows one assignment hop within a method and favours precision over recall: it is a lightweight name heuristic, not a taint engine. The fix is to use System.Security.Cryptography.RandomNumberGenerator (for example GetBytes or GetInt32). This complements the broad CA5394 with a low-noise, sink-aware signal (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA040.md).</value>
+  </data>
+  <data name="DSA040AnalyzerMessageFormat" xml:space="preserve">
+    <value>Do not use the non-cryptographic System.Random for a security-sensitive value; use System.Security.Cryptography.RandomNumberGenerator</value>
+  </data>
+  <data name="DSA040AnalyzerTitle" xml:space="preserve">
+    <value>Do not use System.Random for security-sensitive values</value>
+  </data>
   <data name="DSA036ReviewComment" xml:space="preserve">
     <value>/* [DSA036 / CySec + QA + Performance]: Extract Regex with constant pattern to a static readonly field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md)
  * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
