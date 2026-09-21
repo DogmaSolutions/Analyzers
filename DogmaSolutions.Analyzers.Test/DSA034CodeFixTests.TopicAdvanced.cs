@@ -98,7 +98,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 28)
             .WithArguments("Test0.cs", 14, 13));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.TopicEquivalenceKey;
       test.FixedState.Sources.Add(("MyRegistry.Ctors.cs", fixedCtors));
@@ -222,7 +222,7 @@ dotnet_diagnostic.DSA034.max_topics = 3
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 25)
             .WithArguments("Test0.cs", 18, 17));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.TopicEquivalenceKey;
       test.FixedState.Sources.Add(("MyAgent.Ctors.cs", fixedCtors));
@@ -340,7 +340,7 @@ dotnet_diagnostic.DSA034.max_topics = 3
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 25)
             .WithArguments("Test0.cs", 18, 17));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.TopicEquivalenceKey;
       test.FixedState.Sources.Add(("MyOrbit.Ctors.cs", fixedCtors));
@@ -452,7 +452,7 @@ dotnet_diagnostic.DSA034.max_topics = 4
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 24)
             .WithArguments("Test0.cs", 18, 17));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.TopicEquivalenceKey;
       test.FixedState.Sources.Add(("MyMint.Ctors.cs", fixedCtors));
@@ -553,7 +553,7 @@ dotnet_diagnostic.DSA034.excluded_topic_words = Load,Save,Check,Get,Set,Process
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 26)
             .WithArguments("Test0.cs", 14, 13));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.TopicEquivalenceKey;
       test.FixedState.Sources.Add(("MyBridge.Ctors.cs", fixedCtors));

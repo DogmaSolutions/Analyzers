@@ -29,7 +29,7 @@ public class DSA034Tests
       test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 20)
+            .WithSpan(2, 18, 2, 25)
             .WithArguments("Test0.cs", 502, 500));
 
       await test.RunAsync().ConfigureAwait(false);
@@ -63,7 +63,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
 "));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 1)
+            .WithSpan(4, 18, 4, 27)
             .WithArguments("Test0.cs", 12, 5));
 
       await test.RunAsync().ConfigureAwait(false);
@@ -240,7 +240,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 19, 3, 26)
             .WithArguments("Test0.cs", 9, 5));
 
       await test.RunAsync().ConfigureAwait(false);
@@ -272,7 +272,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 22, 3, 31)
             .WithArguments("Test0.cs", 9, 5));
 
       await test.RunAsync().ConfigureAwait(false);
@@ -304,7 +304,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 19, 3, 26)
             .WithArguments("Test0.cs", 9, 5));
 
       await test.RunAsync().ConfigureAwait(false);
@@ -339,7 +339,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 17, 3, 22)
             .WithArguments("Test0.cs", 12, 5));
 
       await test.RunAsync().ConfigureAwait(false);
@@ -374,7 +374,7 @@ public class MyService
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 19)
+            .WithSpan(3, 14, 3, 23)
             .WithArguments("Test0.cs", 8, 5));
 
       await test.RunAsync().ConfigureAwait(false);
@@ -404,7 +404,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 23)
+            .WithSpan(1, 14, 1, 23)
             .WithArguments("Test0.cs", 7, 5));
 
       await test.RunAsync().ConfigureAwait(false);
@@ -541,7 +541,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
 "));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 44)
+            .WithSpan(1, 14, 1, 23)
             .WithArguments("Test0.cs", 502, 500));
 
       await test.RunAsync().ConfigureAwait(false);
@@ -651,7 +651,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
 "));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 1)
+            .WithSpan(2, 18, 2, 29)
             .WithArguments("Test0.cs", 11, 10));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -685,7 +685,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
 "));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 1)
+            .WithSpan(2, 15, 2, 26)
             .WithArguments("Test0.cs", 11, 10));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -715,7 +715,7 @@ dotnet_diagnostic.DSA034.excluded_file_patterns = *.auto.cs
 "));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan("MyOutput.special.cs", 1, 1, 1, 20)
+            .WithSpan("MyOutput.special.cs", 2, 18, 2, 32)
             .WithArguments("MyOutput.special.cs", 502, 500));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -813,7 +813,7 @@ dotnet_diagnostic.DSA034.excluded_base_types = System.NotImplementedException
 "));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 1)
+            .WithSpan(2, 14, 2, 28)
             .WithArguments("Test0.cs", 12, 10));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -885,7 +885,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
 "));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 26)
             .WithArguments("Test0.cs", 15, 10));
       await test.RunAsync().ConfigureAwait(false);
    }
@@ -918,7 +918,7 @@ dotnet_diagnostic.DSA034.max_lines = 10
 "));
       test.ExpectedDiagnostics.Add(
          CSharpAnalyzerVerifier<DSA034Analyzer>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 26)
             .WithArguments("Test0.cs", 11, 10));
       await test.RunAsync().ConfigureAwait(false);
    }

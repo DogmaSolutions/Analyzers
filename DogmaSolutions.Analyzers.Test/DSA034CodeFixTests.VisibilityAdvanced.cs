@@ -73,7 +73,7 @@ public partial class MyGateway
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 19)
+            .WithSpan(3, 14, 3, 23)
             .WithArguments("Test0.cs", 12, 10));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.VisibilityEquivalenceKey;
       test.FixedState.Sources.Add(("MyGateway.Ctors.cs", fixedCtors));
@@ -169,7 +169,7 @@ namespace TestApp
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 14)
+            .WithSpan(5, 18, 5, 28)
             .WithArguments("Test0.cs", 17, 13));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.VisibilityEquivalenceKey;
       test.FixedState.Sources.Add(("MyResource.Ctors.cs", fixedCtors));
@@ -178,6 +178,8 @@ namespace TestApp
       test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
       test.FixedState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
 
+      test.NumberOfIncrementalIterations = 2;
+      test.NumberOfFixAllIterations = 2;
       await test.RunAsync().ConfigureAwait(false);
    }
 
@@ -249,7 +251,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 24)
             .WithArguments("Test0.cs", 11, 10));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.VisibilityEquivalenceKey;
       test.FixedState.Sources.Add(("MyBase.Ctors.cs", fixedCtors));
@@ -325,7 +327,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 28)
             .WithArguments("Test0.cs", 13, 10));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.VisibilityEquivalenceKey;
       test.FixedState.Sources.Add(("Repository.Ctors.cs", fixedCtors));
@@ -429,7 +431,7 @@ dotnet_diagnostic.DSA034.max_topics = 2
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 26)
             .WithArguments("Test0.cs", 16, 13));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.TopicEquivalenceKey;
       test.FixedState.Sources.Add(("MyRouter.Ctors.cs", fixedCtors));
@@ -531,7 +533,7 @@ dotnet_diagnostic.DSA034.excluded_topic_words = Order
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 26)
             .WithArguments("Test0.cs", 16, 13));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.TopicEquivalenceKey;
       test.FixedState.Sources.Add(("MyBridge.Ctors.cs", fixedCtors));
@@ -605,7 +607,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 26)
             .WithArguments("Test0.cs", 17, 14));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.TopicEquivalenceKey;
       test.FixedState.Sources.Add(("MyRunner.Ctors.cs", fixedCtors));
@@ -665,7 +667,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 21)
+            .WithSpan(1, 14, 1, 21)
             .WithArguments("Test0.cs", 9, 8));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.VisibilityEquivalenceKey;
       test.FixedState.Sources.Add(("MyThing.Ctors.cs", fixedCtors));
@@ -739,7 +741,7 @@ dotnet_diagnostic.DSA034.count_blank_lines = true
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", editorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 28)
             .WithArguments("Test0.cs", 12, 10));
       test.CodeActionEquivalenceKey = DSA034CodeFixProvider.VisibilityEquivalenceKey;
       test.FixedState.Sources.Add(("MyObserver.Ctors.cs", fixedCtors));

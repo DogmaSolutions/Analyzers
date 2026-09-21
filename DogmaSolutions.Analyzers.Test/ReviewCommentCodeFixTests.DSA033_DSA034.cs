@@ -148,11 +148,13 @@ namespace TestApp
     }
 }";
 
-      var fixedSource = @"/* [DSA034 / QA + Code Smell]: Single-type file exceeds maximum line count (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA034.md)
- * CWE-1080: Source Code File with Excessive Number of Lines of Code - https://cwe.mitre.org/data/definitions/1080.html
- */
-namespace TestApp
+      // The comment now anchors on the type declaration (the diagnostic location), so it lands inside the
+      // namespace, immediately before the class, indented to the type — not at file top.
+      var fixedSource = @"namespace TestApp
 {
+    /* [DSA034 / QA + Code Smell]: Single-type file exceeds maximum line count (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA034.md)
+     * CWE-1080: Source Code File with Excessive Number of Lines of Code - https://cwe.mitre.org/data/definitions/1080.html
+     */
     public class MyClass
     {
         public int A { get; set; }
@@ -170,11 +172,11 @@ namespace TestApp
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", Dsa034EditorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 18, 3, 25)
             .WithArguments("Test0.cs", 9, 5));
       test.FixedState.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 157)
+            .WithSpan(6, 18, 6, 25)
             .WithArguments("Test0.cs", 12, 5));
       test.FixedState.AnalyzerConfigFiles.Add(("/.editorconfig", Dsa034EditorConfig));
       test.NumberOfIncrementalIterations = 1;
@@ -198,11 +200,13 @@ namespace TestApp
     }
 }";
 
-      var fixedSource = @"/* [DSA034 / QA + Code Smell]: Single-type file exceeds maximum line count (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA034.md)
- * CWE-1080: Source Code File with Excessive Number of Lines of Code - https://cwe.mitre.org/data/definitions/1080.html
- */
-namespace TestApp
+      // The comment now anchors on the type declaration (the diagnostic location), so it lands inside the
+      // namespace, immediately before the enum, indented to the type — not at file top.
+      var fixedSource = @"namespace TestApp
 {
+    /* [DSA034 / QA + Code Smell]: Single-type file exceeds maximum line count (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA034.md)
+     * CWE-1080: Source Code File with Excessive Number of Lines of Code - https://cwe.mitre.org/data/definitions/1080.html
+     */
     public enum Color
     {
         Red,
@@ -221,11 +225,11 @@ namespace TestApp
       test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", Dsa034EditorConfig));
       test.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 18)
+            .WithSpan(3, 17, 3, 22)
             .WithArguments("Test0.cs", 10, 5));
       test.FixedState.ExpectedDiagnostics.Add(
          CSharpCodeFixVerifier<DSA034Analyzer, DSA034CodeFixProvider>.Diagnostic(DSA034Analyzer.DiagnosticId)
-            .WithSpan(1, 1, 1, 157)
+            .WithSpan(6, 17, 6, 22)
             .WithArguments("Test0.cs", 13, 5));
       test.FixedState.AnalyzerConfigFiles.Add(("/.editorconfig", Dsa034EditorConfig));
       test.NumberOfIncrementalIterations = 1;
