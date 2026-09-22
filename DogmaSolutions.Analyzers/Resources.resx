@@ -771,6 +771,36 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA040AnalyzerTitle" xml:space="preserve">
     <value>Do not use System.Random for security-sensitive values</value>
   </data>
+  <data name="DSA037ReviewComment" xml:space="preserve">
+    <value>/* [DSA037 / QA + Bug]: A [ThreadStatic] Random field must not have a field initializer (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md)
+ * A [ThreadStatic] field initializer runs only on the thread that first triggers static construction; every other thread observes the default (null). Assign the Random per-thread on first use, or use Random.Shared.
+ * MITRE, CWE-457: Use of Uninitialized Variable - https://cwe.mitre.org/data/definitions/457.html
+ * ThreadStaticAttribute - https://learn.microsoft.com/en-us/dotnet/api/system.threadstaticattribute
+ */</value>
+  </data>
+  <data name="DSA038ReviewComment" xml:space="preserve">
+    <value>/* [DSA038 / CySec + QA + Bug]: Avoid seeding Random with a time-based or constant value (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md)
+ * A time-based seed collides within a clock tick (identical sequences); a constant seed is fully predictable. Prefer the parameterless 'new Random()' or Random.Shared.
+ * MITRE, CWE-337: Predictable Seed in Pseudo-Random Number Generator - https://cwe.mitre.org/data/definitions/337.html
+ * System.Random - https://learn.microsoft.com/en-us/dotnet/api/system.random
+ */</value>
+  </data>
+  <data name="DSA039ReviewComment" xml:space="preserve">
+    <value>/* [DSA039 / CySec + QA + Security]: Avoid modulo bias when reducing cryptographic random bytes into a range (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md)
+ * A naive % reduction skews the distribution and undermines the cryptographic guarantee. Use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive), which rejection-samples an unbiased value.
+ * MITRE, CWE-1241: Use of Predictable Algorithm in Random Number Generator - https://cwe.mitre.org/data/definitions/1241.html
+ * MITRE, CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG) - https://cwe.mitre.org/data/definitions/338.html
+ * RandomNumberGenerator.GetInt32 - https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator.getint32
+ */</value>
+  </data>
+  <data name="DSA040ReviewComment" xml:space="preserve">
+    <value>/* [DSA040 / CySec + QA + Security]: Do not use System.Random for security-sensitive values (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA040.md)
+ * System.Random is fast but predictable; an attacker who reconstructs its state can forge tokens, salts, nonces, keys or OTPs. Use System.Security.Cryptography.RandomNumberGenerator (GetBytes / GetInt32).
+ * MITRE, CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG) - https://cwe.mitre.org/data/definitions/338.html
+ * OWASP: Insecure Randomness - https://owasp.org/www-community/vulnerabilities/Insecure_Randomness
+ * RandomNumberGenerator - https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator
+ */</value>
+  </data>
   <data name="DSA036ReviewComment" xml:space="preserve">
     <value>/* [DSA036 / CySec + QA + Performance]: Extract Regex with constant pattern to a static readonly field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md)
  * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
