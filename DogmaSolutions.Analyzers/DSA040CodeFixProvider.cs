@@ -18,14 +18,11 @@ public sealed class DSA040CodeFixProvider : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root == null)
-            return;
-
         var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
+        var node = root?.FindNode(diagnostic.Location.SourceSpan);
         // Swapping System.Random for RandomNumberGenerator changes the calling shape (byte buffers vs Next*), so it is
         // not a safe mechanical rewrite; only the Review-Comment fix is offered.
-        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA040Analyzer.DiagnosticId, nameof(Resources.DSA040ReviewComment));
+        if (node is not null)
+            ReviewCommentCodeFix.Register(context, diagnostic, node, DSA040Analyzer.DiagnosticId, nameof(Resources.DSA040ReviewComment));
     }
 }
