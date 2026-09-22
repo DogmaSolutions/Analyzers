@@ -18,14 +18,11 @@ public sealed class DSA039CodeFixProvider : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root == null)
-            return;
-
         var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
+        var node = root?.FindNode(diagnostic.Location.SourceSpan);
         // Rewriting the reduction to RandomNumberGenerator.GetInt32 depends on the surrounding range logic, so only
         // the Review-Comment fix is offered.
-        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA039Analyzer.DiagnosticId, nameof(Resources.DSA039ReviewComment));
+        if (node is not null)
+            ReviewCommentCodeFix.Register(context, diagnostic, node, DSA039Analyzer.DiagnosticId, nameof(Resources.DSA039ReviewComment));
     }
 }

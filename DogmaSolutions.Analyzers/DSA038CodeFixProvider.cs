@@ -18,13 +18,10 @@ public sealed class DSA038CodeFixProvider : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root == null)
-            return;
-
         var diagnostic = context.Diagnostics[0];
-        var node = root.FindNode(diagnostic.Location.SourceSpan);
-
+        var node = root?.FindNode(diagnostic.Location.SourceSpan);
         // Whether a reproducible sequence is intended is a human judgement, so only the Review-Comment fix is offered.
-        ReviewCommentCodeFix.Register(context, diagnostic, node, DSA038Analyzer.DiagnosticId, nameof(Resources.DSA038ReviewComment));
+        if (node is not null)
+            ReviewCommentCodeFix.Register(context, diagnostic, node, DSA038Analyzer.DiagnosticId, nameof(Resources.DSA038ReviewComment));
     }
 }
