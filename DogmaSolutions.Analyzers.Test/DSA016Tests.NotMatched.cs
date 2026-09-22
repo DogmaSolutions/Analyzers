@@ -424,6 +424,31 @@ public partial class DSA016Tests
                 }
             }"
         ],
+        [
+            "Same method chain differing only by generic type argument",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Alpha { }
+                public class Beta { }
+                public class Gamma { }
+                public class TestContext
+                {
+                    public IEnumerable<T> GetCreatedEntities<T>() => new List<T>();
+                }
+                public class MyService
+                {
+                    public void Process(TestContext ctx)
+                    {
+                        var val1 = ctx.GetCreatedEntities<Alpha>().Single();
+                        var val2 = ctx.GetCreatedEntities<Beta>().Single();
+                        var val3 = ctx.GetCreatedEntities<Gamma>().Single();
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]
