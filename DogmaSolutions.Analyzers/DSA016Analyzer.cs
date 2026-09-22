@@ -147,14 +147,14 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
         {
             receiverText = memberAccess.Expression.ToString();
-            methodName = memberAccess.Name.Identifier.ValueText;
+            methodName = GetNameKey(memberAccess.Name);
             argumentsText = invocation.ArgumentList.ToString();
             return true;
         }
 
         if (invocation.Expression is MemberBindingExpressionSyntax memberBinding)
         {
-            methodName = memberBinding.Name.Identifier.ValueText;
+            methodName = GetNameKey(memberBinding.Name);
             argumentsText = invocation.ArgumentList.ToString();
 
             // Walk up to the ConditionalAccessExpression to get the receiver
@@ -181,6 +181,15 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         var receiver = symbolKey ?? SyntaxUtils.NormalizeWhitespace(receiverText);
         return $"{receiver}|{methodName}|{SyntaxUtils.NormalizeWhitespace(argsText)}";
     }
+
+    /// <summary>
+    /// The comparison key for an invoked member name. A generic call (e.g. <c>GetCreatedEntities&lt;T&gt;()</c> or
+    /// <c>Cast&lt;T&gt;()</c>) must be keyed by its type arguments too: <c>SimpleName.Identifier.ValueText</c> returns
+    /// only the bare identifier, so chains that differ solely by their generic type argument would otherwise collapse
+    /// to the same key and be reported as false duplicates. Using the full name text keeps them distinct.
+    /// </summary>
+    private static string GetNameKey(SimpleNameSyntax name) =>
+        SyntaxUtils.NormalizeWhitespace(name.ToString());
 
     private static string GetReceiverSymbolKey(InvocationExpressionSyntax invocation, SemanticModel model)
     {
@@ -218,7 +227,7 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
             if (leftKey == null)
                 return null;
 
-            return $"{leftKey}.{memberAccess.Name.Identifier.ValueText}";
+            return $"{leftKey}.{GetNameKey(memberAccess.Name)}";
         }
 
         // An invocation inside the receiver chain (e.g. callSite.GetValue(nameof(Pippo)) in

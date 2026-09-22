@@ -397,6 +397,30 @@ public partial class DSA016Tests
             "FirstOrDefault",
             2
         ],
+        [
+            "Same generic method chain repeated with identical type argument is still flagged",
+            @"
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class Alpha { }
+                public class TestContext
+                {
+                    public IEnumerable<T> GetCreatedEntities<T>() => new List<T>();
+                }
+                public class MyService
+                {
+                    public void Process(TestContext ctx)
+                    {
+                        var a = {|#0:ctx.GetCreatedEntities<Alpha>().Single()|};
+                        var b = {|#1:ctx.GetCreatedEntities<Alpha>().Single()|};
+                    }
+                }
+            }",
+            "Single",
+            2
+        ],
     ];
 
     [TestMethod]
