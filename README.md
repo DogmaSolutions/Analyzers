@@ -4,7 +4,7 @@
 
 A set of C# Roslyn analyzers, code fixers, and refactorings that catch bugs, design flaws, and security pitfalls at compile time -- before they reach code review or production.
 
-The package currently ships 35 rules across six categories:
+The package currently ships many rules across six categories:
 - Design
 - Security
 - Performance
