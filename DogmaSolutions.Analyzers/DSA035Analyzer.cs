@@ -194,6 +194,9 @@ public sealed class DSA035Analyzer : DiagnosticAnalyzer
             case MemberAccessExpressionSyntax memberAccess:
                 methodName = memberAccess.Name.Identifier.ValueText;
                 break;
+            case MemberBindingExpressionSyntax memberBinding:
+                methodName = memberBinding.Name.Identifier.ValueText;
+                break;
             case IdentifierNameSyntax identifier:
                 methodName = identifier.Identifier.ValueText;
                 break;
@@ -227,6 +230,9 @@ public sealed class DSA035Analyzer : DiagnosticAnalyzer
         if (ns == "System" && type.Name == "Type")
             return true;
 
+        if (ns == "System" && type.Name == "Attribute")
+            return true;
+
         if (ns == "System.Reflection")
             return true;
 
@@ -241,10 +247,14 @@ public sealed class DSA035Analyzer : DiagnosticAnalyzer
         HashSet<ISymbol> modifiedSymbols,
         SemanticModel model)
     {
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-            return false;
+        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            return IsExpressionLoopInvariant(memberAccess.Expression, modifiedSymbols, model);
 
-        return IsExpressionLoopInvariant(memberAccess.Expression, modifiedSymbols, model);
+        if (invocation.Expression is MemberBindingExpressionSyntax &&
+            invocation.Parent is ConditionalAccessExpressionSyntax conditionalAccess)
+            return IsExpressionLoopInvariant(conditionalAccess.Expression, modifiedSymbols, model);
+
+        return false;
     }
 
     private static bool AreArgumentsLoopInvariant(
@@ -290,6 +300,7 @@ public sealed class DSA035Analyzer : DiagnosticAnalyzer
                         case IFieldSymbol { IsStatic: true }:
                         case IPropertySymbol:
                         case INamedTypeSymbol:
+                        case ITypeParameterSymbol:
                         case INamespaceSymbol:
                             break;
                         default:

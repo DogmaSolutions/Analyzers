@@ -4,7 +4,7 @@
 
 A set of C# Roslyn analyzers, code fixers, and refactorings that catch bugs, design flaws, and security pitfalls at compile time -- before they reach code review or production.
 
-The package currently ships 34 rules across six categories:
+The package currently ships many rules across six categories:
 - Design
 - Security
 - Performance
@@ -90,6 +90,13 @@ Every rule is accompanied by the following information and clues:
 | [DSA033](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA033.md) | Code Smell | File exceeds maximum line count | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA034](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA034.md) | Code Smell | Single-type file exceeds maximum line count | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA035](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA035.md) | Performance | Hoist loop-invariant reflection call out of loop | ⚠ Warning | ✅ | ✅ | ✅ |
+| [DSA036](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md) | Performance | Extract Regex with constant pattern to a static readonly field | ℹ Info | ✅ | ✅ | ✅ |
+| [DSA037](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md) | Bug | A `[ThreadStatic]` `Random` field must not have a field initializer (only the first thread is initialized) | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA038](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md) | Bug | Avoid seeding `Random` with a time-based or constant value | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA039](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md) | Security | Avoid modulo bias when reducing cryptographic random bytes into a range (use `RandomNumberGenerator.GetInt32`) | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA040](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA040.md) | Security | Do not use `System.Random` for security-sensitive values (token/salt/nonce/key); use `RandomNumberGenerator` | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA041](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA041.md) | Code Smell | Avoid switching over an enum with many members (`max_enum_members`, default 4); prefer the Strategy pattern | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA042](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA042.md) | Code Smell | Avoid repeating a segment in a namespace (e.g. `My.Project.Models.Models`) | ⚠ Warning | ✅ | ❌ | ✅ |
 
 # Refactorings list
 

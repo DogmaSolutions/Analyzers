@@ -726,4 +726,118 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  * Wikipedia: Reflection (computer programming) - https://en.wikipedia.org/wiki/Reflection_(computer_programming)
  */</value>
   </data>
+  <data name="DSA036AnalyzerDescription" xml:space="preserve">
+    <value>A Regex object is created at runtime with a pattern (and options, timeout) that are compile-time constants or effectively immutable values. Each such creation allocates a new Regex instance and parses the pattern from scratch — an expensive operation involving finite automaton construction. When the pattern never changes, the Regex should be created once in a private static readonly field and reused across all invocations. This eliminates redundant allocations and parsing, particularly in hot paths and loops. The same applies to static Regex methods (IsMatch, Match, Replace, Split, etc.) which internally create and cache Regex instances with a bounded cache (15 entries by default) — exceeding that cache causes eviction and re-parsing. Pre-allocating a static readonly Regex field guarantees zero cache pressure and consistent O(1) instance retrieval. Security-wise, unbounded Regex allocations inside a tight loop or a request-processing pipeline can be exploited for denial-of-service: an attacker who can trigger the code path repeatedly forces the server to waste CPU cycles on redundant pattern parsing and increases GC pressure. In the context of IEC 62443 certification, this supports FR 7 (Resource Availability) by ensuring that computational resources are not wasted on redundant object construction (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md).</value>
+  </data>
+  <data name="DSA036AnalyzerMessageFormat" xml:space="preserve">
+    <value>'{0}' uses a constant pattern and should be extracted to a private static readonly field to avoid repeated allocation and parsing</value>
+  </data>
+  <data name="DSA036AnalyzerTitle" xml:space="preserve">
+    <value>Extract Regex with constant pattern to a static readonly field</value>
+  </data>
+  <data name="DSA037AnalyzerDescription" xml:space="preserve">
+    <value>A field marked with [ThreadStatic] and given a field initializer is a latent, hard-to-diagnose bug. A thread-static field initializer executes only for the single thread that first triggers the declaring type's static construction; on every other thread the field keeps its default value (null for a reference type such as System.Random), so the first use on those threads throws a NullReferenceException. The correct pattern is to leave the [ThreadStatic] field uninitialized and lazily assign a per-thread instance on first use (e.g. `_rnd ??= new Random();`), or to drop [ThreadStatic] entirely in favour of Random.Shared on .NET 6+. Because System.Random is not thread-safe, developers frequently reach for [ThreadStatic] to obtain a per-thread instance, which makes this a common footgun precisely in the code that was trying to be correct about threading (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md).</value>
+  </data>
+  <data name="DSA037AnalyzerMessageFormat" xml:space="preserve">
+    <value>The [ThreadStatic] field '{0}' has a field initializer, which runs only on the thread that first triggers static construction; every other thread will observe null. Remove the initializer and assign the Random per-thread on first use, or use Random.Shared.</value>
+  </data>
+  <data name="DSA037AnalyzerTitle" xml:space="preserve">
+    <value>A [ThreadStatic] Random field must not have a field initializer</value>
+  </data>
+  <data name="DSA038AnalyzerDescription" xml:space="preserve">
+    <value>Constructing System.Random with an explicit seed is almost always a mistake. When the seed is a time-based value such as Environment.TickCount or DateTime.UtcNow.Ticks, it merely reproduces what the parameterless `new Random()` constructor already does — but worse: the clock has low resolution, so two Random instances created within the same tick (for example inside a loop) are given the same seed and therefore produce the identical sequence of numbers. When the seed is a compile-time constant (for example `new Random(42)`), the sequence is fully deterministic and predictable, which is occasionally desirable for reproducible simulations or tests but is a defect in production code. Prefer the parameterless `new Random()` (or `Random.Shared` on .NET 6+), and reserve seeded construction for code that genuinely needs a reproducible sequence — where the rule can be downgraded per-path via .editorconfig. Never derive a seed from the current time by hand (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md).</value>
+  </data>
+  <data name="DSA038AnalyzerMessageFormat" xml:space="preserve">
+    <value>This Random is seeded with {0}. Prefer the parameterless 'new Random()' (or Random.Shared) unless a reproducible sequence is explicitly required.</value>
+  </data>
+  <data name="DSA038AnalyzerTitle" xml:space="preserve">
+    <value>Avoid seeding Random with a time-based or constant value</value>
+  </data>
+  <data name="DSA039AnalyzerDescription" xml:space="preserve">
+    <value>Bytes produced by System.Security.Cryptography.RandomNumberGenerator are uniformly distributed, but reducing them into a smaller range with the remainder operator (%) reintroduces bias unless the range size exactly divides the operand's value domain (e.g. 2^32 for an int). When it does not, the lower residues occur slightly more often than the higher ones, so the resulting value is no longer uniform — which silently weakens tokens, keys, PINs and other security-sensitive values and defeats the entire reason for choosing a cryptographic generator over System.Random. The correct API is RandomNumberGenerator.GetInt32(fromInclusive, toExclusive), which performs rejection sampling to produce an unbiased value in the requested range. This rule flags a % whose left operand is derived from RandomNumberGenerator output (via BitConverter conversion of, or indexing into, RNG-filled bytes, including a one-hop local buffer). It deliberately favours precision over recall and does not follow cross-method flow (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md).</value>
+  </data>
+  <data name="DSA039AnalyzerMessageFormat" xml:space="preserve">
+    <value>Reducing cryptographic random bytes with % introduces modulo bias; use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive)</value>
+  </data>
+  <data name="DSA039AnalyzerTitle" xml:space="preserve">
+    <value>Avoid modulo bias when reducing cryptographic random bytes into a range</value>
+  </data>
+  <data name="DSA040AnalyzerDescription" xml:space="preserve">
+    <value>System.Random is a non-cryptographic pseudo-random generator: its output is fast but predictable, and must never be used to produce security-sensitive values such as tokens, passwords, salts, nonces, initialization vectors, session identifiers, API keys, OTPs or CSRF tokens. An attacker who can observe or reconstruct the generator state can predict future values and forge or guess these secrets. This rule flags Random output (any Next* method, including Random.Shared, and NextBytes into a buffer) that flows into a sink whose name matches a security term — a variable, field, property, parameter or return whose identifier contains a security word on a word boundary (so 'apiKey' and 'sessionId' match while 'keyboard' does not). It follows one assignment hop within a method and favours precision over recall: it is a lightweight name heuristic, not a taint engine. The fix is to use System.Security.Cryptography.RandomNumberGenerator (for example GetBytes or GetInt32). This complements the broad CA5394 with a low-noise, sink-aware signal (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA040.md).</value>
+  </data>
+  <data name="DSA040AnalyzerMessageFormat" xml:space="preserve">
+    <value>Do not use the non-cryptographic System.Random for a security-sensitive value; use System.Security.Cryptography.RandomNumberGenerator</value>
+  </data>
+  <data name="DSA040AnalyzerTitle" xml:space="preserve">
+    <value>Do not use System.Random for security-sensitive values</value>
+  </data>
+  <data name="DSA037ReviewComment" xml:space="preserve">
+    <value>/* [DSA037 / QA + Bug]: A [ThreadStatic] Random field must not have a field initializer (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md)
+ * A [ThreadStatic] field initializer runs only on the thread that first triggers static construction; every other thread observes the default (null). Assign the Random per-thread on first use, or use Random.Shared.
+ * MITRE, CWE-457: Use of Uninitialized Variable - https://cwe.mitre.org/data/definitions/457.html
+ * ThreadStaticAttribute - https://learn.microsoft.com/en-us/dotnet/api/system.threadstaticattribute
+ */</value>
+  </data>
+  <data name="DSA038ReviewComment" xml:space="preserve">
+    <value>/* [DSA038 / CySec + QA + Bug]: Avoid seeding Random with a time-based or constant value (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md)
+ * A time-based seed collides within a clock tick (identical sequences); a constant seed is fully predictable. Prefer the parameterless 'new Random()' or Random.Shared.
+ * MITRE, CWE-337: Predictable Seed in Pseudo-Random Number Generator - https://cwe.mitre.org/data/definitions/337.html
+ * System.Random - https://learn.microsoft.com/en-us/dotnet/api/system.random
+ */</value>
+  </data>
+  <data name="DSA039ReviewComment" xml:space="preserve">
+    <value>/* [DSA039 / CySec + QA + Security]: Avoid modulo bias when reducing cryptographic random bytes into a range (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md)
+ * A naive % reduction skews the distribution and undermines the cryptographic guarantee. Use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive), which rejection-samples an unbiased value.
+ * MITRE, CWE-1241: Use of Predictable Algorithm in Random Number Generator - https://cwe.mitre.org/data/definitions/1241.html
+ * MITRE, CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG) - https://cwe.mitre.org/data/definitions/338.html
+ * RandomNumberGenerator.GetInt32 - https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator.getint32
+ */</value>
+  </data>
+  <data name="DSA040ReviewComment" xml:space="preserve">
+    <value>/* [DSA040 / CySec + QA + Security]: Do not use System.Random for security-sensitive values (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA040.md)
+ * System.Random is fast but predictable; an attacker who reconstructs its state can forge tokens, salts, nonces, keys or OTPs. Use System.Security.Cryptography.RandomNumberGenerator (GetBytes / GetInt32).
+ * MITRE, CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG) - https://cwe.mitre.org/data/definitions/338.html
+ * OWASP: Insecure Randomness - https://owasp.org/www-community/vulnerabilities/Insecure_Randomness
+ * RandomNumberGenerator - https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator
+ */</value>
+  </data>
+  <data name="DSA036ReviewComment" xml:space="preserve">
+    <value>/* [DSA036 / CySec + QA + Performance]: Extract Regex with constant pattern to a static readonly field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md)
+ * MITRE, CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+ * MITRE, CWE-405: Asymmetric Resource Consumption (Amplification) - https://cwe.mitre.org/data/definitions/405.html
+ * IEC 62443-3-3: System security requirements and security levels - https://webstore.iec.ch/en/publication/7033
+ * Microsoft: .NET Regular Expression Best Practices - https://learn.microsoft.com/en-us/dotnet/standard/base-types/best-practices-regex
+ */</value>
+  </data>
+  <data name="DSA041AnalyzerTitle" xml:space="preserve">
+    <value>Avoid switching over an enum with many members</value>
+  </data>
+  <data name="DSA041AnalyzerMessageFormat" xml:space="preserve">
+    <value>The switch is driven by enum '{0}', which declares {1} members (more than the allowed {2}); a large-enum switch is a code smell — prefer the Strategy pattern</value>
+  </data>
+  <data name="DSA041AnalyzerDescription" xml:space="preserve">
+    <value>A switch (statement or expression) whose governing value is an enum with more than max_enum_members members (default 4) has grown too complex for a switch to remain the right tool. High decisional complexity in a single switch invites CWE-670 (always-incorrect control flow), CWE-840 (business-logic errors) and CWE-478 (missing default / non-exhaustive) defects. Prefer the Strategy pattern (https://en.wikipedia.org/wiki/Strategy_pattern) to distribute the per-case behaviour. The threshold is configurable via the editorconfig option dotnet_diagnostic.DSA041.max_enum_members (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA041.md).</value>
+  </data>
+  <data name="DSA041ReviewComment" xml:space="preserve">
+    <value>/* [DSA041 / QA + Code Smell]: Switch driven by a large enum (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA041.md)
+ * CWE-670: Always-Incorrect Control Flow Implementation - https://cwe.mitre.org/data/definitions/670.html
+ * CWE-840: Business Logic Errors - https://cwe.mitre.org/data/definitions/840.html
+ * CWE-478: Missing Default Case in Multiple Condition Expression - https://cwe.mitre.org/data/definitions/478.html
+ * Strategy pattern - https://en.wikipedia.org/wiki/Strategy_pattern
+ */</value>
+  </data>
+  <data name="DSA042AnalyzerTitle" xml:space="preserve">
+    <value>Avoid repeating a segment in a namespace</value>
+  </data>
+  <data name="DSA042AnalyzerMessageFormat" xml:space="preserve">
+    <value>The namespace '{0}' repeats the segment '{1}'; a repeated segment is a naming smell — rename or flatten the namespace</value>
+  </data>
+  <data name="DSA042AnalyzerDescription" xml:space="preserve">
+    <value>A namespace whose dotted path repeats the same segment — adjacent (My.Project.Models.Models) or not (My.Project.Models.Abstractions.Models) — is a naming smell: it is harder to read and usually signals a misplaced nesting level. Rename the offending segment or flatten the namespace so each segment is distinct (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA042.md).</value>
+  </data>
+  <data name="DSA042ReviewComment" xml:space="preserve">
+    <value>/* [DSA042 / QA + Code Smell]: Namespace repeats a segment (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA042.md)
+ * CWE-1078: Inappropriate Source Code Style or Formatting - https://cwe.mitre.org/data/definitions/1078.html
+ */</value>
+  </data>
 </root>

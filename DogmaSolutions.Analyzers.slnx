@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/Shared files/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="BannedSymbols.txt" />
+    <File Path="Directory.Build.props" />
+    <File Path="DogmaSolutions.ruleset" />
+    <File Path="DuplicateCode.Allowed.txt" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="DogmaSolutions.Analyzers.Package/DogmaSolutions.Analyzers.Package.csproj" />
+  <Project Path="DogmaSolutions.Analyzers.Test/DogmaSolutions.Analyzers.Test.csproj" />
+  <Project Path="DogmaSolutions.Analyzers.WorkbenchLibrary/DogmaSolutions.Analyzers.WorkbenchLibrary.csproj" />
+  <Project Path="DogmaSolutions.Analyzers/DogmaSolutions.Analyzers.csproj" />
+</Solution>

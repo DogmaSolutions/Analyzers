@@ -38,3 +38,10 @@ DSA032  | Code Smells   | Warning  | DSA032Analyzer
 DSA033  | Code Smells   | Warning  | DSA033Analyzer
 DSA034  | Code Smells   | Warning  | DSA034Analyzer
 DSA035  | Performance   | Warning  | DSA035Analyzer
+DSA036  | Performance   | Info     | DSA036Analyzer
+DSA037  | Bug           | Warning  | DSA037Analyzer
+DSA038  | Bug           | Warning  | DSA038Analyzer
+DSA039  | Security      | Warning  | DSA039Analyzer
+DSA040  | Security      | Warning  | DSA040Analyzer
+DSA041  | Code Smell    | Warning  | DSA041Analyzer
+DSA042  | Code Smell    | Warning  | DSA042Analyzer

@@ -9,6 +9,32 @@ namespace DogmaSolutions.Analyzers;
 
 internal static class SyntaxUtils
 {
+    /// <summary>
+    /// Strips the value-preserving wrappers that sit AROUND an expression — parentheses, casts and
+    /// <c>checked</c>/<c>unchecked</c> — returning the innermost operand (e.g. <c>unchecked((int)x)</c> → <c>x</c>).
+    /// Shared by the RNG-seed and modulo-bias analyzers so the "peel to the real value" logic lives in one place.
+    /// </summary>
+    internal static ExpressionSyntax UnwrapParenthesesCastsAndChecked(ExpressionSyntax expression)
+    {
+        while (true)
+        {
+            switch (expression)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    expression = parenthesized.Expression;
+                    continue;
+                case CastExpressionSyntax cast:
+                    expression = cast.Expression;
+                    continue;
+                case CheckedExpressionSyntax @checked:
+                    expression = @checked.Expression;
+                    continue;
+                default:
+                    return expression;
+            }
+        }
+    }
+
     internal static SyntaxNode GetContainingScope(SyntaxNode node)
     {
         var current = node.Parent;

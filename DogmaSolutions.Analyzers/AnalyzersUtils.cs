@@ -274,5 +274,28 @@ namespace DogmaSolutions.Analyzers
 
             return types;
         }
+
+        /// <summary>
+        /// The "header" span of a type declaration: from the start of the declaration (attributes/modifiers/keyword)
+        /// up to — but not including — the opening brace. This is the region a developer means by "the class/struct/
+        /// interface/record declaration line(s)", as opposed to the body between the braces.
+        /// </summary>
+        internal static TextSpan GetTypeDeclarationHeaderSpan(BaseTypeDeclarationSyntax typeDeclaration)
+        {
+            var start = typeDeclaration.SpanStart;
+            // OpenBraceToken.SpanStart is the boundary between header and body. For malformed/partial code with no
+            // braces the parser supplies a zero-width MISSING open brace positioned right after the header, so this
+            // still yields the declaration line without special-casing (and never throws).
+            var end = System.Math.Max(start, typeDeclaration.OpenBraceToken.SpanStart);
+            return TextSpan.FromBounds(start, end);
+        }
+
+        /// <summary>
+        /// True when the editor caret/selection <paramref name="span"/> falls on the type declaration's header
+        /// (see <see cref="GetTypeDeclarationHeaderSpan"/>) — i.e. the cursor is on the declaration line, not inside
+        /// the body. Centralised so every provider that offers a type-level action agrees on "at class level".
+        /// </summary>
+        internal static bool IsSpanOnTypeDeclarationHeader(BaseTypeDeclarationSyntax typeDeclaration, TextSpan span) =>
+            GetTypeDeclarationHeaderSpan(typeDeclaration).IntersectsWith(span);
     }
 }

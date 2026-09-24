@@ -25,7 +25,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="DogmaSolutions.Analyzers.Test" />
+        <!-- The assembly is strong-name signed with the org key (CI: SignAssembly=true), so a friend
+             reference MUST carry that key's public key, else CS1726. Key = the org public key (token
+             d8c2a102d42a7e66). The SDK turns this into [InternalsVisibleTo("...Test, PublicKey=<Key>")]. -->
+        <InternalsVisibleTo Include="DogmaSolutions.Analyzers.Test" Key="00240000048000001401000006020000002400005253413100080000010001003dec65ec74b8c6df572342a652314dbfd35c74e216806008ef9d10318e35da17eba7baae9581ecf7c1409d2cd8dbddfe078018d240e98564a0e7697b09f4310ffd35bab3bb1b6de3ca654fb1611dc42081656a5ac8012f40411e60e8d0a4da7e9db9d596344a9085b411c516d80a2114580914407ee13f4a2826d08fb47ddeb4a3197d54fd776c86338deb2e12c93e61f4b63e4496fdea6cb818d935c3b7290f242c57622205e12189a94d9c6e6c3f067a9a1c0d0d095bd8d41b96d066a68c0c672a39366da7882709a5b90e723fd45542e6f46eb47e5635940fac5ab72125a3ca73cbf087ad40cd461df14ca6a45a3c112489730daf97d49a4ed484bdae24e6" />
     </ItemGroup>
 
     <ItemGroup>
