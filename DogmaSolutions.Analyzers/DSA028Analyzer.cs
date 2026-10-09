@@ -48,6 +48,15 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
         "IndexOf", "LastIndexOf", "AsReadOnly", "EnsureCapacity",
     };
 
+    // Methods that change a list in place (or fill another one): a list on which they are called can't become an array.
+    private static readonly HashSet<string> MutatingMethods = new(StringComparer.Ordinal)
+    {
+        "Add", "AddRange", "Insert", "InsertRange",
+        "Remove", "RemoveAt", "RemoveAll", "RemoveRange",
+        "Clear", "Sort", "Reverse", "Set",
+        "TrimExcess", "CopyTo",
+    };
+
     private static readonly string[] ImmutableReturnTypes =
     [
         "IEnumerable",
@@ -452,10 +461,7 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
 
     private static bool IsMutatingMethod(string methodName)
     {
-        return methodName is "Add" or "AddRange" or "Insert" or "InsertRange"
-            or "Remove" or "RemoveAt" or "RemoveAll" or "RemoveRange"
-            or "Clear" or "Sort" or "Reverse" or "Set"
-            or "TrimExcess" or "CopyTo";
+        return MutatingMethods.Contains(methodName);
     }
 
     private static bool IsInsideNestedFunction(SyntaxNode node, SyntaxNode boundary)
