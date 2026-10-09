@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace DogmaSolutions.Analyzers.Test;
 
 [TestClass]
-public class DSA030Tests
+public partial class DSA030Tests
 {
     private const string EfCoreStubs = @"#nullable disable
 using System;

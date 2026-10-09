@@ -324,33 +324,33 @@ public sealed class DSA030Analyzer : DiagnosticAnalyzer
         IParameterSymbol parameter,
         IMethodSymbol invokedSymbol)
     {
-        var paramOrdinal = parameter.Ordinal;
         var isReducedExtensionCall = invokedSymbol.ReducedFrom != null;
 
-        if (isReducedExtensionCall && paramOrdinal == 0)
-        {
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
-                return memberAccess.Expression;
-            return null;
-        }
+        // In a reduced extension call (x.Ext(...)) the 'this' parameter is not an argument: it is the member-access receiver.
+        if (isReducedExtensionCall && parameter.Ordinal == 0)
+            return (invocation.Expression as MemberAccessExpressionSyntax)?.Expression;
 
-        var argIndex = isReducedExtensionCall ? paramOrdinal - 1 : paramOrdinal;
+        // The receiver takes no slot in the argument list of a reduced call, so the remaining parameters shift by one.
+        var argIndex = isReducedExtensionCall ? parameter.Ordinal - 1 : parameter.Ordinal;
 
-        foreach (var arg in invocation.ArgumentList.Arguments)
-        {
-            if (arg.NameColon != null &&
-                arg.NameColon.Name.Identifier.ValueText == parameter.Name)
-                return arg.Expression;
-        }
+        return FindNamedArgument(invocation, parameter.Name) ?? FindPositionalArgument(invocation, argIndex);
+    }
 
-        if (argIndex >= 0 && argIndex < invocation.ArgumentList.Arguments.Count)
-        {
-            var arg = invocation.ArgumentList.Arguments[argIndex];
-            if (arg.NameColon == null)
-                return arg.Expression;
-        }
+    private static ExpressionSyntax FindNamedArgument(InvocationExpressionSyntax invocation, string parameterName)
+    {
+        return invocation.ArgumentList.Arguments
+            .FirstOrDefault(arg => arg.NameColon?.Name.Identifier.ValueText == parameterName)
+            ?.Expression;
+    }
 
-        return null;
+    private static ExpressionSyntax FindPositionalArgument(InvocationExpressionSyntax invocation, int argIndex)
+    {
+        // An omitted optional parameter leaves no argument at its position: the slot is either past the end of the list,
+        // or taken by a named argument that belongs to another parameter.
+        var arguments = invocation.ArgumentList.Arguments;
+        return argIndex < arguments.Count && arguments[argIndex].NameColon == null
+            ? arguments[argIndex].Expression
+            : null;
     }
 
     private static bool ArgumentExpressionHasTrackingChoice(
