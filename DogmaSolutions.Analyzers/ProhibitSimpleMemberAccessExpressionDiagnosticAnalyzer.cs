@@ -70,20 +70,7 @@ public abstract class ProhibitSimpleMemberAccessExpressionDiagnosticAnalyzer<T> 
 
 
         // Maybe "TypeName" has been imported using a "using static"
-        var importedByStaticUsing = memberAccessExpression.Ancestors().
-                                        OfType<CompilationUnitSyntax>().
-                                        FirstOrDefault()?. // navigate "up" and find the root
-                                        DescendantNodes().
-                                        OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
-                                        Any(
-                                            u => u.StaticKeyword.IsKind(SyntaxKind.StaticKeyword) && // consider only "using static" directives
-                                                 (u.NamespaceOrType.ToString() == TypeFullName || // consider only "using static TypeFullName" ?
-                                                  u.NamespaceOrType.ToString() == GlobalTypeFullName // consider only "using static global::TypeFullName" ?
-                                                 )
-                                        ) ==
-                                    true;
-
-        return importedByStaticUsing;
+        return IsTypeImportedWithUsingStatic(memberAccessExpression);
     }
 
     protected virtual void OnIdentifierName(SyntaxNodeAnalysisContext ctx, [NotNull] DiagnosticDescriptor rule)
@@ -108,20 +95,26 @@ public abstract class ProhibitSimpleMemberAccessExpressionDiagnosticAnalyzer<T> 
             return false;
 
         // Maybe "TypeName" has been imported using a "using static"
-        var importedByStaticUsing = identifierNameSyntax.Ancestors().
-                                        OfType<CompilationUnitSyntax>().
-                                        FirstOrDefault()?. // navigate "up" and find the root
-                                        DescendantNodes().
-                                        OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
-                                        Any(
-                                            u => u.StaticKeyword.IsKind(SyntaxKind.StaticKeyword) && // consider only "using static" directives
-                                                 (u.NamespaceOrType.ToString() == TypeFullName || // consider only "using static TypeFullName" ?
-                                                  u.NamespaceOrType.ToString() == GlobalTypeFullName // consider only "using static global::TypeFullName" ?
-                                                 )
-                                        ) ==
-                                    true;
+        return IsTypeImportedWithUsingStatic(identifierNameSyntax);
+    }
 
-        return importedByStaticUsing;
+    private bool IsTypeImportedWithUsingStatic(SyntaxNode node)
+    {
+        var root = node.Ancestors().OfType<CompilationUnitSyntax>().FirstOrDefault(); // navigate "up" and find the root
+        return root != null &&
+               root.DescendantNodes().
+                   OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
+                   Any(IsUsingStaticOfType);
+    }
+
+    // consider only "using static TypeFullName" or "using static global::TypeFullName"
+    private bool IsUsingStaticOfType(UsingDirectiveSyntax directive)
+    {
+        if (!directive.StaticKeyword.IsKind(SyntaxKind.StaticKeyword))
+            return false;
+
+        var imported = directive.NamespaceOrType.ToString();
+        return imported == TypeFullName || imported == GlobalTypeFullName;
     }
 
     #pragma warning restore CA1062
