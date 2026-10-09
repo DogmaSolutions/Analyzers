@@ -271,4 +271,79 @@ namespace TestApp
 
         await VerifyFixAsync(source, fixedSource, "Count", 2).ConfigureAwait(false);
     }
+
+    // The declaration goes inside the innermost loop whose variable the expression uses, even if the outer loops are unrelated.
+
+    [TestMethod]
+    public async Task FixNestedLoops_InnerLoopVariableOnly_DeclaresInsideTheInnerLoop()
+    {
+        var source = LoopSource(@"
+            foreach (var group in groups)
+            {
+                foreach (var item in group)
+                {
+                    var a = {|#0:item.Children.Count()|};
+                    var b = {|#1:item.Children.Count()|};
+                }
+            }");
+
+        var fixedSource = LoopSource(@"
+            foreach (var group in groups)
+            {
+                foreach (var item in group)
+                {
+                    var count = item.Children.Count();
+                    var a = count;
+                    var b = count;
+                }
+            }");
+
+        await VerifyFixAsync(source, fixedSource, "Count", 2).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixNestedLoops_ForLoopVariableInsideAnUnrelatedForEach_DeclaresInsideTheForLoop()
+    {
+        var source = LoopSource(@"
+            foreach (var group in groups)
+            {
+                for (var i = 0; i < group.Count; i++)
+                {
+                    var a = {|#0:group[i].Children.Count()|};
+                    var b = {|#1:group[i].Children.Count()|};
+                }
+            }");
+
+        var fixedSource = LoopSource(@"
+            foreach (var group in groups)
+            {
+                for (var i = 0; i < group.Count; i++)
+                {
+                    var count = group[i].Children.Count();
+                    var a = count;
+                    var b = count;
+                }
+            }");
+
+        await VerifyFixAsync(source, fixedSource, "Count", 2).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixNestedLoopsWithoutBraces_InnerLoopVariableOnly_WrapsTheInnerBodyInABlock()
+    {
+        var source = LoopSource(@"
+            foreach (var group in groups)
+                foreach (var item in group)
+                    System.Console.WriteLine({|#0:item.Children.Count()|} + {|#1:item.Children.Count()|});");
+
+        var fixedSource = LoopSource(@"
+            foreach (var group in groups)
+                foreach (var item in group)
+                {
+                    var count = item.Children.Count();
+                    System.Console.WriteLine(count + count);
+                }");
+
+        await VerifyFixAsync(source, fixedSource, "Count", 2).ConfigureAwait(false);
+    }
 }

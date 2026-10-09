@@ -521,30 +521,25 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
         if (semanticModel == null)
             return insertionStatement;
 
-        // Keep descending into nested loops as long as the expression depends on the variable of the current loop.
-        StatementSyntax innerStatement;
-        while ((innerStatement = FindInsertionStatementInsideLoop(insertionStatement, expressionToExtract, occurrences, semanticModel)) != null)
-            insertionStatement = innerStatement;
+        // The innermost loop (among the ones enclosing the occurrences) declaring a variable the expression depends on:
+        // the extracted variable can't be declared before it, wherever the outer loops are.
+        var dependentLoop = occurrences
+            .First(insertionStatement.Contains)
+            .Ancestors()
+            .OfType<StatementSyntax>()
+            .TakeWhile(insertionStatement.Contains)
+            .Select(statement => GetLoopBodyAndVariables(statement, semanticModel))
+            .FirstOrDefault(loop => loop.Body != null &&
+                                    loop.Variables.Any(variable => ExpressionReferencesSymbol(expressionToExtract, variable, semanticModel)));
 
-        return insertionStatement;
-    }
+        if (dependentLoop.Body == null)
+            return insertionStatement;
 
-    /// <summary>
-    /// When the statement is a loop declaring a variable used by the expression to extract, returns the statement of the loop
-    /// body in front of which the variable must be declared: the earliest statement of the body containing an occurrence, or
-    /// the body itself when it is a single embedded statement (which the caller wraps in a block). Otherwise null.
-    /// </summary>
-    private static StatementSyntax FindInsertionStatementInsideLoop(
-        StatementSyntax statement,
-        ExpressionSyntax expressionToExtract,
-        List<SyntaxNode> occurrences,
-        SemanticModel semanticModel)
-    {
-        var (loopBody, loopVariables) = GetLoopBodyAndVariables(statement, semanticModel);
-        if (loopBody == null || !loopVariables.Any(variable => ExpressionReferencesSymbol(expressionToExtract, variable, semanticModel)))
-            return null;
-
-        return loopBody is BlockSyntax ? FindEarliestContainingStatement(occurrences, loopBody) : loopBody;
+        // Declare it in front of the earliest statement of the loop body containing an occurrence, or wrap the body
+        // in a block when it is a single embedded statement.
+        return dependentLoop.Body is BlockSyntax
+            ? FindEarliestContainingStatement(occurrences, dependentLoop.Body)
+            : dependentLoop.Body;
     }
 
     private static (StatementSyntax Body, IEnumerable<ISymbol> Variables) GetLoopBodyAndVariables(StatementSyntax statement, SemanticModel semanticModel)
