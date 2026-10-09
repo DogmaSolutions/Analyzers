@@ -292,6 +292,37 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
 
     private static List<ElapsedTimePairInfo> FindElapsedTimePairs(BlockSyntax body, SemanticModel model)
     {
+        var dateTimeVars = CollectDateTimeVars(body);
+        var startVars = dateTimeVars.Where(v => ContainsStartKeyword(v.Declarator.Identifier.ValueText)).ToList();
+        var endVars = dateTimeVars.Where(v => ContainsEndKeyword(v.Declarator.Identifier.ValueText)).ToList();
+
+        var pairs = new List<ElapsedTimePairInfo>();
+        var usedDeclarators = new HashSet<VariableDeclaratorSyntax>();
+
+        // Pass 1: find start+end variable pairs
+        foreach (var startVar in startVars.Where(v => !usedDeclarators.Contains(v.Declarator)))
+        {
+            var pair = TryCreateStartEndPair(startVar, endVars, usedDeclarators, body, model);
+            if (pair != null)
+                pairs.Add(pair);
+        }
+
+        // Pass 2: find start variables with inline DateTime subtraction (no end variable)
+        foreach (var startVar in startVars.Where(v => !usedDeclarators.Contains(v.Declarator)))
+        {
+            var pair = TryCreateInlineSubtractionPair(startVar, usedDeclarators, body, model);
+            if (pair != null)
+                pairs.Add(pair);
+        }
+
+        return pairs;
+    }
+
+    /// <summary>
+    /// The local variables initialized with DateTime.Now / UtcNow (or DateTimeOffset.Now / UtcNow).
+    /// </summary>
+    private static List<DateTimeVarInfo> CollectDateTimeVars(BlockSyntax body)
+    {
         var dateTimeVars = new List<DateTimeVarInfo>();
 
         foreach (var localDecl in body.DescendantNodes().OfType<LocalDeclarationStatementSyntax>())
@@ -313,95 +344,89 @@ public sealed class DSA005CodeFixProvider : CodeFixProvider
             }
         }
 
-        var pairs = new List<ElapsedTimePairInfo>();
-        var usedDeclarators = new HashSet<VariableDeclaratorSyntax>();
+        return dateTimeVars;
+    }
 
-        // Pass 1: find start+end variable pairs (existing logic)
-        foreach (var startVar in dateTimeVars.Where(v => ContainsStartKeyword(v.Declarator.Identifier.ValueText)))
+    /// <summary>
+    /// Pairs a start variable with the first end variable (same property and type) such that both are only used in
+    /// subtractions. Marks both as used when a pair is found.
+    /// </summary>
+    private static ElapsedTimePairInfo TryCreateStartEndPair(
+        DateTimeVarInfo startVar,
+        IEnumerable<DateTimeVarInfo> endVars,
+        HashSet<VariableDeclaratorSyntax> usedDeclarators,
+        BlockSyntax body,
+        SemanticModel model)
+    {
+        foreach (var endVar in endVars)
         {
-            if (usedDeclarators.Contains(startVar.Declarator))
+            if (usedDeclarators.Contains(endVar.Declarator))
                 continue;
 
-            foreach (var endVar in dateTimeVars.Where(v => ContainsEndKeyword(v.Declarator.Identifier.ValueText)))
-            {
-                if (usedDeclarators.Contains(endVar.Declarator))
-                    continue;
-
-                if (startVar.DateTimeProperty != endVar.DateTimeProperty || startVar.TypeName != endVar.TypeName)
-                    continue;
-                if (startVar.Declarator == endVar.Declarator)
-                    continue;
-
-                var subtractions = FindSubtractionExpressions(body, startVar.Declarator, endVar.Declarator, model);
-                if (subtractions.Count == 0)
-                    continue;
-
-                if (!AreVariablesOnlyUsedInSubtractions(
-                        body,
-                        startVar.Declarator,
-                        endVar.Declarator,
-                        subtractions,
-                        model))
-                    continue;
-
-                usedDeclarators.Add(startVar.Declarator);
-                usedDeclarators.Add(endVar.Declarator);
-
-                pairs.Add(
-                    new ElapsedTimePairInfo(
-                        startVar.Declarator,
-                        endVar.Declarator,
-                        endVar.Statement,
-                        startVar.InitializerExpression,
-                        startVar.Declarator.Identifier.ValueText,
-                        endVar.Declarator.Identifier.ValueText,
-                        startVar.DateTimeProperty,
-                        startVar.TypeName,
-                        subtractions));
-
-                break;
-            }
-        }
-
-        // Pass 2: find start variables with inline DateTime subtraction (no end variable)
-        foreach (var startVar in dateTimeVars.Where(v => ContainsStartKeyword(v.Declarator.Identifier.ValueText)))
-        {
-            if (usedDeclarators.Contains(startVar.Declarator))
+            if (startVar.DateTimeProperty != endVar.DateTimeProperty || startVar.TypeName != endVar.TypeName)
+                continue;
+            if (startVar.Declarator == endVar.Declarator)
                 continue;
 
-            var inlineSubtractions = FindInlineSubtractionExpressions(
-                body,
-                startVar.Declarator,
-                startVar.DateTimeProperty,
-                startVar.TypeName,
-                model);
-            if (inlineSubtractions.Count == 0)
+            var subtractions = FindSubtractionExpressions(body, startVar.Declarator, endVar.Declarator, model);
+            if (subtractions.Count == 0)
                 continue;
 
-            if (!AreVariablesOnlyUsedInSubtractions(
-                    body,
-                    startVar.Declarator,
-                    null,
-                    inlineSubtractions,
-                    model))
+            if (!AreVariablesOnlyUsedInSubtractions(body, startVar.Declarator, endVar.Declarator, subtractions, model))
                 continue;
 
             usedDeclarators.Add(startVar.Declarator);
+            usedDeclarators.Add(endVar.Declarator);
 
-            pairs.Add(
-                new ElapsedTimePairInfo(
-                    startVar.Declarator,
-                    null,
-                    null,
-                    startVar.InitializerExpression,
-                    startVar.Declarator.Identifier.ValueText,
-                    null,
-                    startVar.DateTimeProperty,
-                    startVar.TypeName,
-                    inlineSubtractions));
+            return new ElapsedTimePairInfo(
+                startVar.Declarator,
+                endVar.Declarator,
+                endVar.Statement,
+                startVar.InitializerExpression,
+                startVar.Declarator.Identifier.ValueText,
+                endVar.Declarator.Identifier.ValueText,
+                startVar.DateTimeProperty,
+                startVar.TypeName,
+                subtractions);
         }
 
-        return pairs;
+        return null;
+    }
+
+    /// <summary>
+    /// Pairs a start variable with the inline subtractions (DateTime.Now - start) using it, if it is only used there.
+    /// Marks the start variable as used when a pair is found.
+    /// </summary>
+    private static ElapsedTimePairInfo TryCreateInlineSubtractionPair(
+        DateTimeVarInfo startVar,
+        HashSet<VariableDeclaratorSyntax> usedDeclarators,
+        BlockSyntax body,
+        SemanticModel model)
+    {
+        var inlineSubtractions = FindInlineSubtractionExpressions(
+            body,
+            startVar.Declarator,
+            startVar.DateTimeProperty,
+            startVar.TypeName,
+            model);
+        if (inlineSubtractions.Count == 0)
+            return null;
+
+        if (!AreVariablesOnlyUsedInSubtractions(body, startVar.Declarator, null, inlineSubtractions, model))
+            return null;
+
+        usedDeclarators.Add(startVar.Declarator);
+
+        return new ElapsedTimePairInfo(
+            startVar.Declarator,
+            null,
+            null,
+            startVar.InitializerExpression,
+            startVar.Declarator.Identifier.ValueText,
+            null,
+            startVar.DateTimeProperty,
+            startVar.TypeName,
+            inlineSubtractions);
     }
 
     private static List<SubtractionMatch> FindSubtractionExpressions(
