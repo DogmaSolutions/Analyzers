@@ -37,30 +37,45 @@ internal static class SyntaxUtils
 
     internal static SyntaxNode GetContainingScope(SyntaxNode node)
     {
-        var current = node.Parent;
-        while (current != null)
+        foreach (var ancestor in node.Ancestors())
         {
-            if (current is SimpleLambdaExpressionSyntax simpleLambda)
-                return simpleLambda.Body;
-            if (current is ParenthesizedLambdaExpressionSyntax parenLambda)
-                return parenLambda.Body;
-            if (current is AnonymousMethodExpressionSyntax anonMethod)
-                return anonMethod.Body;
-            if (current is LocalFunctionStatementSyntax localFunc)
-                return (SyntaxNode)localFunc.Body ?? localFunc.ExpressionBody?.Expression;
-            if (current is MethodDeclarationSyntax method)
-                return (SyntaxNode)method.Body ?? method.ExpressionBody?.Expression;
-            if (current is ConstructorDeclarationSyntax ctor)
-                return (SyntaxNode)ctor.Body ?? ctor.ExpressionBody?.Expression;
-            if (current is AccessorDeclarationSyntax accessor)
-                return (SyntaxNode)accessor.Body ?? accessor.ExpressionBody?.Expression;
-            if (current is CompilationUnitSyntax compilationUnit)
-                return compilationUnit;
-
-            current = current.Parent;
+            if (TryGetScopeOfContainer(ancestor, out var scope))
+                return scope;
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// When the node is a container of code (lambda, anonymous method, local function, method, constructor, accessor,
+    /// compilation unit), returns true and its body as the scope; the scope is null for a container without body.
+    /// </summary>
+    private static bool TryGetScopeOfContainer(SyntaxNode node, out SyntaxNode scope)
+    {
+        switch (node)
+        {
+            case AnonymousFunctionExpressionSyntax anonymousFunction: // lambdas and anonymous methods
+                scope = anonymousFunction.Body;
+                return true;
+            case LocalFunctionStatementSyntax localFunc:
+                scope = (SyntaxNode)localFunc.Body ?? localFunc.ExpressionBody?.Expression;
+                return true;
+            case MethodDeclarationSyntax method:
+                scope = (SyntaxNode)method.Body ?? method.ExpressionBody?.Expression;
+                return true;
+            case ConstructorDeclarationSyntax ctor:
+                scope = (SyntaxNode)ctor.Body ?? ctor.ExpressionBody?.Expression;
+                return true;
+            case AccessorDeclarationSyntax accessor:
+                scope = (SyntaxNode)accessor.Body ?? accessor.ExpressionBody?.Expression;
+                return true;
+            case CompilationUnitSyntax compilationUnit:
+                scope = compilationUnit;
+                return true;
+            default:
+                scope = null;
+                return false;
+        }
     }
 
     internal static bool IsNestedScope(SyntaxNode node)
