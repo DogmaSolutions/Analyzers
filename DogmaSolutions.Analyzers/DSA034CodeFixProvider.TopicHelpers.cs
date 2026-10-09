@@ -272,53 +272,66 @@ public partial class DSA034CodeFixProvider
         { "Aches", "Ache" },
     };
 
+    // Regular plural endings, tried in order: (ending, the word must be longer than this, characters to remove).
+    private static readonly (string Suffix, int MinLengthExclusive, int TrimLength)[] PluralSuffixRules =
+    {
+        ("sses", 4, 2),
+        ("shes", 4, 2),
+        ("ches", 5, 2),
+        ("xes", 3, 2),
+    };
+
     internal static string NormalizeWord(string word)
     {
         if (string.IsNullOrEmpty(word) || word.Length <= 2)
             return word;
 
-        foreach (var kvp in IrregularPlurals)
-        {
-            if (string.Equals(word, kvp.Key, StringComparison.OrdinalIgnoreCase))
-            {
-                if (char.IsLower(word[0]) && char.IsUpper(kvp.Value[0]))
-                    return char.ToLowerInvariant(kvp.Value[0]) + kvp.Value.Substring(1);
-                return kvp.Value;
-            }
-        }
+        if (IrregularPlurals.TryGetValue(word, out var singular))
+            return MatchFirstLetterCase(word, singular);
 
-        if (!word.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+        if (!EndsWith(word, "s"))
             return word;
 
+        return Singularize(word);
+    }
+
+    // The singular of an irregular plural, written in lower case when the plural is
+    private static string MatchFirstLetterCase(string plural, string singular)
+    {
+        return char.IsLower(plural[0]) && char.IsUpper(singular[0])
+            ? char.ToLowerInvariant(singular[0]) + singular.Substring(1)
+            : singular;
+    }
+
+    // The singular of a regular plural ending with 's'
+    private static string Singularize(string word)
+    {
         var len = word.Length;
 
         if (EndsWith(word, "ss") || EndsWith(word, "us") || EndsWith(word, "is"))
             return word;
 
         if (len > 3 && EndsWith(word, "ies"))
+            return SingularizeIes(word);
+
+        foreach (var (suffix, minLengthExclusive, trimLength) in PluralSuffixRules)
         {
-            var lower = word.ToLowerInvariant();
-            if (lower == "series" || lower == "species")
-                return word;
-            return word.Substring(0, len - 3) + (char.IsUpper(word[len - 3]) ? "Y" : "y");
+            if (len > minLengthExclusive && EndsWith(word, suffix))
+                return word.Substring(0, len - trimLength);
         }
 
-        if (len > 4 && EndsWith(word, "sses"))
-            return word.Substring(0, len - 2);
-
-        if (len > 4 && EndsWith(word, "shes"))
-            return word.Substring(0, len - 2);
-
-        if (len > 5 && EndsWith(word, "ches"))
-            return word.Substring(0, len - 2);
-
-        if (len > 3 && EndsWith(word, "xes"))
-            return word.Substring(0, len - 2);
-
-        if (len > 3 && EndsWith(word, "zes") && !EndsWith(word, "zzes"))
-            return word.Substring(0, len - 1);
-
         return word.Substring(0, len - 1);
+    }
+
+    // categories -> category, but series and species are their own singular
+    private static string SingularizeIes(string word)
+    {
+        var lower = word.ToLowerInvariant();
+        if (lower == "series" || lower == "species")
+            return word;
+
+        var len = word.Length;
+        return word.Substring(0, len - 3) + (char.IsUpper(word[len - 3]) ? "Y" : "y");
     }
 
     private static bool EndsWith(string word, string suffix)
