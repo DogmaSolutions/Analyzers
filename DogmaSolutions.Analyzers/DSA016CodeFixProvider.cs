@@ -58,12 +58,16 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
         if (displayFragment.Length > 60)
             displayFragment = displayFragment.Substring(0, 57) + "...";
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title: $"Extract '{displayFragment}' to local variable",
-                createChangedDocument: ct => ExtractToVariableAsync(context.Document, invocation, ct),
-                equivalenceKey: DSA016Analyzer.DiagnosticId),
-            diagnostic);
+        // A conditional access we can't extract without changing its null semantics (e.g. items?.Method().Name) gets no extraction.
+        if (!(invocation.Expression is MemberBindingExpressionSyntax) || TryGetReplaceableConditionalAccess(invocation, out _))
+        {
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: $"Extract '{displayFragment}' to local variable",
+                    createChangedDocument: ct => ExtractToVariableAsync(context.Document, invocation, ct),
+                    equivalenceKey: DSA016Analyzer.DiagnosticId),
+                diagnostic);
+        }
 
         ReviewCommentCodeFix.Register(context, diagnostic, invocation, DSA016Analyzer.DiagnosticId, nameof(Resources.DSA016ReviewComment));
     }
@@ -89,7 +93,11 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
 
         // Determine what expression to extract (the invocation itself, or the whole
         // ConditionalAccessExpression that wraps it for ?. chains)
-        var (nodesToReplace, expressionToExtract) = DetermineExtractionTarget(allOccurrences);
+        var extractionTarget = DetermineExtractionTarget(allOccurrences);
+        if (extractionTarget == null)
+            return document;
+
+        var (nodesToReplace, expressionToExtract) = extractionTarget.Value;
 
         var variableName = GenerateVariableName(targetInvocation);
 
@@ -133,11 +141,7 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
         SyntaxNode nodeToReplace;
         while ((nodeToReplace = newRoot.GetAnnotatedNodes(replaceAnnotation).FirstOrDefault()) != null)
         {
-            newRoot = newRoot.ReplaceNode(
-                nodeToReplace,
-                identifierName
-                    .WithLeadingTrivia(nodeToReplace.GetLeadingTrivia())
-                    .WithTrailingTrivia(nodeToReplace.GetTrailingTrivia()));
+            newRoot = newRoot.ReplaceNode(nodeToReplace, CreateReplacement(nodeToReplace, identifierName));
         }
 
         var finalInsertion = newRoot.GetAnnotatedNodes(insertionAnnotation).First() as StatementSyntax;
@@ -276,51 +280,78 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
     /// <summary>
     /// Determines the extraction target. For conditional access chains (items?.Method()),
     /// the entire ConditionalAccessExpression is extracted. Otherwise the invocation itself.
+    /// Returns null when the occurrences are conditional accesses that can't be extracted without changing their meaning.
     /// </summary>
-    private static (List<SyntaxNode> NodesToReplace, ExpressionSyntax ExpressionToExtract)
+    private static (List<SyntaxNode> NodesToReplace, ExpressionSyntax ExpressionToExtract)?
         DetermineExtractionTarget(List<InvocationExpressionSyntax> occurrences)
     {
-        // Check if all occurrences are inside ConditionalAccessExpressions (e.g., items?.FirstOrDefault(x => ...)).
-        var conditionalAccesses = occurrences.Select(GetContainingConditionalAccess).ToList();
+        if (!occurrences.Any(occurrence => occurrence.Expression is MemberBindingExpressionSyntax))
+            return (occurrences.Cast<SyntaxNode>().ToList(), occurrences[0]);
 
-        // The first one is the expression to extract: its WhenNotNull part must end at the invocation. When the
-        // conditional access has trailing access after the invocation (e.g., items?.FirstOrDefault(...)?.Name),
-        // or the occurrences do not all have the same shape, we can't easily split it: fall back to extracting
-        // the plain invocations.
-        if (conditionalAccesses.All(ca => ca != null) &&
-            conditionalAccesses[0].WhenNotNull is InvocationExpressionSyntax &&
-            conditionalAccesses.Zip(occurrences, IsWholeConditionalAccessReplaceable).All(replaceable => replaceable))
+        // Conditional access (e.g., items?.FirstOrDefault(x => ...)): every occurrence must be replaceable.
+        var conditionalAccesses = new List<ConditionalAccessExpressionSyntax>();
+        foreach (var occurrence in occurrences)
         {
-            return (conditionalAccesses.Cast<SyntaxNode>().ToList(), conditionalAccesses[0]);
+            if (!TryGetReplaceableConditionalAccess(occurrence, out var conditionalAccess))
+                return null;
+
+            conditionalAccesses.Add(conditionalAccess);
         }
 
-        return (occurrences.Cast<SyntaxNode>().ToList(), occurrences[0]);
+        return (conditionalAccesses.Cast<SyntaxNode>().ToList(), BuildConditionalAccessToExtract(conditionalAccesses[0], occurrences[0]));
     }
 
     /// <summary>
-    /// True when the whole conditional access is the occurrence (no trailing access after the invocation), so it can be
-    /// replaced by the extracted variable.
+    /// Finds the conditional access to replace by the extracted variable:
+    /// <list type="bullet">
+    /// <item><c>items?.Method()</c>: the whole conditional access, which is replaced by the variable;</item>
+    /// <item><c>items?.Method()?.Tail</c>: the whole chain, which is replaced by <c>variable?.Tail</c>.</item>
+    /// </list>
+    /// Any other shape (e.g. <c>items?.Method().Tail</c>, whose null short-circuit would be lost) is not replaceable.
     /// </summary>
-    private static bool IsWholeConditionalAccessReplaceable(ConditionalAccessExpressionSyntax conditionalAccess, InvocationExpressionSyntax occurrence)
+    private static bool TryGetReplaceableConditionalAccess(InvocationExpressionSyntax invocation, out ConditionalAccessExpressionSyntax conditionalAccess)
     {
-        return conditionalAccess.WhenNotNull is InvocationExpressionSyntax ||
-               (conditionalAccess.WhenNotNull is MemberBindingExpressionSyntax && occurrence.Parent == conditionalAccess);
-    }
+        conditionalAccess = null;
+        if (!(invocation.Expression is MemberBindingExpressionSyntax) || !(invocation.Parent is ConditionalAccessExpressionSyntax parent))
+            return false;
 
-    private static ConditionalAccessExpressionSyntax GetContainingConditionalAccess(InvocationExpressionSyntax invocation)
-    {
-        if (invocation.Expression is MemberBindingExpressionSyntax)
+        if (parent.WhenNotNull == invocation)
         {
-            var ancestor = invocation.Parent;
-            while (ancestor != null)
-            {
-                if (ancestor is ConditionalAccessExpressionSyntax ca)
-                    return ca;
-                ancestor = ancestor.Parent;
-            }
+            conditionalAccess = parent;
+            return true;
         }
 
-        return null;
+        if (parent.Expression == invocation && parent.Parent is ConditionalAccessExpressionSyntax chain && chain.WhenNotNull == parent)
+        {
+            conditionalAccess = chain;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// The part of the conditional access up to the invocation: <c>items?.Method()</c>.
+    /// </summary>
+    private static ExpressionSyntax BuildConditionalAccessToExtract(ConditionalAccessExpressionSyntax conditionalAccess, InvocationExpressionSyntax invocation)
+    {
+        return conditionalAccess.WhenNotNull == invocation
+            ? conditionalAccess
+            : SyntaxFactory.ConditionalAccessExpression(conditionalAccess.Expression, invocation);
+    }
+
+    /// <summary>
+    /// The node that replaces an extracted occurrence: the variable, or <c>variable?.Tail</c> for a conditional access chain.
+    /// </summary>
+    private static ExpressionSyntax CreateReplacement(SyntaxNode original, IdentifierNameSyntax variable)
+    {
+        ExpressionSyntax replacement = original is ConditionalAccessExpressionSyntax { WhenNotNull: ConditionalAccessExpressionSyntax tail }
+            ? tail.WithExpression(variable)
+            : variable;
+
+        return replacement
+            .WithLeadingTrivia(original.GetLeadingTrivia())
+            .WithTrailingTrivia(original.GetTrailingTrivia());
     }
 
     private static string GenerateVariableName(InvocationExpressionSyntax invocation)
@@ -383,9 +414,7 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
 
         var newExpression = expressionBody.ReplaceNodes(
             nodesToReplace.Where(o => expressionBody.Contains(o)),
-            (original, _) => SyntaxFactory.IdentifierName(variableName)
-                .WithLeadingTrivia(original.GetLeadingTrivia())
-                .WithTrailingTrivia(original.GetTrailingTrivia()));
+            (original, _) => CreateReplacement(original, SyntaxFactory.IdentifierName(variableName)));
 
         var variableDecl = SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(
