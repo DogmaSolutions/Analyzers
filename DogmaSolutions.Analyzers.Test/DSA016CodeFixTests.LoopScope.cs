@@ -215,4 +215,60 @@ namespace TestApp
 
         await VerifyFixAsync(source, fixedSource, "Count", 2).ConfigureAwait(false);
     }
+
+    // A loop without braces: the variable can't be declared before the loop (it depends on the loop variable),
+    // so the body is wrapped in a block.
+
+    [TestMethod]
+    public async Task FixForEachLoopVariable_WithoutBraces_WrapsTheBodyInABlock()
+    {
+        var source = LoopSource(@"
+            foreach (var item in items)
+                System.Console.WriteLine({|#0:item.Children.Count()|} + {|#1:item.Children.Count()|});");
+
+        var fixedSource = LoopSource(@"
+            foreach (var item in items)
+            {
+                var count = item.Children.Count();
+                System.Console.WriteLine(count + count);
+            }");
+
+        await VerifyFixAsync(source, fixedSource, "Count", 2).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixForLoopVariable_WithoutBraces_WrapsTheBodyInABlock()
+    {
+        var source = LoopSource(@"
+            for (var i = 0; i < items.Count; i++)
+                System.Console.WriteLine({|#0:items[i].Children.Count()|} + {|#1:items[i].Children.Count()|});");
+
+        var fixedSource = LoopSource(@"
+            for (var i = 0; i < items.Count; i++)
+            {
+                var count = items[i].Children.Count();
+                System.Console.WriteLine(count + count);
+            }");
+
+        await VerifyFixAsync(source, fixedSource, "Count", 2).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task FixNestedLoopsWithoutBraces_WrapsTheInnermostBodyInABlock()
+    {
+        var source = LoopSource(@"
+            foreach (var group in groups)
+                foreach (var item in group)
+                    System.Console.WriteLine({|#0:group.Count(c => c.Id == item.Id)|} + {|#1:group.Count(c => c.Id == item.Id)|});");
+
+        var fixedSource = LoopSource(@"
+            foreach (var group in groups)
+                foreach (var item in group)
+                {
+                    var count = group.Count(c => c.Id == item.Id);
+                    System.Console.WriteLine(count + count);
+                }");
+
+        await VerifyFixAsync(source, fixedSource, "Count", 2).ConfigureAwait(false);
+    }
 }

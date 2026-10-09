@@ -145,6 +145,15 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
         }
 
         var finalInsertion = newRoot.GetAnnotatedNodes(insertionAnnotation).First() as StatementSyntax;
+
+        // The body of a loop without braces: the variable goes in a new block wrapping the body.
+        if (finalInsertion?.Parent is StatementSyntax embeddingStatement && !(embeddingStatement is BlockSyntax))
+        {
+            return document.WithSyntaxRoot(newRoot.ReplaceNode(
+                finalInsertion,
+                WrapInBlock(variableDeclaration, finalInsertion, embeddingStatement, eolTrivia)));
+        }
+
         var containingBlock = finalInsertion?.Parent as BlockSyntax;
         if (containingBlock == null)
             return document.WithSyntaxRoot(newRoot);
@@ -154,6 +163,24 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
         newRoot = newRoot.ReplaceNode(containingBlock, containingBlock.WithStatements(newStatements));
 
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    /// <summary>
+    /// Wraps an embedded statement (e.g. the body of a loop without braces) in a block that starts with the declaration.
+    /// </summary>
+    private static BlockSyntax WrapInBlock(
+        LocalDeclarationStatementSyntax declaration,
+        StatementSyntax embeddedStatement,
+        StatementSyntax embeddingStatement,
+        SyntaxTrivia eolTrivia)
+    {
+        var embeddingIndentation = SyntaxFactory.TriviaList(
+            SyntaxUtils.GetIndentationTrivia(embeddingStatement).Where(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia)));
+
+        return SyntaxFactory.Block(
+            SyntaxFactory.Token(embeddingIndentation, SyntaxKind.OpenBraceToken, SyntaxFactory.TriviaList(eolTrivia)),
+            SyntaxFactory.List(new StatementSyntax[] { declaration, embeddedStatement.WithTrailingTrivia(eolTrivia) }),
+            SyntaxFactory.Token(embeddingIndentation, SyntaxKind.CloseBraceToken, embeddedStatement.GetTrailingTrivia()));
     }
 
     private static List<InvocationExpressionSyntax> FindDuplicateInvocations(
@@ -503,8 +530,9 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
     }
 
     /// <summary>
-    /// When the statement is a loop declaring a variable used by the expression to extract, returns the earliest statement
-    /// of the loop body containing an occurrence (the variable cannot be declared before the loop). Otherwise null.
+    /// When the statement is a loop declaring a variable used by the expression to extract, returns the statement of the loop
+    /// body in front of which the variable must be declared: the earliest statement of the body containing an occurrence, or
+    /// the body itself when it is a single embedded statement (which the caller wraps in a block). Otherwise null.
     /// </summary>
     private static StatementSyntax FindInsertionStatementInsideLoop(
         StatementSyntax statement,
@@ -516,18 +544,18 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
         if (loopBody == null || !loopVariables.Any(variable => ExpressionReferencesSymbol(expressionToExtract, variable, semanticModel)))
             return null;
 
-        return FindEarliestContainingStatement(occurrences, loopBody);
+        return loopBody is BlockSyntax ? FindEarliestContainingStatement(occurrences, loopBody) : loopBody;
     }
 
-    private static (BlockSyntax Body, IEnumerable<ISymbol> Variables) GetLoopBodyAndVariables(StatementSyntax statement, SemanticModel semanticModel)
+    private static (StatementSyntax Body, IEnumerable<ISymbol> Variables) GetLoopBodyAndVariables(StatementSyntax statement, SemanticModel semanticModel)
     {
         switch (statement)
         {
             case ForEachStatementSyntax forEach:
-                return (forEach.Statement as BlockSyntax, new[] { semanticModel.GetDeclaredSymbol(forEach) }.Where(symbol => symbol != null));
+                return (forEach.Statement, new[] { semanticModel.GetDeclaredSymbol(forEach) }.Where(symbol => symbol != null));
 
             case ForStatementSyntax { Declaration: not null } forStatement:
-                return (forStatement.Statement as BlockSyntax,
+                return (forStatement.Statement,
                     forStatement.Declaration.Variables.Select(declarator => semanticModel.GetDeclaredSymbol(declarator)).Where(symbol => symbol != null));
 
             default:
