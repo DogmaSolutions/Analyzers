@@ -199,12 +199,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         var threshold = GetThreshold(context);
         var ignoredMembers = GetIgnoredIntermediateMembers(context);
 
-        var syntacticDepth = ComputeChainDepth(elementAccess);
-        if (syntacticDepth < threshold)
-            return;
-
-        var effectiveDepth = ComputeEffectiveChainDepth(elementAccess, context.SemanticModel, ignoredMembers);
-        if (effectiveDepth < threshold)
+        if (!IsChainDeepEnough(elementAccess, threshold, ignoredMembers, context.SemanticModel))
             return;
 
         if (IsInsideExpressionTreeLambda(elementAccess, context.SemanticModel))
@@ -220,28 +215,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         if (scope == null)
             return;
 
-        var count = 1; // count self
-        foreach (var sibling in GetElementAccessesInScope(scope))
-        {
-            if (ReferenceEquals(sibling, elementAccess))
-                continue;
-
-            if (IsInsideNameof(sibling))
-                continue;
-
-            var sibSyntacticDepth = ComputeChainDepth(sibling);
-            if (sibSyntacticDepth < threshold)
-                continue;
-
-            var sibEffectiveDepth = ComputeEffectiveChainDepth(sibling, context.SemanticModel, ignoredMembers);
-            if (sibEffectiveDepth < threshold)
-                continue;
-
-            var sibKey = SyntaxUtils.NormalizeWhitespace(sibling.ToString());
-            if (sibKey == key && AreSemanticallySame(elementAccess, sibling, context.SemanticModel))
-                count++;
-        }
-
+        var count = 1 + CountSameAccessesInScope(elementAccess, key, scope, threshold, ignoredMembers, context.SemanticModel); // 1 = self
         if (count > 1)
         {
             var diagnostic = Diagnostic.Create(
@@ -254,6 +228,38 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
                 count);
             context.ReportDiagnostic(diagnostic);
         }
+    }
+
+    /// <summary>
+    /// Both the syntactic depth of the chain and its effective depth (without the ignored intermediate members) reach the threshold.
+    /// </summary>
+    private static bool IsChainDeepEnough(
+        ElementAccessExpressionSyntax elementAccess,
+        int threshold,
+        HashSet<string> ignoredMembers,
+        SemanticModel semanticModel)
+    {
+        return ComputeChainDepth(elementAccess) >= threshold &&
+               ComputeEffectiveChainDepth(elementAccess, semanticModel, ignoredMembers) >= threshold;
+    }
+
+    /// <summary>
+    /// How many other deep-enough accesses of the scope are the same chain as <paramref name="elementAccess"/>.
+    /// </summary>
+    private static int CountSameAccessesInScope(
+        ElementAccessExpressionSyntax elementAccess,
+        string key,
+        SyntaxNode scope,
+        int threshold,
+        HashSet<string> ignoredMembers,
+        SemanticModel semanticModel)
+    {
+        return GetElementAccessesInScope(scope).Count(sibling =>
+            !ReferenceEquals(sibling, elementAccess) &&
+            !IsInsideNameof(sibling) &&
+            IsChainDeepEnough(sibling, threshold, ignoredMembers, semanticModel) &&
+            SyntaxUtils.NormalizeWhitespace(sibling.ToString()) == key &&
+            AreSemanticallySame(elementAccess, sibling, semanticModel));
     }
 
     private static int GetThreshold(SyntaxNodeAnalysisContext context)
