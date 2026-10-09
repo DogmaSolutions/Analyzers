@@ -401,43 +401,42 @@ public sealed class DSA031Analyzer : DiagnosticAnalyzer
         ITypeSymbol entityType,
         SemanticModel semanticModel)
     {
-        foreach (var assignment in methodBody.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+        return methodBody.DescendantNodes()
+            .OfType<AssignmentExpressionSyntax>()
+            .Any(assignment => AssignsToFieldOrProperty(assignment.Left, semanticModel) &&
+                               ValueInvolvesEntityType(assignment.Right, entityType, semanticModel));
+    }
+
+    /// <summary>
+    /// <c>_field = ...</c>, <c>Property = ...</c>, <c>(_field, x) = ...</c> or <c>_field[i] = ...</c>.
+    /// </summary>
+    private static bool AssignsToFieldOrProperty(ExpressionSyntax left, SemanticModel semanticModel)
+    {
+        if (IsFieldOrProperty(semanticModel.GetSymbolInfo(left).Symbol))
+            return true;
+
+        switch (left)
         {
-            var leftSymbol = semanticModel.GetSymbolInfo(assignment.Left).Symbol;
-            if (leftSymbol is IFieldSymbol || leftSymbol is IPropertySymbol)
-            {
-                var rightType = semanticModel.GetTypeInfo(assignment.Right).Type;
-                if (rightType != null && TypeInvolvesEntityType(rightType, entityType))
-                    return true;
-            }
+            case TupleExpressionSyntax tuple:
+                return tuple.Arguments.Any(element => IsFieldOrProperty(semanticModel.GetSymbolInfo(element.Expression).Symbol));
 
-            if (assignment.Left is TupleExpressionSyntax tupleExpr)
-            {
-                var rightType = semanticModel.GetTypeInfo(assignment.Right).Type;
-                if (rightType != null && TypeInvolvesEntityType(rightType, entityType))
-                {
-                    foreach (var element in tupleExpr.Arguments)
-                    {
-                        var elementSymbol = semanticModel.GetSymbolInfo(element.Expression).Symbol;
-                        if (elementSymbol is IFieldSymbol || elementSymbol is IPropertySymbol)
-                            return true;
-                    }
-                }
-            }
+            case ElementAccessExpressionSyntax elementAccess:
+                return IsFieldOrProperty(semanticModel.GetSymbolInfo(elementAccess.Expression).Symbol);
 
-            if (assignment.Left is ElementAccessExpressionSyntax elementAccess)
-            {
-                var containerSymbol = semanticModel.GetSymbolInfo(elementAccess.Expression).Symbol;
-                if (containerSymbol is IFieldSymbol || containerSymbol is IPropertySymbol)
-                {
-                    var rightType = semanticModel.GetTypeInfo(assignment.Right).Type;
-                    if (rightType != null && TypeInvolvesEntityType(rightType, entityType))
-                        return true;
-                }
-            }
+            default:
+                return false;
         }
+    }
 
-        return false;
+    private static bool IsFieldOrProperty(ISymbol symbol)
+    {
+        return symbol is IFieldSymbol || symbol is IPropertySymbol;
+    }
+
+    private static bool ValueInvolvesEntityType(ExpressionSyntax value, ITypeSymbol entityType, SemanticModel semanticModel)
+    {
+        var type = semanticModel.GetTypeInfo(value).Type;
+        return type != null && TypeInvolvesEntityType(type, entityType);
     }
 
     private static bool MethodBodyPassesEntityToMethods(
