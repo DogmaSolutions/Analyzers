@@ -280,53 +280,31 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
     private static (List<SyntaxNode> NodesToReplace, ExpressionSyntax ExpressionToExtract)
         DetermineExtractionTarget(List<InvocationExpressionSyntax> occurrences)
     {
-        // Check if all occurrences are inside ConditionalAccessExpressions with the
-        // same overall expression text (e.g., items?.FirstOrDefault(x => ...))
-        var conditionalAccessOccurrences = new List<ConditionalAccessExpressionSyntax>();
-        foreach (var inv in occurrences)
+        // Check if all occurrences are inside ConditionalAccessExpressions (e.g., items?.FirstOrDefault(x => ...)).
+        var conditionalAccesses = occurrences.Select(GetContainingConditionalAccess).ToList();
+
+        // The first one is the expression to extract: its WhenNotNull part must end at the invocation. When the
+        // conditional access has trailing access after the invocation (e.g., items?.FirstOrDefault(...)?.Name),
+        // or the occurrences do not all have the same shape, we can't easily split it: fall back to extracting
+        // the plain invocations.
+        if (conditionalAccesses.All(ca => ca != null) &&
+            conditionalAccesses[0].WhenNotNull is InvocationExpressionSyntax &&
+            conditionalAccesses.Zip(occurrences, IsWholeConditionalAccessReplaceable).All(replaceable => replaceable))
         {
-            var ca = GetContainingConditionalAccess(inv);
-            if (ca != null)
-                conditionalAccessOccurrences.Add(ca);
+            return (conditionalAccesses.Cast<SyntaxNode>().ToList(), conditionalAccesses[0]);
         }
 
-        if (conditionalAccessOccurrences.Count == occurrences.Count && conditionalAccessOccurrences.Count > 0)
-        {
-            // All are conditional access — check if the whole conditional access chain (up to the invocation)
-            // is the same. If the conditional access has further member access after the invocation
-            // (e.g., items?.FirstOrDefault(...)?.Name), we extract just up to the invocation.
-            // Use the first one as the expression to extract.
-            var firstCa = conditionalAccessOccurrences[0];
-            var expressionToExtract = BuildConditionalAccessUpToInvocation(firstCa, occurrences[0]);
-            if (expressionToExtract != null)
-            {
-                // Find the matching nodes to replace — these are the conditional access chains
-                // up to the invocation in each occurrence
-                var nodesToReplace = new List<SyntaxNode>();
-                for (var i = 0; i < occurrences.Count; i++)
-                {
-                    var ca = conditionalAccessOccurrences[i];
-                    var replacementNode = BuildConditionalAccessUpToInvocation(ca, occurrences[i]);
-                    // If the entire CA is the invocation (no trailing access), replace the CA itself
-                    if (ca.WhenNotNull is InvocationExpressionSyntax ||
-                        (ca.WhenNotNull is MemberBindingExpressionSyntax && occurrences[i].Parent == ca))
-                    {
-                        nodesToReplace.Add(ca);
-                    }
-                    else
-                    {
-                        // The CA has trailing access — we can't easily split it, so fall through
-                        // to extracting the plain invocations
-                        goto fallback;
-                    }
-                }
-
-                return (nodesToReplace, expressionToExtract ?? (ExpressionSyntax)firstCa);
-            }
-        }
-
-        fallback:
         return (occurrences.Cast<SyntaxNode>().ToList(), occurrences[0]);
+    }
+
+    /// <summary>
+    /// True when the whole conditional access is the occurrence (no trailing access after the invocation), so it can be
+    /// replaced by the extracted variable.
+    /// </summary>
+    private static bool IsWholeConditionalAccessReplaceable(ConditionalAccessExpressionSyntax conditionalAccess, InvocationExpressionSyntax occurrence)
+    {
+        return conditionalAccess.WhenNotNull is InvocationExpressionSyntax ||
+               (conditionalAccess.WhenNotNull is MemberBindingExpressionSyntax && occurrence.Parent == conditionalAccess);
     }
 
     private static ConditionalAccessExpressionSyntax GetContainingConditionalAccess(InvocationExpressionSyntax invocation)
@@ -340,20 +318,6 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
                     return ca;
                 ancestor = ancestor.Parent;
             }
-        }
-
-        return null;
-    }
-
-    private static ExpressionSyntax BuildConditionalAccessUpToInvocation(
-        ConditionalAccessExpressionSyntax ca,
-        InvocationExpressionSyntax invocation)
-    {
-        // If the WhenNotNull part ends at the invocation, the whole CA is the expression
-        if (ca.WhenNotNull == invocation ||
-            (ca.WhenNotNull is InvocationExpressionSyntax))
-        {
-            return ca;
         }
 
         return null;
