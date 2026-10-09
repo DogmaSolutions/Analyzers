@@ -73,6 +73,7 @@ public partial class DSA036Tests
     private static IEnumerable<object[]> GetLocalMutationMatchedCases =>
     [
         ["Local counter never mutated", LocalMutationSource(string.Empty, MarkedCounterRegexCreation)],
+        ["Local counter used with the null-forgiving operator", LocalMutationSource("var copy = n!;", MarkedCounterRegexCreation)],
         ["Other local assigned", LocalMutationSource("other = 2;", MarkedCounterRegexCreation)],
         ["Other local assigned in a declaration", LocalMutationSource("var chained = other = 2;", MarkedCounterRegexCreation)],
         ["Other local incremented and decremented (postfix)", LocalMutationSource("other++; other--;", MarkedCounterRegexCreation)],

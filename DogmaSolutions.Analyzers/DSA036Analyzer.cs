@@ -337,7 +337,8 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
             case ArgumentSyntax { RefKindKeyword.RawKind: not 0 } arg:
                 return IsReferenceToLocal(arg.Expression, local, model);
 
-            case PostfixUnaryExpressionSyntax postfix:
+            case PostfixUnaryExpressionSyntax postfix
+                when postfix.IsKind(SyntaxKind.PostIncrementExpression) || postfix.IsKind(SyntaxKind.PostDecrementExpression):
                 return IsReferenceToLocal(postfix.Operand, local, model);
 
             case PrefixUnaryExpressionSyntax prefix
