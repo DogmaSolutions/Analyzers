@@ -50,6 +50,8 @@ public partial class DSA036Tests
         ["Local counter mutated by prefix decrement", LocalMutationSource("--n;", CounterRegexCreation)],
         ["Local counter passed by ref", LocalMutationSource("Fill(ref n);", CounterRegexCreation)],
         ["Local counter passed by out", LocalMutationSource("Produce(out n);", CounterRegexCreation)],
+        ["Local counter mutated by an assignment used as a declaration initializer", LocalMutationSource("var chained = n = 2;", CounterRegexCreation)],
+        ["Local counter mutated by a compound assignment used as a declaration initializer", LocalMutationSource("var chained = n += 2;", CounterRegexCreation)],
         ["Local counter mutated by tuple deconstruction", LocalMutationSource("(n, other) = (2, 3);", CounterRegexCreation)],
         ["Local counter mutated by nested tuple deconstruction", LocalMutationSource("((n, other), otherText) = ((2, 3), \"y\");", CounterRegexCreation)],
         ["Local counter mutated by tuple deconstruction, after another target", LocalMutationSource("(other, n) = (3, 2);", CounterRegexCreation)],

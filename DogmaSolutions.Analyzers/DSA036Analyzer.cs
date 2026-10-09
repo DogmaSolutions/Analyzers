@@ -332,8 +332,7 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
         switch (node)
         {
             case AssignmentExpressionSyntax assignment:
-                return assignment.Parent is not EqualsValueClauseSyntax &&
-                       GetAssignmentTargetSymbols(assignment.Left, model).Any(target => SymbolEqualityComparer.Default.Equals(target, local));
+                return GetAssignmentTargetSymbols(assignment.Left, model).Any(target => SymbolEqualityComparer.Default.Equals(target, local));
 
             case ArgumentSyntax { RefKindKeyword.RawKind: not 0 } arg:
                 return IsReferenceToLocal(arg.Expression, local, model);
