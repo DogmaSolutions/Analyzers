@@ -346,54 +346,36 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
         string variableName,
         InvocationExpressionSyntax toListInvocation)
     {
-        var toListSpan = toListInvocation.Span;
+        var position = toListInvocation.Span.End;
 
-        foreach (var invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        return body.DescendantNodes().Where(node => node.SpanStart > position)
+            .Any(node => IsMutationOfVariable(node, variableName));
+    }
+
+    /// <summary>
+    /// True for <c>x.Add(...)</c> (any list-mutating call), <c>x[i] = ...</c> and <c>x = ...</c>.
+    /// </summary>
+    private static bool IsMutationOfVariable(SyntaxNode node, string variableName)
+    {
+        switch (node)
         {
-            if (invocation.SpanStart <= toListSpan.End)
-                continue;
+            case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess }:
+                return IsIdentifier(memberAccess.Expression, variableName) && IsMutatingMethod(memberAccess.Name.Identifier.ValueText);
 
-            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-                continue;
+            case ElementAccessExpressionSyntax { Parent: AssignmentExpressionSyntax assignment } elementAccess:
+                return assignment.Left == elementAccess && IsIdentifier(elementAccess.Expression, variableName);
 
-            if (memberAccess.Expression is not IdentifierNameSyntax receiver)
-                continue;
+            case AssignmentExpressionSyntax assignment:
+                return IsIdentifier(assignment.Left, variableName);
 
-            if (receiver.Identifier.ValueText != variableName)
-                continue;
-
-            var methodName = memberAccess.Name.Identifier.ValueText;
-            if (IsMutatingMethod(methodName))
-                return true;
+            default:
+                return false;
         }
+    }
 
-        foreach (var elementAccess in body.DescendantNodes().OfType<ElementAccessExpressionSyntax>())
-        {
-            if (elementAccess.SpanStart <= toListSpan.End)
-                continue;
-
-            if (elementAccess.Expression is not IdentifierNameSyntax receiver)
-                continue;
-
-            if (receiver.Identifier.ValueText != variableName)
-                continue;
-
-            if (elementAccess.Parent is AssignmentExpressionSyntax assignment &&
-                assignment.Left == elementAccess)
-                return true;
-        }
-
-        foreach (var assignment in body.DescendantNodes().OfType<AssignmentExpressionSyntax>())
-        {
-            if (assignment.SpanStart <= toListSpan.End)
-                continue;
-
-            if (assignment.Left is IdentifierNameSyntax target &&
-                target.Identifier.ValueText == variableName)
-                return true;
-        }
-
-        return false;
+    private static bool IsIdentifier(ExpressionSyntax expression, string name)
+    {
+        return expression is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == name;
     }
 
     private static bool WouldToArrayBreakCode(
