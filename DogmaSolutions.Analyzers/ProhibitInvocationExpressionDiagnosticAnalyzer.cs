@@ -47,36 +47,42 @@ public abstract class ProhibitInvocationExpressionDiagnosticAnalyzer<T> : Diagno
     {
         if (invocationExpression == null) throw new ArgumentNullException(nameof(invocationExpression));
 
-        if (invocationExpression.Expression is MemberAccessExpressionSyntax memberAccess) // match "xxx.yyy"
+        switch (invocationExpression.Expression)
         {
-            if (memberAccess.Name.Identifier.ValueText != MemberName) // match "xxx.Now"
+            case MemberAccessExpressionSyntax memberAccess: // match "xxx.yyy"
+                return memberAccess.Name.Identifier.ValueText == MemberName && // match "xxx.Now"
+                       IsReferenceToType(memberAccess.Expression);
+
+            case IdentifierNameSyntax identifier when identifier.Identifier.ValueText == MemberName:
+                return IsTypeImportedWithUsingStatic(invocationExpression); // Maybe "TypeName" has been imported using a "using static"
+
+            default:
                 return false;
-
-            if ((memberAccess.Expression is IdentifierNameSyntax syntax && syntax.Identifier.ValueText == TypeName) ||
-                (memberAccess.Expression is MemberAccessExpressionSyntax && memberAccess.Expression.ToString() == TypeFullName)
-               )
-            {
-                return true;
-            }
         }
-        else if (invocationExpression.Expression is IdentifierNameSyntax syntax &&
-                 syntax.Identifier is var token &&
-                 token.ValueText == MemberName) // Maybe "TypeName" has been imported using a "using static"
-        {
-            return invocationExpression.Ancestors().
-                       OfType<CompilationUnitSyntax>().
-                       FirstOrDefault()?. // navigate "up" and find the root
-                       DescendantNodes().
-                       OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
-                       Any(
-                           u => u.StaticKeyword.IsKind(SyntaxKind.StaticKeyword) && // consider only "using static" directives
-                                (u.NamespaceOrType.ToString() == TypeName ||
-                                 u.NamespaceOrType.ToString() == TypeFullName ||
-                                 u.NamespaceOrType.ToString() == GlobalTypeFullName) // consider only "using static TypeFullName"  or "using static TypeName"
-                       ) ==
-                   true;
-        }
+    }
 
-        return false;
+    private bool IsReferenceToType(ExpressionSyntax expression)
+    {
+        return (expression is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == TypeName) ||
+               (expression is MemberAccessExpressionSyntax && expression.ToString() == TypeFullName);
+    }
+
+    private bool IsTypeImportedWithUsingStatic(SyntaxNode node)
+    {
+        var root = node.Ancestors().OfType<CompilationUnitSyntax>().FirstOrDefault(); // navigate "up" and find the root
+        return root != null &&
+               root.DescendantNodes().
+                   OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
+                   Any(IsUsingStaticOfType);
+    }
+
+    // consider only "using static TypeFullName" or "using static TypeName"
+    private bool IsUsingStaticOfType(UsingDirectiveSyntax directive)
+    {
+        if (!directive.StaticKeyword.IsKind(SyntaxKind.StaticKeyword))
+            return false;
+
+        var imported = directive.NamespaceOrType.ToString();
+        return imported == TypeName || imported == TypeFullName || imported == GlobalTypeFullName;
     }
 }
