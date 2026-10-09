@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -37,6 +38,15 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
         helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA028.md");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
+
+    // Members that exist on List<T> but not on IEnumerable<T> / arrays: replacing ToList() with ToArray() would break their callers.
+    private static readonly HashSet<string> ListSpecificMethods = new(StringComparer.Ordinal)
+    {
+        "Find", "FindAll", "FindIndex", "FindLast", "FindLastIndex",
+        "Exists", "TrueForAll", "ConvertAll", "GetRange",
+        "BinarySearch", "ForEach",
+        "IndexOf", "LastIndexOf", "AsReadOnly", "EnsureCapacity",
+    };
 
     private static readonly string[] ImmutableReturnTypes =
     [
@@ -437,10 +447,7 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
 
     private static bool IsListSpecificMethod(string methodName)
     {
-        return methodName is "Find" or "FindAll" or "FindIndex" or "FindLast" or "FindLastIndex"
-            or "Exists" or "TrueForAll" or "ConvertAll" or "GetRange"
-            or "BinarySearch" or "ForEach"
-            or "IndexOf" or "LastIndexOf" or "AsReadOnly" or "EnsureCapacity";
+        return ListSpecificMethods.Contains(methodName);
     }
 
     private static bool IsMutatingMethod(string methodName)
