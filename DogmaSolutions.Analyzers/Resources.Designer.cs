@@ -1258,5 +1258,41 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA032ReviewComment", resourceCulture);
             }
         }
+
+        internal static string CheckThenActSuggestionTryAddOrIndexer {
+            get {
+                return ResourceManager.GetString("CheckThenActSuggestionTryAddOrIndexer", resourceCulture);
+            }
+        }
+
+        internal static string CheckThenActSuggestionIndexer {
+            get {
+                return ResourceManager.GetString("CheckThenActSuggestionIndexer", resourceCulture);
+            }
+        }
+
+        internal static string CheckThenActSuggestionAddReturnsBool {
+            get {
+                return ResourceManager.GetString("CheckThenActSuggestionAddReturnsBool", resourceCulture);
+            }
+        }
+
+        internal static string CheckThenActSuggestionConcurrentDictionary {
+            get {
+                return ResourceManager.GetString("CheckThenActSuggestionConcurrentDictionary", resourceCulture);
+            }
+        }
+
+        internal static string CheckThenActSuggestionImmutableSetAdd {
+            get {
+                return ResourceManager.GetString("CheckThenActSuggestionImmutableSetAdd", resourceCulture);
+            }
+        }
+
+        internal static string CheckThenActSuggestionImmutableDictionarySetItem {
+            get {
+                return ResourceManager.GetString("CheckThenActSuggestionImmutableDictionarySetItem", resourceCulture);
+            }
+        }
     }
 }

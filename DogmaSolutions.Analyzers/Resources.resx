@@ -840,4 +840,22 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  * CWE-1078: Inappropriate Source Code Style or Formatting - https://cwe.mitre.org/data/definitions/1078.html
  */</value>
   </data>
+  <data name="CheckThenActSuggestionTryAddOrIndexer" xml:space="preserve">
+    <value>TryAdd or indexer assignment [key] = value</value>
+  </data>
+  <data name="CheckThenActSuggestionIndexer" xml:space="preserve">
+    <value>indexer assignment [key] = value</value>
+  </data>
+  <data name="CheckThenActSuggestionAddReturnsBool" xml:space="preserve">
+    <value>Add (already returns a bool indicating whether the element was added)</value>
+  </data>
+  <data name="CheckThenActSuggestionConcurrentDictionary" xml:space="preserve">
+    <value>GetOrAdd, AddOrUpdate, or TryAdd</value>
+  </data>
+  <data name="CheckThenActSuggestionImmutableSetAdd" xml:space="preserve">
+    <value>Add (already handles duplicates)</value>
+  </data>
+  <data name="CheckThenActSuggestionImmutableDictionarySetItem" xml:space="preserve">
+    <value>SetItem (upsert semantics)</value>
+  </data>
 </root>
