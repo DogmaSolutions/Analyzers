@@ -137,18 +137,13 @@ public sealed class DSA025Analyzer : DiagnosticAnalyzer
 
     private static bool IsILoggerType(ITypeSymbol type)
     {
-        if (type.Name == "ILogger" &&
-            type.ContainingNamespace?.ToDisplayString() == "Microsoft.Extensions.Logging")
-            return true;
+        return IsILogger(type) || type.AllInterfaces.Any(IsILogger);
+    }
 
-        foreach (var iface in type.AllInterfaces)
-        {
-            if (iface.Name == "ILogger" &&
-                iface.ContainingNamespace?.ToDisplayString() == "Microsoft.Extensions.Logging")
-                return true;
-        }
-
-        return false;
+    private static bool IsILogger(ITypeSymbol type)
+    {
+        return type.Name == "ILogger" &&
+               type.ContainingNamespace?.ToDisplayString() == "Microsoft.Extensions.Logging";
     }
 
     private static bool AllInterpolationsAreConstant(
