@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -265,40 +266,39 @@ public sealed class DSA030Analyzer : DiagnosticAnalyzer
         Compilation compilation,
         int maxDepth = 3)
     {
-        if (maxDepth <= 0)
-            return false;
-
-        if (!(parameter.ContainingSymbol is IMethodSymbol containingMethod))
+        if (maxDepth <= 0 || !(parameter.ContainingSymbol is IMethodSymbol containingMethod))
             return false;
 
         var foundAnySite = false;
 
-        foreach (var tree in compilation.SyntaxTrees)
+        // Lazy enumeration: the search stops at the first call site that does not provide a tracking choice.
+        foreach (var (model, invocation, invokedSymbol) in FindCallSites(compilation, containingMethod))
         {
-            var model = compilation.GetSemanticModel(tree);
-            var root = tree.GetRoot();
+            foundAnySite = true;
 
-            foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
-            {
-                var invokedSymbol = model.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-                if (invokedSymbol == null)
-                    continue;
-
-                if (!IsCallToMethod(invokedSymbol, containingMethod))
-                    continue;
-
-                foundAnySite = true;
-
-                var argExpr = GetArgumentForParameter(invocation, parameter, invokedSymbol);
-                if (argExpr == null)
-                    return false;
-
-                if (!ArgumentExpressionHasTrackingChoice(argExpr, model, compilation, maxDepth - 1))
-                    return false;
-            }
+            var argExpr = GetArgumentForParameter(invocation, parameter, invokedSymbol);
+            if (argExpr == null || !ArgumentExpressionHasTrackingChoice(argExpr, model, compilation, maxDepth - 1))
+                return false;
         }
 
         return foundAnySite;
+    }
+
+    private static IEnumerable<(SemanticModel Model, InvocationExpressionSyntax Invocation, IMethodSymbol InvokedSymbol)> FindCallSites(
+        Compilation compilation,
+        IMethodSymbol targetMethod)
+    {
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            var model = compilation.GetSemanticModel(tree);
+
+            foreach (var invocation in tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>())
+            {
+                if (model.GetSymbolInfo(invocation).Symbol is IMethodSymbol invokedSymbol &&
+                    IsCallToMethod(invokedSymbol, targetMethod))
+                    yield return (model, invocation, invokedSymbol);
+            }
+        }
     }
 
     private static bool IsCallToMethod(IMethodSymbol invokedSymbol, IMethodSymbol targetMethod)

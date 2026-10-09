@@ -1,4 +1,8 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -164,5 +168,158 @@ namespace TestApp
         await AssertFlagsToListAsync(BuildSourceWithExtensions(
             @"public Task<List<User>> Caller() { return _context.Users.AsNoTracking().RunList(_context.Users); }",
             @"public static Task<List<User>> RunList(this IQueryable<User> source, IQueryable<User> other) { return {|#0:other.ToListAsync()|}; }")).ConfigureAwait(false);
+    }
+
+    // ── Arguments that are not directly a tracked query ────────────────
+
+    [TestMethod]
+    public async Task ParameterQuery_ForwardedThroughParametersWithinMaxDepth_NoFlag()
+    {
+        await AssertNoFlag(BuildSource(@"
+        private Task<List<User>> Level1(IQueryable<User> q) { return q.ToListAsync(); }
+        private Task<List<User>> Level2(IQueryable<User> q) { return Level1(q); }
+        private Task<List<User>> Level3(IQueryable<User> q) { return Level2(q); }
+        public Task<List<User>> Caller() { return Level3(_context.Users.AsNoTracking()); }")).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ParameterQuery_ForwardedThroughParametersBeyondMaxDepth_Flags()
+    {
+        // The lookup gives up after a fixed number of forwarding levels and reports the query.
+        await AssertFlagsToListAsync(BuildSource(@"
+        private Task<List<User>> Level1(IQueryable<User> q) { return {|#0:q.ToListAsync()|}; }
+        private Task<List<User>> Level2(IQueryable<User> q) { return Level1(q); }
+        private Task<List<User>> Level3(IQueryable<User> q) { return Level2(q); }
+        private Task<List<User>> Level4(IQueryable<User> q) { return Level3(q); }
+        public Task<List<User>> Caller() { return Level4(_context.Users.AsNoTracking()); }")).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ParameterQuery_ArgumentIsLocalWithTracking_NoFlag()
+    {
+        await AssertNoFlag(BuildSource(@"
+        private Task<List<User>> Run(IQueryable<User> q) { return q.ToListAsync(); }
+        public Task<List<User>> Caller() { var query = _context.Users.AsNoTracking(); return Run(query); }")).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ParameterQuery_ArgumentIsLocalWithoutTracking_Flags()
+    {
+        await AssertFlagsToListAsync(BuildSource(@"
+        private Task<List<User>> Run(IQueryable<User> q) { return {|#0:q.ToListAsync()|}; }
+        public Task<List<User>> Caller() { var query = _context.Users.Where(u => u.IsActive); return Run(query); }")).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ParameterQuery_ArgumentIsNull_Flags()
+    {
+        await AssertFlagsToListAsync(BuildSource(@"
+        private Task<List<User>> Run(IQueryable<User> q) { return {|#0:q.ToListAsync()|}; }
+        public Task<List<User>> Caller() { return Run(null); }")).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ParameterQuery_ArgumentIsMethodResultWithoutTracking_Flags()
+    {
+        await AssertFlagsToListAsync(BuildSource(@"
+        private IQueryable<User> GetUsers() { return _context.Users; }
+        private Task<List<User>> Run(IQueryable<User> q) { return {|#0:q.ToListAsync()|}; }
+        public Task<List<User>> Caller() { return Run(GetUsers()); }")).ConfigureAwait(false);
+    }
+
+    // ── Several call sites / unusual call-site shapes ──────────────────
+
+    [TestMethod]
+    public async Task ParameterQuery_AllCallSitesWithTracking_NoFlag()
+    {
+        await AssertNoFlag(BuildSource(@"
+        private Task<List<User>> Run(IQueryable<User> q) { return q.ToListAsync(); }
+        public Task<List<User>> Caller1() { return Run(_context.Users.AsNoTracking()); }
+        public Task<List<User>> Caller2() { return Run(_context.Users.AsTracking()); }")).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ParameterQuery_OneCallSiteWithoutTracking_Flags()
+    {
+        await AssertFlagsToListAsync(BuildSource(@"
+        private Task<List<User>> Run(IQueryable<User> q) { return {|#0:q.ToListAsync()|}; }
+        public Task<List<User>> Caller1() { return Run(_context.Users.AsNoTracking()); }
+        public Task<List<User>> Caller2() { return Run(_context.Users); }")).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ParameterQuery_NeverCalled_Flags()
+    {
+        await AssertFlagsToListAsync(BuildSource(@"
+        private Task<List<User>> Run(IQueryable<User> q) { return {|#0:q.ToListAsync()|}; }")).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ParameterQuery_InvocationsWithoutMethodSymbolAreIgnoredWhenLookingForCallSites_NoFlag()
+    {
+        // 'nameof(...)' is syntactically an invocation but resolves to no method: it is not a call site.
+        await AssertNoFlag(BuildSource(@"
+        private Task<List<User>> Run(IQueryable<User> q) { return q.ToListAsync(); }
+        public string Name() { return nameof(User); }
+        public Task<List<User>> Caller() { return Run(_context.Users.AsNoTracking()); }")).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ParameterQuery_OfAnIndexer_Flags()
+    {
+        // The parameter does not belong to a method, so its call sites cannot be looked up.
+        await AssertFlagsToListAsync(BuildSource(@"
+        public Task<List<User>> this[IQueryable<User> q] { get { return {|#0:q.ToListAsync()|}; } }")).ConfigureAwait(false);
+    }
+
+    // ── Direct calls ───────────────────────────────────────────────────
+
+    private static (IParameterSymbol Parameter, Compilation Compilation) GetRunQueryParameter() => GetParameter(compilation =>
+        compilation.GetTypeByMetadataName("TestApp.MyService").GetMembers("Run").OfType<IMethodSymbol>().Single().Parameters[0]);
+
+    private static (IParameterSymbol Parameter, Compilation Compilation) GetIndexerParameter() => GetParameter(compilation =>
+        compilation.GetTypeByMetadataName("TestApp.MyService").GetMembers().OfType<IPropertySymbol>().Single(p => p.IsIndexer).Parameters[0]);
+
+    private static (IParameterSymbol Parameter, Compilation Compilation) GetParameter(Func<Compilation, IParameterSymbol> selectParameter)
+    {
+        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"))
+            .Split(System.IO.Path.PathSeparator)
+            .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path));
+        var source = BuildSource(@"
+        private Task<List<User>> Run(IQueryable<User> q) { return q.ToListAsync(); }
+        public Task<List<User>> Caller() { return Run(_context.Users.AsNoTracking()); }
+        public int this[IQueryable<User> indexerQuery] { get { return 0; } }");
+        var compilation = CSharpCompilation.Create(
+            "DSA030DirectCalls",
+            new[] { CSharpSyntaxTree.ParseText(source) },
+            references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        return (selectParameter(compilation), compilation);
+    }
+
+    [TestMethod]
+    public void ParameterHasTrackingAtAllCallSites_ReturnsTrueWithEnoughDepth()
+    {
+        var (parameter, compilation) = GetRunQueryParameter();
+        Assert.IsTrue(DSA030Analyzer.ParameterHasTrackingAtAllCallSites(parameter, compilation));
+        Assert.IsTrue(DSA030Analyzer.ParameterHasTrackingAtAllCallSites(parameter, compilation, 1));
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-1)]
+    public void ParameterHasTrackingAtAllCallSites_ReturnsFalseWhenNoDepthIsLeft(int maxDepth)
+    {
+        var (parameter, compilation) = GetRunQueryParameter();
+        Assert.IsFalse(DSA030Analyzer.ParameterHasTrackingAtAllCallSites(parameter, compilation, maxDepth));
+    }
+
+    [TestMethod]
+    public void ParameterHasTrackingAtAllCallSites_ReturnsFalseForAParameterNotBelongingToAMethod()
+    {
+        var (parameter, compilation) = GetIndexerParameter();
+        Assert.IsInstanceOfType<IPropertySymbol>(parameter.ContainingSymbol);
+        Assert.IsFalse(DSA030Analyzer.ParameterHasTrackingAtAllCallSites(parameter, compilation));
     }
 }
