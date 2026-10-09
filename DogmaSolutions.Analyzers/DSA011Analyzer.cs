@@ -102,46 +102,56 @@ public sealed class DSA011Analyzer : DiagnosticAnalyzer
     private static void AnalyzeGetAccessor(SyntaxNodeAnalysisContext context, PropertyDeclarationSyntax propertyDeclaration)
     {
         var getAccessor = propertyDeclaration.AccessorList.Accessors.FirstOrDefault(a => a.Kind() == SyntaxKind.GetAccessorDeclaration);
+        if (getAccessor?.Body?.Statements == null)
+            return;
 
-        if (getAccessor?.Body?.Statements != null)
+        // get { if (_instance == null) _instance = ...; ... }
+        foreach (var ifStatement in getAccessor.Body.Statements.OfType<IfStatementSyntax>())
         {
-            foreach (var statement in getAccessor.Body.Statements)
+            if (TryGetStaticFieldComparedWithNull(ifStatement, SyntaxKind.EqualsExpression, context.SemanticModel, out var fieldSymbol) &&
+                IsAssignmentToField(ifStatement.Statement, fieldSymbol, context.SemanticModel))
             {
-                if (statement is IfStatementSyntax ifStatement)
-                {
-                    if (ifStatement.Condition is BinaryExpressionSyntax binaryExpression &&
-                        binaryExpression.Kind() == SyntaxKind.EqualsExpression &&
-                        binaryExpression.Right is LiteralExpressionSyntax literalExpression &&
-                        literalExpression.Kind() == SyntaxKind.NullLiteralExpression &&
-                        binaryExpression.Left is IdentifierNameSyntax leftIdentifier)
-                    {
-                        var leftSymbol = context.SemanticModel.GetSymbolInfo(leftIdentifier).Symbol;
-
-                        if (leftSymbol is IFieldSymbol fieldSymbol && fieldSymbol.IsStatic)
-                        {
-                            var assignment = ifStatement.Statement as ExpressionStatementSyntax;
-                            if (assignment?.Expression is AssignmentExpressionSyntax assignmentExpression)
-                            {
-                                if (assignmentExpression.Left is IdentifierNameSyntax assignmentLeftIdentifier)
-                                {
-                                    var assignmentLeftSymbol = context.SemanticModel.GetSymbolInfo(assignmentLeftIdentifier).Symbol;
-                                    if (assignmentLeftSymbol != null && SymbolEqualityComparer.Default.Equals(assignmentLeftSymbol, leftSymbol))
-                                    {
-                                        var containingType = fieldSymbol.ContainingType;
-                                        var containingProperty = context.SemanticModel.GetDeclaredSymbol(propertyDeclaration);
-                                        if (containingType != null && containingProperty != null && SymbolEqualityComparer.Default.Equals(containingType, containingProperty.ContainingType))
-                                        {
-                                            var diagnostic = Diagnostic.Create(_rule, propertyDeclaration.GetLocation(), propertyDeclaration.Identifier.ToString());
-                                            context.ReportDiagnostic(diagnostic);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                ReportDiagnosticIfMatchingType(context, propertyDeclaration, fieldSymbol);
             }
         }
+    }
+
+    /// <summary>
+    /// <c>if (_field == null)</c> or <c>if (_field != null)</c> (depending on the kind of comparison) on a static field.
+    /// </summary>
+    private static bool TryGetStaticFieldComparedWithNull(
+        IfStatementSyntax ifStatement,
+        SyntaxKind comparisonKind,
+        SemanticModel semanticModel,
+        out IFieldSymbol fieldSymbol)
+    {
+        fieldSymbol = null;
+
+        if (ifStatement.Condition is not BinaryExpressionSyntax binaryExpression ||
+            binaryExpression.Kind() != comparisonKind ||
+            binaryExpression.Right is not LiteralExpressionSyntax literalExpression ||
+            literalExpression.Kind() != SyntaxKind.NullLiteralExpression ||
+            binaryExpression.Left is not IdentifierNameSyntax leftIdentifier)
+            return false;
+
+        fieldSymbol = semanticModel.GetSymbolInfo(leftIdentifier).Symbol as IFieldSymbol;
+        if (fieldSymbol is { IsStatic: true })
+            return true;
+
+        fieldSymbol = null;
+        return false;
+    }
+
+    /// <summary>
+    /// The statement is <c>_field = ...;</c> for the given field.
+    /// </summary>
+    private static bool IsAssignmentToField(StatementSyntax statement, IFieldSymbol fieldSymbol, SemanticModel semanticModel)
+    {
+        if (statement is not ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax { Left: IdentifierNameSyntax assignmentLeftIdentifier } })
+            return false;
+
+        var assignmentLeftSymbol = semanticModel.GetSymbolInfo(assignmentLeftIdentifier).Symbol;
+        return assignmentLeftSymbol != null && SymbolEqualityComparer.Default.Equals(assignmentLeftSymbol, fieldSymbol);
     }
 
     private static void AnalyzeGetAccessor2(SyntaxNodeAnalysisContext context, PropertyDeclarationSyntax propertyDeclaration)
