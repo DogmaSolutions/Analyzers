@@ -222,39 +222,45 @@ internal static class CheckThenActUtils
 
     internal static bool IsPositiveExistenceCheck(ExpressionSyntax condition, out ExpressionSyntax receiver)
     {
-        receiver = null;
-
         // Handle: collection.Any(...)
         if (IsExistenceCheckInvocation(condition, BooleanExistenceMethods, out receiver))
             return true;
 
-        if (condition is BinaryExpressionSyntax binary)
+        receiver = null;
+        if (condition is not BinaryExpressionSyntax binary)
+            return false;
+
+        switch (binary.Kind())
         {
             // Handle: collection.Count(...) > 0
-            if (binary.IsKind(SyntaxKind.GreaterThanExpression) &&
-                IsExistenceCheckInvocation(binary.Left, CountMethods, out receiver) && IsZeroLiteral(binary.Right))
-                return true;
+            case SyntaxKind.GreaterThanExpression:
+                return IsExistenceCheckInvocation(binary.Left, CountMethods, out receiver) && IsZeroLiteral(binary.Right);
 
             // Handle: 0 < collection.Count(...)
-            if (binary.IsKind(SyntaxKind.LessThanExpression) &&
-                IsZeroLiteral(binary.Left) && IsExistenceCheckInvocation(binary.Right, CountMethods, out receiver))
-                return true;
+            case SyntaxKind.LessThanExpression:
+                return IsZeroLiteral(binary.Left) && IsExistenceCheckInvocation(binary.Right, CountMethods, out receiver);
 
-            // Handle: collection.Count(...) != 0
-            if (binary.IsKind(SyntaxKind.NotEqualsExpression))
-            {
-                if ((IsExistenceCheckInvocation(binary.Left, CountMethods, out receiver) && IsZeroLiteral(binary.Right)) ||
-                    (IsExistenceCheckInvocation(binary.Right, CountMethods, out receiver) && IsZeroLiteral(binary.Left)))
-                    return true;
+            // Handle: collection.Count(...) != 0, collection.FirstOrDefault(...) != null (either operand order)
+            case SyntaxKind.NotEqualsExpression:
+                return IsInvocationComparedTo(binary, CountMethods, IsZeroLiteral, out receiver) ||
+                       IsInvocationComparedTo(binary, FindMethods, IsNullLiteral, out receiver);
 
-                // Handle: collection.FirstOrDefault(...) != null
-                if ((IsExistenceCheckInvocation(binary.Left, FindMethods, out receiver) && IsNullLiteral(binary.Right)) ||
-                    (IsExistenceCheckInvocation(binary.Right, FindMethods, out receiver) && IsNullLiteral(binary.Left)))
-                    return true;
-            }
+            default:
+                return false;
         }
+    }
 
-        return false;
+    /// <summary>
+    /// Matches a binary expression made of an existence-check invocation on one side and a literal on the other, in either order.
+    /// </summary>
+    private static bool IsInvocationComparedTo(
+        BinaryExpressionSyntax binary,
+        string[] methodNames,
+        Func<ExpressionSyntax, bool> isExpectedLiteral,
+        out ExpressionSyntax receiver)
+    {
+        return (IsExistenceCheckInvocation(binary.Left, methodNames, out receiver) && isExpectedLiteral(binary.Right)) ||
+               (IsExistenceCheckInvocation(binary.Right, methodNames, out receiver) && isExpectedLiteral(binary.Left));
     }
 
     private static bool IsExistenceCheckInvocation(ExpressionSyntax expression, string[] methodNames, out ExpressionSyntax receiver)
