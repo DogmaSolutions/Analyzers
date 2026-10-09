@@ -157,29 +157,12 @@ public sealed class DSA011Analyzer : DiagnosticAnalyzer
     private static void AnalyzeGetAccessor2(SyntaxNodeAnalysisContext context, PropertyDeclarationSyntax propertyDeclaration)
     {
         var getAccessor = propertyDeclaration.AccessorList?.Accessors.FirstOrDefault(a => a.Kind() == SyntaxKind.GetAccessorDeclaration);
-        if (!(getAccessor?.Body?.Statements.Count >= 2) || getAccessor.Body.Statements[0] is not IfStatementSyntax ifStatement) 
-            return;
-        
-        if (ifStatement.Condition is not BinaryExpressionSyntax binaryExpression ||
-            binaryExpression.Kind() != SyntaxKind.NotEqualsExpression ||
-            binaryExpression.Right is not LiteralExpressionSyntax literalExpression ||
-            literalExpression.Kind() != SyntaxKind.NullLiteralExpression ||
-            binaryExpression.Left is not IdentifierNameSyntax leftIdentifier)
+        if (!(getAccessor?.Body?.Statements.Count >= 2) || getAccessor.Body.Statements[0] is not IfStatementSyntax ifStatement)
             return;
 
-        var leftSymbol = context.SemanticModel.GetSymbolInfo(leftIdentifier).Symbol;
-
-        if (leftSymbol is not IFieldSymbol fieldSymbol || !fieldSymbol.IsStatic)
-            return;
-
-        if (getAccessor.Body.Statements[1] is not ExpressionStatementSyntax expressionStatement ||
-            expressionStatement.Expression is not AssignmentExpressionSyntax assignmentExpression ||
-            assignmentExpression.Left is not IdentifierNameSyntax assignmentLeftIdentifier)
-            return;
-
-        var assignmentLeftSymbol = context.SemanticModel.GetSymbolInfo(assignmentLeftIdentifier).Symbol;
-
-        if (assignmentLeftSymbol != null && SymbolEqualityComparer.Default.Equals(assignmentLeftSymbol, fieldSymbol))
+        // get { if (_instance != null) return _instance; _instance = ...; ... }
+        if (TryGetStaticFieldComparedWithNull(ifStatement, SyntaxKind.NotEqualsExpression, context.SemanticModel, out var fieldSymbol) &&
+            IsAssignmentToField(getAccessor.Body.Statements[1], fieldSymbol, context.SemanticModel))
         {
             ReportDiagnosticIfMatchingType(context, propertyDeclaration, fieldSymbol);
         }
