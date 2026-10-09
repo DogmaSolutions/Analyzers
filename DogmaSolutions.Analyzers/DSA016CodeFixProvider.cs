@@ -465,46 +465,45 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
         if (semanticModel == null)
             return insertionStatement;
 
-        while (insertionStatement != null)
-        {
-            BlockSyntax loopBody = null;
-            var referencesLoopVariable = false;
-
-            if (insertionStatement is ForEachStatementSyntax forEach)
-            {
-                loopBody = forEach.Statement as BlockSyntax;
-                var iterVar = semanticModel.GetDeclaredSymbol(forEach);
-                referencesLoopVariable = iterVar != null &&
-                                         ExpressionReferencesSymbol(expressionToExtract, iterVar, semanticModel);
-            }
-            else if (insertionStatement is ForStatementSyntax forStmt && forStmt.Declaration != null)
-            {
-                loopBody = forStmt.Statement as BlockSyntax;
-                foreach (var declarator in forStmt.Declaration.Variables)
-                {
-                    var sym = semanticModel.GetDeclaredSymbol(declarator);
-                    if (sym != null && ExpressionReferencesSymbol(expressionToExtract, sym, semanticModel))
-                    {
-                        referencesLoopVariable = true;
-                        break;
-                    }
-                }
-            }
-
-            if (referencesLoopVariable && loopBody != null)
-            {
-                var innerStatement = FindEarliestContainingStatement(occurrences, loopBody);
-                if (innerStatement != null)
-                {
-                    insertionStatement = innerStatement;
-                    continue;
-                }
-            }
-
-            break;
-        }
+        // Keep descending into nested loops as long as the expression depends on the variable of the current loop.
+        StatementSyntax innerStatement;
+        while ((innerStatement = FindInsertionStatementInsideLoop(insertionStatement, expressionToExtract, occurrences, semanticModel)) != null)
+            insertionStatement = innerStatement;
 
         return insertionStatement;
+    }
+
+    /// <summary>
+    /// When the statement is a loop declaring a variable used by the expression to extract, returns the earliest statement
+    /// of the loop body containing an occurrence (the variable cannot be declared before the loop). Otherwise null.
+    /// </summary>
+    private static StatementSyntax FindInsertionStatementInsideLoop(
+        StatementSyntax statement,
+        ExpressionSyntax expressionToExtract,
+        List<SyntaxNode> occurrences,
+        SemanticModel semanticModel)
+    {
+        var (loopBody, loopVariables) = GetLoopBodyAndVariables(statement, semanticModel);
+        if (loopBody == null || !loopVariables.Any(variable => ExpressionReferencesSymbol(expressionToExtract, variable, semanticModel)))
+            return null;
+
+        return FindEarliestContainingStatement(occurrences, loopBody);
+    }
+
+    private static (BlockSyntax Body, IEnumerable<ISymbol> Variables) GetLoopBodyAndVariables(StatementSyntax statement, SemanticModel semanticModel)
+    {
+        switch (statement)
+        {
+            case ForEachStatementSyntax forEach:
+                return (forEach.Statement as BlockSyntax, new[] { semanticModel.GetDeclaredSymbol(forEach) }.Where(symbol => symbol != null));
+
+            case ForStatementSyntax { Declaration: not null } forStatement:
+                return (forStatement.Statement as BlockSyntax,
+                    forStatement.Declaration.Variables.Select(declarator => semanticModel.GetDeclaredSymbol(declarator)).Where(symbol => symbol != null));
+
+            default:
+                return (null, Enumerable.Empty<ISymbol>());
+        }
     }
 
     private static bool ExpressionReferencesSymbol(
