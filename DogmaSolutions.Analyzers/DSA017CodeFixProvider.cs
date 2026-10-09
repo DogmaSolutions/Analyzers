@@ -68,50 +68,61 @@ public sealed class DSA017CodeFixProvider : CodeFixProvider
         SetAddThrowPattern,
     }
 
+    private enum InsertPattern
+    {
+        None,
+
+        /// <summary>if (!exists) { insert }</summary>
+        InsertWhenAbsent,
+
+        /// <summary>if (exists) { throw } insert</summary>
+        ThrowWhenPresent,
+
+        /// <summary>if (exists) { ... } else { insert }</summary>
+        InsertInElse,
+    }
+
     private static FixKind ClassifyFix(string typeName, string ns, IfStatementSyntax ifStatement)
     {
-        if (TryGetTryGetValueOutVariableName(ifStatement.Condition, out var outVarName))
+        // TryGetValue(key, out var v): only fixable if the value is not used afterwards and there is no else
+        if (TryGetTryGetValueOutVariableName(ifStatement.Condition, out var outVarName) &&
+            (IsOutVariableUsedBeyondCondition(outVarName, ifStatement) || ifStatement.Else != null))
+            return FixKind.None;
+
+        var isDictionaryLike = IsDictionaryLikeWithTryAdd(typeName, ns);
+        if (!isDictionaryLike && !IsSetLike(typeName, ns))
+            return FixKind.None;
+
+        switch (ClassifyInsertPattern(ifStatement))
         {
-            if (IsOutVariableUsedBeyondCondition(outVarName, ifStatement) || ifStatement.Else != null)
+            case InsertPattern.InsertWhenAbsent:
+            case InsertPattern.InsertInElse:
+                return isDictionaryLike ? FixKind.DictionaryTryAdd : FixKind.SetAddReturnsBool;
+
+            case InsertPattern.ThrowWhenPresent:
+                return isDictionaryLike ? FixKind.DictionaryTryAddThrowPattern : FixKind.SetAddThrowPattern;
+
+            default:
                 return FixKind.None;
         }
+    }
 
+    private static InsertPattern ClassifyInsertPattern(IfStatementSyntax ifStatement)
+    {
         if (CheckThenActUtils.IsNegatedExistenceCheck(ifStatement.Condition, out _))
-        {
-            if (!HasSimpleInsertBody(ifStatement.Statement))
-                return FixKind.None;
+            return HasSimpleInsertBody(ifStatement.Statement) ? InsertPattern.InsertWhenAbsent : InsertPattern.None;
 
-            if (IsDictionaryLikeWithTryAdd(typeName, ns))
-                return FixKind.DictionaryTryAdd;
+        if (!CheckThenActUtils.IsPositiveExistenceCheck(ifStatement.Condition, out _))
+            return InsertPattern.None;
 
-            if (IsSetLike(typeName, ns))
-                return FixKind.SetAddReturnsBool;
-        }
+        if (CheckThenActUtils.ContainsThrowStatement(ifStatement.Statement) &&
+            ifStatement.Else == null &&
+            HasAdjacentInsertStatement(ifStatement))
+            return InsertPattern.ThrowWhenPresent;
 
-        if (CheckThenActUtils.IsPositiveExistenceCheck(ifStatement.Condition, out _))
-        {
-            if (CheckThenActUtils.ContainsThrowStatement(ifStatement.Statement) &&
-                ifStatement.Else == null &&
-                HasAdjacentInsertStatement(ifStatement))
-            {
-                if (IsDictionaryLikeWithTryAdd(typeName, ns))
-                    return FixKind.DictionaryTryAddThrowPattern;
-
-                if (IsSetLike(typeName, ns))
-                    return FixKind.SetAddThrowPattern;
-            }
-
-            if (ifStatement.Else != null && HasSimpleInsertBody(ifStatement.Else.Statement))
-            {
-                if (IsDictionaryLikeWithTryAdd(typeName, ns))
-                    return FixKind.DictionaryTryAdd;
-
-                if (IsSetLike(typeName, ns))
-                    return FixKind.SetAddReturnsBool;
-            }
-        }
-
-        return FixKind.None;
+        return ifStatement.Else != null && HasSimpleInsertBody(ifStatement.Else.Statement)
+            ? InsertPattern.InsertInElse
+            : InsertPattern.None;
     }
 
     private static bool HasAdjacentInsertStatement(IfStatementSyntax ifStatement)
