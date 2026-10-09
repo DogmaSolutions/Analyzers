@@ -115,64 +115,53 @@ internal static class EndpointAuthorizationUtils
         if (!visited.Add(symbol))
             return false;
 
-        var declaringSyntax = symbol.DeclaringSyntaxReferences;
-        if (declaringSyntax.Length == 0)
-            return false;
-
-        var declarationNode = declaringSyntax[0].GetSyntax();
-        var containingBlock = GetContainingBlock(declarationNode);
+        var declarationNode = symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax();
+        var containingBlock = declarationNode == null ? null : GetContainingBlock(declarationNode);
         if (containingBlock == null)
             return false;
 
-        // Check the initializer of the variable declaration
-        if (declarationNode is VariableDeclaratorSyntax declarator && declarator.Initializer != null)
-        {
-            var initValue = declarator.Initializer.Value;
+        return HasAuthInInitializer(declarationNode, semanticModel, visited) ||
+               HasAuthMethodCalledOn(containingBlock, symbol, semanticModel) ||
+               HasAuthInAssignedValue(containingBlock, symbol, semanticModel, visited);
+    }
 
-            if (HasAuthInDescendantInvocations(initValue))
-                return true;
+    // The initializer of the variable declaration: var group = app.MapGroup(...).RequireAuthorization();
+    private static bool HasAuthInInitializer(SyntaxNode declarationNode, SemanticModel semanticModel, HashSet<ISymbol> visited)
+    {
+        return declarationNode is VariableDeclaratorSyntax { Initializer: not null } declarator &&
+               IsAuthorizedValue(declarator.Initializer.Value, semanticModel, visited);
+    }
 
-            // Check if the initializer is a MapGroup chain, and if so,
-            // recursively check the group's receiver
-            if (TryGetReceiverOfMapGroup(initValue, out var groupReceiver))
-            {
-                var receiverSymbol = semanticModel.GetSymbolInfo(groupReceiver);
-                if (receiverSymbol.Symbol != null && HasAuthOnSymbolLocally(receiverSymbol.Symbol, semanticModel, visited))
-                    return true;
-            }
-        }
+    // Separate statements like: group.RequireAuthorization();
+    private static bool HasAuthMethodCalledOn(SyntaxNode containingBlock, ISymbol symbol, SemanticModel semanticModel)
+    {
+        return containingBlock.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(invocation => invocation.Expression is MemberAccessExpressionSyntax access &&
+                               IsAuthMethod(access.Name.Identifier.ValueText) &&
+                               SymbolEqualityComparer.Default.Equals(semanticModel.GetSymbolInfo(access.Expression).Symbol, symbol));
+    }
 
-        // Check for separate statements like: group.RequireAuthorization();
-        foreach (var invocation in containingBlock.DescendantNodes().OfType<InvocationExpressionSyntax>())
-        {
-            if (invocation.Expression is MemberAccessExpressionSyntax access &&
-                IsAuthMethod(access.Name.Identifier.ValueText))
-            {
-                var receiverSymbol = semanticModel.GetSymbolInfo(access.Expression);
-                if (SymbolEqualityComparer.Default.Equals(receiverSymbol.Symbol, symbol))
-                    return true;
-            }
-        }
+    // Assignments (not just the declaration initializer) with auth in the assigned value
+    private static bool HasAuthInAssignedValue(SyntaxNode containingBlock, ISymbol symbol, SemanticModel semanticModel, HashSet<ISymbol> visited)
+    {
+        return containingBlock.DescendantNodes()
+            .OfType<AssignmentExpressionSyntax>()
+            .Where(assignment => SymbolEqualityComparer.Default.Equals(semanticModel.GetSymbolInfo(assignment.Left).Symbol, symbol))
+            .Any(assignment => IsAuthorizedValue(assignment.Right, semanticModel, visited));
+    }
 
-        // Check assignments (not just the declaration initializer) for auth in the assigned value
-        foreach (var assignment in containingBlock.DescendantNodes().OfType<AssignmentExpressionSyntax>())
-        {
-            var leftSymbol = semanticModel.GetSymbolInfo(assignment.Left);
-            if (SymbolEqualityComparer.Default.Equals(leftSymbol.Symbol, symbol))
-            {
-                if (HasAuthInDescendantInvocations(assignment.Right))
-                    return true;
+    // The value configures auth itself, or is a MapGroup of a receiver which has auth
+    private static bool IsAuthorizedValue(ExpressionSyntax value, SemanticModel semanticModel, HashSet<ISymbol> visited)
+    {
+        if (HasAuthInDescendantInvocations(value))
+            return true;
 
-                if (TryGetReceiverOfMapGroup(assignment.Right, out var groupReceiver))
-                {
-                    var receiverSymbol = semanticModel.GetSymbolInfo(groupReceiver);
-                    if (receiverSymbol.Symbol != null && HasAuthOnSymbolLocally(receiverSymbol.Symbol, semanticModel, visited))
-                        return true;
-                }
-            }
-        }
+        if (!TryGetReceiverOfMapGroup(value, out var groupReceiver))
+            return false;
 
-        return false;
+        var receiverSymbol = semanticModel.GetSymbolInfo(groupReceiver).Symbol;
+        return receiverSymbol != null && HasAuthOnSymbolLocally(receiverSymbol, semanticModel, visited);
     }
 
     /// <summary>
