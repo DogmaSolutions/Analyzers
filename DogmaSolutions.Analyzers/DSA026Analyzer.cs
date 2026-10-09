@@ -249,32 +249,10 @@ public sealed class DSA026Analyzer : DiagnosticAnalyzer
 
     private static bool IsInsideCreateLinkedTokenSource(SyntaxNode node, SemanticModel model)
     {
-        for (var current = node.Parent; current != null; current = current.Parent)
+        foreach (var current in node.Ancestors())
         {
-            if (current is InvocationExpressionSyntax invocation)
-            {
-                var symbol = model.GetSymbolInfo(invocation).Symbol;
-                if (symbol is IMethodSymbol
-                    {
-                        Name: "CreateLinkedTokenSource",
-                        ContainingType:
-                        {
-                            Name: "CancellationTokenSource",
-                            ContainingNamespace:
-                            {
-                                Name: "Threading",
-                                ContainingNamespace:
-                                {
-                                    Name: "System",
-                                    ContainingNamespace.IsGlobalNamespace: true
-                                }
-                            }
-                        }
-                    })
-                {
-                    return true;
-                }
-            }
+            if (current is InvocationExpressionSyntax invocation && IsCreateLinkedTokenSource(model.GetSymbolInfo(invocation).Symbol))
+                return true;
 
             if (current is StatementSyntax or MemberDeclarationSyntax or
                 LambdaExpressionSyntax or LocalFunctionStatementSyntax)
@@ -282,5 +260,11 @@ public sealed class DSA026Analyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool IsCreateLinkedTokenSource(ISymbol symbol)
+    {
+        return symbol is IMethodSymbol { Name: "CreateLinkedTokenSource", ContainingType: { Name: "CancellationTokenSource" } type } &&
+               type.ContainingNamespace?.ToDisplayString() == "System.Threading";
     }
 }
