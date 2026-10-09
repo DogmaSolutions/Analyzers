@@ -83,9 +83,6 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
             if (binExpr.IsKind(SyntaxKind.AddExpression) && IsStringConcatenation(binExpr, context.SemanticModel))
                 continue;
 
-            if (IsLoopControlExpression(binExpr, loopNode))
-                continue;
-
             if (IsInsideNestedLoop(binExpr, body))
                 continue;
 
@@ -273,32 +270,6 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
         }
 
         return true;
-    }
-
-    private static bool IsLoopControlExpression(SyntaxNode expr, SyntaxNode loopNode)
-    {
-        if (loopNode is ForStatementSyntax forStmt)
-        {
-            if (forStmt.Condition != null && forStmt.Condition.Contains(expr))
-                return true;
-
-            foreach (var inc in forStmt.Incrementors)
-            {
-                if (inc.Contains(expr))
-                    return true;
-            }
-
-            if (forStmt.Declaration != null && forStmt.Declaration.Contains(expr))
-                return true;
-        }
-
-        if (loopNode is WhileStatementSyntax whileStmt && whileStmt.Condition.Contains(expr))
-            return true;
-
-        if (loopNode is DoStatementSyntax doStmt && doStmt.Condition.Contains(expr))
-            return true;
-
-        return false;
     }
 
     private static bool IsInsideNestedLoop(SyntaxNode expr, StatementSyntax loopBody)
