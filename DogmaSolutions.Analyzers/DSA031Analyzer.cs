@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -58,6 +59,20 @@ public sealed class DSA031Analyzer : DiagnosticAnalyzer
         "First", "FirstOrDefault",
         "Single", "SingleOrDefault",
         "Last", "LastOrDefault",
+    };
+
+    private static readonly HashSet<string> SaveChangesMethods = new(StringComparer.Ordinal)
+    {
+        "SaveChanges", "SaveChangesAsync",
+    };
+
+    private static readonly HashSet<string> ChangeTrackingMethods = new(StringComparer.Ordinal)
+    {
+        "Add", "AddAsync", "AddRange", "AddRangeAsync",
+        "Update", "UpdateRange",
+        "Remove", "RemoveRange",
+        "Attach", "AttachRange",
+        "Entry",
     };
 
     private static readonly string[] BulkOperationMethods =
@@ -301,29 +316,20 @@ public sealed class DSA031Analyzer : DiagnosticAnalyzer
 
     private static bool MethodBodyContainsMutationCalls(SyntaxNode methodBody, SemanticModel semanticModel)
     {
-        foreach (var invocation in methodBody.DescendantNodes().OfType<InvocationExpressionSyntax>())
-        {
-            var methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-            if (methodSymbol == null)
-                continue;
+        return methodBody.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Select(invocation => semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol)
+            .Any(IsMutationCall);
+    }
 
-            var name = methodSymbol.Name;
-
-            if (name is "SaveChanges" or "SaveChangesAsync")
-                return true;
-
-            if (name is "Add" or "AddAsync" or "AddRange" or "AddRangeAsync" or
-                "Update" or "UpdateRange" or
-                "Remove" or "RemoveRange" or
-                "Attach" or "AttachRange" or
-                "Entry")
-            {
-                if (IsDbContextOrDbSetType(methodSymbol.ContainingType))
-                    return true;
-            }
-        }
-
-        return false;
+    /// <summary>
+    /// SaveChanges on anything, or a change-tracking call (Add, Update, Remove, Attach, Entry...) on a DbContext / DbSet.
+    /// </summary>
+    private static bool IsMutationCall(IMethodSymbol method)
+    {
+        return method != null &&
+               (SaveChangesMethods.Contains(method.Name) ||
+                (ChangeTrackingMethods.Contains(method.Name) && IsDbContextOrDbSetType(method.ContainingType)));
     }
 
     private static bool MethodBodyContainsEntityPropertyAssignment(
