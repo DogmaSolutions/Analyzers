@@ -398,36 +398,34 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
 
     private static SyntaxNode GetEnclosingMethodBody(SyntaxNode node)
     {
-        var current = node.Parent;
-        while (current != null)
+        return node.Ancestors().Select(GetBodyIfContainer).FirstOrDefault(body => body != null);
+    }
+
+    /// <summary>
+    /// The scope in which a constant pattern is searched, when the node is a container of code: the body of a method,
+    /// constructor, accessor, local function or lambda; a field or property initializer; the top-level statements.
+    /// </summary>
+    private static SyntaxNode GetBodyIfContainer(SyntaxNode node)
+    {
+        switch (node)
         {
-            switch (current)
-            {
-                case MethodDeclarationSyntax method:
-                    return (SyntaxNode)method.Body ?? method.ExpressionBody;
-                case ConstructorDeclarationSyntax ctor:
-                    return (SyntaxNode)ctor.Body ?? ctor.ExpressionBody;
-                case AccessorDeclarationSyntax accessor:
-                    return (SyntaxNode)accessor.Body ?? accessor.ExpressionBody;
-                case LocalFunctionStatementSyntax localFunc:
-                    return (SyntaxNode)localFunc.Body ?? localFunc.ExpressionBody;
-                case SimpleLambdaExpressionSyntax lambda:
-                    return lambda.Body;
-                case ParenthesizedLambdaExpressionSyntax lambda:
-                    return lambda.Body;
-                case AnonymousMethodExpressionSyntax anon:
-                    return anon.Body;
-                case FieldDeclarationSyntax:
-                case PropertyDeclarationSyntax propDecl when propDecl.Initializer != null:
-                    return current;
-                case GlobalStatementSyntax:
-                case CompilationUnitSyntax:
-                    return current;
-            }
-
-            current = current.Parent;
+            case MethodDeclarationSyntax method:
+                return (SyntaxNode)method.Body ?? method.ExpressionBody;
+            case ConstructorDeclarationSyntax ctor:
+                return (SyntaxNode)ctor.Body ?? ctor.ExpressionBody;
+            case AccessorDeclarationSyntax accessor:
+                return (SyntaxNode)accessor.Body ?? accessor.ExpressionBody;
+            case LocalFunctionStatementSyntax localFunc:
+                return (SyntaxNode)localFunc.Body ?? localFunc.ExpressionBody;
+            case AnonymousFunctionExpressionSyntax anonymousFunction:
+                return anonymousFunction.Body;
+            case FieldDeclarationSyntax:
+            case PropertyDeclarationSyntax { Initializer: not null }:
+            case GlobalStatementSyntax:
+            case CompilationUnitSyntax:
+                return node;
+            default:
+                return null;
         }
-
-        return null;
     }
 }
