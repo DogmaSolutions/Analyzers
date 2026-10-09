@@ -153,24 +153,21 @@ namespace DogmaSolutions.Analyzers
             if (scope == null)
                 return false;
 
-            foreach (var invocation in scope.DescendantNodes().OfType<InvocationExpressionSyntax>())
-            {
-                if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method)
-                    continue;
-                if (!IsRandomNumberGeneratorType(method.ContainingType, context))
-                    continue;
-                if (method.Name is not ("Fill" or "GetBytes" or "GetNonZeroBytes"))
-                    continue;
+            return scope.DescendantNodes()
+                .OfType<InvocationExpressionSyntax>()
+                .Any(invocation => IsRandomFillOf(invocation, local, context));
+        }
 
-                foreach (var argument in invocation.ArgumentList.Arguments)
-                {
-                    var argumentSymbol = context.SemanticModel.GetSymbolInfo(argument.Expression, context.CancellationToken).Symbol;
-                    if (SymbolEqualityComparer.Default.Equals(argumentSymbol, local))
-                        return true;
-                }
-            }
-
-            return false;
+        /// <summary>RandomNumberGenerator.Fill / GetBytes / GetNonZeroBytes called with <paramref name="local"/> as an argument.</summary>
+        private static bool IsRandomFillOf(InvocationExpressionSyntax invocation, ILocalSymbol local, SyntaxNodeAnalysisContext context)
+        {
+            return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method &&
+                   IsRandomNumberGeneratorType(method.ContainingType, context) &&
+                   (method.Name is "Fill" or "GetBytes" or "GetNonZeroBytes") &&
+                   invocation.ArgumentList.Arguments.Any(argument =>
+                       SymbolEqualityComparer.Default.Equals(
+                           context.SemanticModel.GetSymbolInfo(argument.Expression, context.CancellationToken).Symbol,
+                           local));
         }
 
         private static bool LocalInitializerMatches(ILocalSymbol local, Func<ExpressionSyntax, bool> predicate)
