@@ -125,120 +125,87 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
 
     internal static HashSet<ISymbol> CollectModifiedSymbols(StatementSyntax loopBody, SyntaxNode loopNode, SemanticModel model)
     {
-        var modified = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var symbols = GetLoopHeaderSymbols(loopNode, model)
+            .Concat(loopBody is ForEachStatementSyntax bodyForEach
+                ? new[] { model.GetDeclaredSymbol(bodyForEach) } // stacked loops without braces: the body IS the nested loop, not a descendant
+                : Array.Empty<ISymbol>())
+            .Concat(loopBody.DescendantNodes().Select(node => GetModifiedSymbol(node, model)));
 
-        if (loopNode is ForStatementSyntax forStmt)
-        {
-            if (forStmt.Declaration != null)
-            {
-                foreach (var variable in forStmt.Declaration.Variables)
-                {
-                    var symbol = model.GetDeclaredSymbol(variable);
-                    if (symbol != null)
-                        modified.Add(symbol);
-                }
-            }
-
-            foreach (var incrementor in forStmt.Incrementors)
-                CollectAssignmentTargets(incrementor, modified, model);
-        }
-
-        if (loopNode is ForEachStatementSyntax forEachStmt)
-        {
-            var symbol = model.GetDeclaredSymbol(forEachStmt);
-            if (symbol != null)
-                modified.Add(symbol);
-        }
-
-        if (loopNode is ForEachVariableStatementSyntax forEachVarStmt)
-        {
-            foreach (var designation in forEachVarStmt.Variable.DescendantNodesAndSelf().OfType<SingleVariableDesignationSyntax>())
-            {
-                var symbol = model.GetDeclaredSymbol(designation);
-                if (symbol != null)
-                    modified.Add(symbol);
-            }
-        }
-
-        // Handle stacked loops without braces: the body IS the nested loop, not a descendant
-        if (loopBody is ForEachStatementSyntax bodyForEach)
-        {
-            var sym = model.GetDeclaredSymbol(bodyForEach);
-            if (sym != null)
-                modified.Add(sym);
-        }
-
-        foreach (var node in loopBody.DescendantNodes())
-        {
-            ISymbol symbol;
-            switch (node)
-            {
-                case VariableDeclaratorSyntax localDecl:
-                    symbol = model.GetDeclaredSymbol(localDecl);
-                    if (symbol != null)
-                        modified.Add(symbol);
-                    break;
-
-                case SingleVariableDesignationSyntax designation:
-                    symbol = model.GetDeclaredSymbol(designation);
-                    if (symbol != null)
-                        modified.Add(symbol);
-                    break;
-
-                case ForEachStatementSyntax nestedForEach:
-                    symbol = model.GetDeclaredSymbol(nestedForEach);
-                    if (symbol != null)
-                        modified.Add(symbol);
-                    break;
-
-                case AssignmentExpressionSyntax assignment:
-                    symbol = model.GetSymbolInfo(assignment.Left).Symbol;
-                    if (symbol != null)
-                        modified.Add(symbol);
-                    break;
-
-                case PrefixUnaryExpressionSyntax prefix
-                    when prefix.IsKind(SyntaxKind.PreIncrementExpression) || prefix.IsKind(SyntaxKind.PreDecrementExpression):
-                    symbol = model.GetSymbolInfo(prefix.Operand).Symbol;
-                    if (symbol != null)
-                        modified.Add(symbol);
-                    break;
-
-                case PostfixUnaryExpressionSyntax postfix
-                    when postfix.IsKind(SyntaxKind.PostIncrementExpression) || postfix.IsKind(SyntaxKind.PostDecrementExpression):
-                    symbol = model.GetSymbolInfo(postfix.Operand).Symbol;
-                    if (symbol != null)
-                        modified.Add(symbol);
-                    break;
-
-                case ArgumentSyntax argument when !argument.RefOrOutKeyword.IsKind(SyntaxKind.None):
-                    symbol = model.GetSymbolInfo(argument.Expression).Symbol;
-                    if (symbol != null)
-                        modified.Add(symbol);
-                    break;
-            }
-        }
-
-        return modified;
+        return new HashSet<ISymbol>(symbols.Where(symbol => symbol != null), SymbolEqualityComparer.Default);
     }
 
-    private static void CollectAssignmentTargets(ExpressionSyntax expression, HashSet<ISymbol> modified, SemanticModel model)
+    /// <summary>
+    /// The symbols declared or modified by the header of the loop: the variables of a for / foreach, and what
+    /// the incrementors of a for assign.
+    /// </summary>
+    private static IEnumerable<ISymbol> GetLoopHeaderSymbols(SyntaxNode loopNode, SemanticModel model)
     {
-        foreach (var node in expression.DescendantNodesAndSelf())
+        switch (loopNode)
         {
-            ISymbol symbol = null;
+            case ForStatementSyntax forStmt:
+                var declared = forStmt.Declaration?.Variables.Select(variable => model.GetDeclaredSymbol(variable))
+                               ?? Enumerable.Empty<ISymbol>();
+                var incremented = forStmt.Incrementors.SelectMany(incrementor => incrementor.DescendantNodesAndSelf())
+                    .Select(node => GetMutationTargetSymbol(node, model));
+                return declared.Concat(incremented);
 
-            if (node is AssignmentExpressionSyntax assignment)
-                symbol = model.GetSymbolInfo(assignment.Left).Symbol;
-            else if (node is PrefixUnaryExpressionSyntax prefix &&
-                     (prefix.IsKind(SyntaxKind.PreIncrementExpression) || prefix.IsKind(SyntaxKind.PreDecrementExpression)))
-                symbol = model.GetSymbolInfo(prefix.Operand).Symbol;
-            else if (node is PostfixUnaryExpressionSyntax postfix &&
-                     (postfix.IsKind(SyntaxKind.PostIncrementExpression) || postfix.IsKind(SyntaxKind.PostDecrementExpression)))
-                symbol = model.GetSymbolInfo(postfix.Operand).Symbol;
+            case ForEachStatementSyntax forEachStmt:
+                return new[] { model.GetDeclaredSymbol(forEachStmt) };
 
-            if (symbol != null)
-                modified.Add(symbol);
+            case ForEachVariableStatementSyntax forEachVarStmt:
+                return forEachVarStmt.Variable.DescendantNodesAndSelf().OfType<SingleVariableDesignationSyntax>()
+                    .Select(designation => model.GetDeclaredSymbol(designation));
+
+            default:
+                return Enumerable.Empty<ISymbol>();
+        }
+    }
+
+    /// <summary>
+    /// The symbol a node of the loop body declares or modifies (null if none): a local, a deconstruction variable, a
+    /// nested foreach variable, an assigned / incremented / decremented symbol, or a ref / out argument.
+    /// </summary>
+    private static ISymbol GetModifiedSymbol(SyntaxNode node, SemanticModel model)
+    {
+        switch (node)
+        {
+            case VariableDeclaratorSyntax localDecl:
+                return model.GetDeclaredSymbol(localDecl);
+
+            case SingleVariableDesignationSyntax designation:
+                return model.GetDeclaredSymbol(designation);
+
+            case ForEachStatementSyntax nestedForEach:
+                return model.GetDeclaredSymbol(nestedForEach);
+
+            case ArgumentSyntax argument when !argument.RefOrOutKeyword.IsKind(SyntaxKind.None):
+                return model.GetSymbolInfo(argument.Expression).Symbol;
+
+            default:
+                return GetMutationTargetSymbol(node, model);
+        }
+    }
+
+    /// <summary>
+    /// The symbol assigned by an assignment, or incremented / decremented by a ++ / -- (prefix or postfix); null otherwise.
+    /// </summary>
+    private static ISymbol GetMutationTargetSymbol(SyntaxNode node, SemanticModel model)
+    {
+        switch (node)
+        {
+            case AssignmentExpressionSyntax assignment:
+                return model.GetSymbolInfo(assignment.Left).Symbol;
+
+            case PrefixUnaryExpressionSyntax prefix
+                when prefix.IsKind(SyntaxKind.PreIncrementExpression) || prefix.IsKind(SyntaxKind.PreDecrementExpression):
+                return model.GetSymbolInfo(prefix.Operand).Symbol;
+
+            case PostfixUnaryExpressionSyntax postfix
+                when postfix.IsKind(SyntaxKind.PostIncrementExpression) || postfix.IsKind(SyntaxKind.PostDecrementExpression):
+                return model.GetSymbolInfo(postfix.Operand).Symbol;
+
+            default:
+                return null;
         }
     }
 
