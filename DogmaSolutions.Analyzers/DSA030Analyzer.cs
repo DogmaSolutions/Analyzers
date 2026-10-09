@@ -181,31 +181,31 @@ public sealed class DSA030Analyzer : DiagnosticAnalyzer
 
     private static bool LocalInitializerInvolvesEf(ILocalSymbol localSymbol, SemanticModel semanticModel)
     {
-        var declaringRefs = localSymbol.DeclaringSyntaxReferences;
-        if (declaringRefs.Length == 0)
-            return false;
+        var initValue = GetLocalInitializerValue(localSymbol);
+        return initValue != null &&
+               (ContainsDbSetTypedNode(initValue, semanticModel) || ContainsEntityFrameworkInvocation(initValue, semanticModel));
+    }
 
-        var declarationNode = declaringRefs[0].GetSyntax();
-        if (!(declarationNode is VariableDeclaratorSyntax declarator) || declarator.Initializer == null)
-            return false;
+    /// <summary>
+    /// Returns the initializer of a local declared as <c>var x = value;</c>, or null when the local has no initializer
+    /// or is not declared by a variable declarator (foreach variables, pattern variables, out variables, ...).
+    /// </summary>
+    private static ExpressionSyntax GetLocalInitializerValue(ILocalSymbol localSymbol)
+    {
+        var declarator = localSymbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
+        return declarator?.Initializer?.Value;
+    }
 
-        var initValue = declarator.Initializer.Value;
+    private static bool ContainsDbSetTypedNode(ExpressionSyntax expression, SemanticModel semanticModel)
+    {
+        return expression.DescendantNodesAndSelf().Any(node => IsDbSetType(semanticModel.GetTypeInfo(node).Type));
+    }
 
-        foreach (var node in initValue.DescendantNodesAndSelf())
-        {
-            var typeInfo = semanticModel.GetTypeInfo(node);
-            if (typeInfo.Type != null && IsDbSetType(typeInfo.Type))
-                return true;
-        }
-
-        foreach (var inv in initValue.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>())
-        {
-            var ms = semanticModel.GetSymbolInfo(inv).Symbol as IMethodSymbol;
-            if (ms != null && IsFromEntityFramework(ms))
-                return true;
-        }
-
-        return false;
+    private static bool ContainsEntityFrameworkInvocation(ExpressionSyntax expression, SemanticModel semanticModel)
+    {
+        return expression.DescendantNodesAndSelf()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(invocation => semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol method && IsFromEntityFramework(method));
     }
 
     internal static bool HasTrackingChoiceInChain(
@@ -242,17 +242,10 @@ public sealed class DSA030Analyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool LocalHasTrackingInInitializer(ISymbol localSymbol)
+    private static bool LocalHasTrackingInInitializer(ILocalSymbol localSymbol)
     {
-        var declaringRefs = localSymbol.DeclaringSyntaxReferences;
-        if (declaringRefs.Length == 0)
-            return false;
-
-        var declarationNode = declaringRefs[0].GetSyntax();
-        if (!(declarationNode is VariableDeclaratorSyntax declarator) || declarator.Initializer == null)
-            return false;
-
-        return ExpressionContainsTrackingChoice(declarator.Initializer.Value);
+        var initValue = GetLocalInitializerValue(localSymbol);
+        return initValue != null && ExpressionContainsTrackingChoice(initValue);
     }
 
     private static bool ExpressionContainsTrackingChoice(ExpressionSyntax expression)
