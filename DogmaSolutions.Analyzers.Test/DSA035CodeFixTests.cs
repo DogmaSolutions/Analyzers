@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace DogmaSolutions.Analyzers.Test;
 
 [TestClass]
-public class DSA035CodeFixTests
+public partial class DSA035CodeFixTests
 {
     [TestMethod]
     public async Task HoistsGetTypeFromForLoop()

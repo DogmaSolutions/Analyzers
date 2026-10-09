@@ -130,35 +130,49 @@ public sealed class DSA035CodeFixProvider : CodeFixProvider
         return document.WithSyntaxRoot(newRoot);
     }
 
-    private static string GenerateVariableName(InvocationExpressionSyntax invocation)
+    internal static string GenerateVariableName(InvocationExpressionSyntax invocation)
     {
-        string methodName = null;
-        string receiverName = null;
+        var (receiverName, methodName) = GetReceiverAndMethodNames(invocation);
 
-        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+        if (methodName == null)
+            return "hoisted";
+
+        return receiverName == null
+            ? "hoisted_" + methodName
+            : "hoisted_" + receiverName + "_" + methodName;
+    }
+
+    /// <summary>
+    /// The name of the method called, and the name that identifies its receiver (a variable, or the previous call of a chain),
+    /// for <c>receiver.Method()</c> and <c>receiver?.Method()</c>. Each is null when it can't be named.
+    /// </summary>
+    private static (string ReceiverName, string MethodName) GetReceiverAndMethodNames(InvocationExpressionSyntax invocation)
+    {
+        switch (invocation.Expression)
         {
-            methodName = memberAccess.Name.Identifier.ValueText;
+            case MemberAccessExpressionSyntax memberAccess:
+                return (GetReceiverName(memberAccess.Expression), memberAccess.Name.Identifier.ValueText);
 
-            if (memberAccess.Expression is IdentifierNameSyntax receiverId)
-                receiverName = receiverId.Identifier.ValueText;
-            else if (memberAccess.Expression is InvocationExpressionSyntax chainedCall &&
-                     chainedCall.Expression is MemberAccessExpressionSyntax chainedMember)
-                receiverName = chainedMember.Name.Identifier.ValueText;
+            case MemberBindingExpressionSyntax memberBinding when invocation.Parent is ConditionalAccessExpressionSyntax conditionalAccess:
+                return ((conditionalAccess.Expression as IdentifierNameSyntax)?.Identifier.ValueText, memberBinding.Name.Identifier.ValueText);
+
+            default:
+                return (null, null);
         }
-        else if (invocation.Expression is MemberBindingExpressionSyntax memberBinding &&
-                 invocation.Parent is ConditionalAccessExpressionSyntax ca)
+    }
+
+    private static string GetReceiverName(ExpressionSyntax receiver)
+    {
+        switch (receiver)
         {
-            methodName = memberBinding.Name.Identifier.ValueText;
-            if (ca.Expression is IdentifierNameSyntax caReceiver)
-                receiverName = caReceiver.Identifier.ValueText;
+            case IdentifierNameSyntax identifier:
+                return identifier.Identifier.ValueText;
+
+            case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax chainedMember }:
+                return chainedMember.Name.Identifier.ValueText;
+
+            default:
+                return null;
         }
-
-        if (receiverName != null && methodName != null)
-            return "hoisted_" + receiverName + "_" + methodName;
-
-        if (methodName != null)
-            return "hoisted_" + methodName;
-
-        return "hoisted";
     }
 }
