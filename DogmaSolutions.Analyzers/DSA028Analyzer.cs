@@ -187,36 +187,35 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
 
     private static bool IsImmutableCollectionReturnType(TypeSyntax typeSyntax, SemanticModel semanticModel)
     {
-        var typeInfo = semanticModel.GetTypeInfo(typeSyntax);
-        var typeSymbol = typeInfo.Type;
+        var typeSymbol = semanticModel.GetTypeInfo(typeSyntax).Type;
         if (typeSymbol == null)
             return false;
 
-        if (typeSymbol is INamedTypeSymbol namedType && namedType.IsGenericType && namedType.TypeArguments.Length == 1)
+        var originalDef = UnwrapTaskResultType(typeSymbol).OriginalDefinition;
+        var ns = GetNamespaceName(originalDef);
+
+        return (ns == "System.Collections.Generic" || ns == "System.Collections") &&
+               Array.IndexOf(ImmutableReturnTypes, originalDef.Name) >= 0;
+    }
+
+    /// <summary>
+    /// <c>Task&lt;T&gt;</c> and <c>ValueTask&lt;T&gt;</c> are looked through: the type that matters is T.
+    /// </summary>
+    private static ITypeSymbol UnwrapTaskResultType(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol is INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: 1 } namedType &&
+            GetNamespaceName(namedType.OriginalDefinition) == "System.Threading.Tasks" &&
+            namedType.OriginalDefinition.Name is "Task" or "ValueTask")
         {
-            var outerDef = namedType.OriginalDefinition;
-            var outerNs = outerDef.ContainingNamespace?.ToDisplayString() ?? string.Empty;
-            if (outerNs == "System.Threading.Tasks" && outerDef.Name is "Task" or "ValueTask")
-                typeSymbol = namedType.TypeArguments[0];
+            return namedType.TypeArguments[0];
         }
 
-        var originalDef = typeSymbol.OriginalDefinition;
-        var name = originalDef.Name;
-        var ns = originalDef.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        return typeSymbol;
+    }
 
-        if (ns != "System.Collections.Generic" && ns != "System.Collections")
-            return false;
-
-        foreach (var allowed in ImmutableReturnTypes)
-        {
-            if (name == allowed)
-                return true;
-        }
-
-        if (name == "IEnumerable" && ns == "System.Collections")
-            return true;
-
-        return false;
+    private static string GetNamespaceName(ISymbol symbol)
+    {
+        return symbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
     }
 
     private static void CheckExpression(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
