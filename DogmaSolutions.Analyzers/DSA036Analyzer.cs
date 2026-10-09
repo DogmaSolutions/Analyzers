@@ -321,59 +321,39 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
 
     private static bool IsLocalNeverReassigned(ILocalSymbol local, SyntaxNode scope, SemanticModel model)
     {
-        foreach (var node in scope.DescendantNodes())
+        return !scope.DescendantNodes().Any(node => IsMutationOfLocal(node, local, model));
+    }
+
+    /// <summary>
+    /// True when the node assigns the local, passes it by ref/out, or increments/decrements it.
+    /// </summary>
+    private static bool IsMutationOfLocal(SyntaxNode node, ILocalSymbol local, SemanticModel model)
+    {
+        switch (node)
         {
-            switch (node)
-            {
-                case AssignmentExpressionSyntax assignment:
-                {
-                    if (assignment.Parent is EqualsValueClauseSyntax)
-                        continue;
+            case AssignmentExpressionSyntax assignment:
+                return assignment.Parent is not EqualsValueClauseSyntax &&
+                       SymbolEqualityComparer.Default.Equals(GetAssignmentTargetSymbol(assignment.Left, model), local);
 
-                    var targetSymbol = GetAssignmentTargetSymbol(assignment.Left, model);
-                    if (SymbolEqualityComparer.Default.Equals(targetSymbol, local))
-                        return false;
-                    break;
-                }
+            case ArgumentSyntax { RefKindKeyword.RawKind: not 0 } arg:
+                return IsReferenceToLocal(arg.Expression, local, model);
 
-                case ArgumentSyntax { RefKindKeyword.RawKind: not 0 } arg:
-                {
-                    if (arg.Expression is IdentifierNameSyntax id)
-                    {
-                        var sym = model.GetSymbolInfo(id).Symbol;
-                        if (SymbolEqualityComparer.Default.Equals(sym, local))
-                            return false;
-                    }
-                    break;
-                }
+            case PostfixUnaryExpressionSyntax postfix:
+                return IsReferenceToLocal(postfix.Operand, local, model);
 
-                case PostfixUnaryExpressionSyntax postfix:
-                {
-                    if (postfix.Operand is IdentifierNameSyntax id)
-                    {
-                        var sym = model.GetSymbolInfo(id).Symbol;
-                        if (SymbolEqualityComparer.Default.Equals(sym, local))
-                            return false;
-                    }
-                    break;
-                }
+            case PrefixUnaryExpressionSyntax prefix
+                when prefix.IsKind(SyntaxKind.PreIncrementExpression) || prefix.IsKind(SyntaxKind.PreDecrementExpression):
+                return IsReferenceToLocal(prefix.Operand, local, model);
 
-                case PrefixUnaryExpressionSyntax prefix
-                    when prefix.IsKind(SyntaxKind.PreIncrementExpression) ||
-                         prefix.IsKind(SyntaxKind.PreDecrementExpression):
-                {
-                    if (prefix.Operand is IdentifierNameSyntax id)
-                    {
-                        var sym = model.GetSymbolInfo(id).Symbol;
-                        if (SymbolEqualityComparer.Default.Equals(sym, local))
-                            return false;
-                    }
-                    break;
-                }
-            }
+            default:
+                return false;
         }
+    }
 
-        return true;
+    private static bool IsReferenceToLocal(ExpressionSyntax expression, ILocalSymbol local, SemanticModel model)
+    {
+        return expression is IdentifierNameSyntax id &&
+               SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(id).Symbol, local);
     }
 
     private static ISymbol GetAssignmentTargetSymbol(ExpressionSyntax left, SemanticModel model)
