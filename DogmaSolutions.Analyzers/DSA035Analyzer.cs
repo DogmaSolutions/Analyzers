@@ -276,58 +276,49 @@ public sealed class DSA035Analyzer : DiagnosticAnalyzer
         HashSet<ISymbol> modifiedSymbols,
         SemanticModel model)
     {
-        foreach (var node in expression.DescendantNodesAndSelf())
+        return expression.DescendantNodesAndSelf().All(node => IsLoopInvariantNode(node, modifiedSymbols, model));
+    }
+
+    private static bool IsLoopInvariantNode(SyntaxNode node, HashSet<ISymbol> modifiedSymbols, SemanticModel model)
+    {
+        switch (node)
         {
-            switch (node)
-            {
-                case IdentifierNameSyntax identifier:
-                    if (identifier.Parent is MemberAccessExpressionSyntax mas && mas.Name == identifier)
-                        break;
+            case IdentifierNameSyntax identifier:
+                return IsLoopInvariantIdentifier(identifier, modifiedSymbols, model);
 
-                    var symbol = model.GetSymbolInfo(identifier).Symbol;
-                    if (symbol == null)
-                        return false;
+            // Only reflection calls can be hoisted: their receiver and arguments must be invariant too.
+            case InvocationExpressionSyntax nestedInvocation:
+                return IsReflectionInvocation(nestedInvocation, model) &&
+                       IsReceiverLoopInvariant(nestedInvocation, modifiedSymbols, model) &&
+                       AreArgumentsLoopInvariant(nestedInvocation, modifiedSymbols, model);
 
-                    if (modifiedSymbols.Contains(symbol))
-                        return false;
+            case ObjectCreationExpressionSyntax:
+            case AwaitExpressionSyntax:
+                return false;
 
-                    switch (symbol)
-                    {
-                        case ILocalSymbol:
-                        case IParameterSymbol:
-                        case IFieldSymbol { IsConst: true }:
-                        case IFieldSymbol { IsReadOnly: true }:
-                        case IFieldSymbol { IsStatic: true }:
-                        case IPropertySymbol:
-                        case INamedTypeSymbol:
-                        case ITypeParameterSymbol:
-                        case INamespaceSymbol:
-                            break;
-                        default:
-                            return false;
-                    }
-                    break;
-
-                case InvocationExpressionSyntax nestedInvocation:
-                    if (IsReflectionInvocation(nestedInvocation, model))
-                    {
-                        if (!IsReceiverLoopInvariant(nestedInvocation, modifiedSymbols, model) ||
-                            !AreArgumentsLoopInvariant(nestedInvocation, modifiedSymbols, model))
-                            return false;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                    break;
-
-                case ObjectCreationExpressionSyntax:
-                case AwaitExpressionSyntax:
-                    return false;
-            }
+            default:
+                return true;
         }
+    }
 
-        return true;
+    private static bool IsLoopInvariantIdentifier(IdentifierNameSyntax identifier, HashSet<ISymbol> modifiedSymbols, SemanticModel model)
+    {
+        // The name after the dot of a member access is not a variable read
+        if (identifier.Parent is MemberAccessExpressionSyntax memberAccess && memberAccess.Name == identifier)
+            return true;
+
+        var symbol = model.GetSymbolInfo(identifier).Symbol;
+        return symbol != null && !modifiedSymbols.Contains(symbol) && IsStableSymbolKind(symbol);
+    }
+
+    /// <summary>
+    /// Locals, parameters, properties, types, and constant / readonly / static fields: what the value of an invariant
+    /// expression can be made of (as long as the loop doesn't modify it).
+    /// </summary>
+    private static bool IsStableSymbolKind(ISymbol symbol)
+    {
+        return symbol is ILocalSymbol or IParameterSymbol or IPropertySymbol or INamedTypeSymbol or ITypeParameterSymbol or INamespaceSymbol ||
+               (symbol is IFieldSymbol field && (field.IsConst || field.IsReadOnly || field.IsStatic));
     }
 
 }
