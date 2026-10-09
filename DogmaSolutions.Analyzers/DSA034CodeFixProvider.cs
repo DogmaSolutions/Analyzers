@@ -14,6 +14,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace DogmaSolutions.Analyzers;
 
@@ -156,64 +157,10 @@ public partial class DSA034CodeFixProvider : CodeFixProvider
 
         var options = document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider
             .GetOptions(root.SyntaxTree);
+        var (maxTopics, excludedWords) = ReadTopicOptions(options);
 
-        var maxTopics = DefaultMaxTopics;
-        if (options.TryGetValue(MaxTopicsOptionKey, out var maxTopicsValue) &&
-            int.TryParse(maxTopicsValue, out var parsedMax) && parsedMax > 0)
-        {
-            maxTopics = parsedMax;
-        }
-
-        var excludedWords = DefaultExcludedTopicWords;
-        if (options.TryGetValue(ExcludedTopicWordsOptionKey, out var excludedValue) &&
-            !string.IsNullOrWhiteSpace(excludedValue))
-        {
-            excludedWords = new HashSet<string>(
-                excludedValue.Split(',').Select(w => w.Trim()).Where(w => w.Length > 0),
-                StringComparer.OrdinalIgnoreCase);
-        }
-
-        var typeName = typeDecl.Identifier.ValueText;
-        var members = typeDecl.Members;
-
-        var ctorsGroup = new List<MemberDeclarationSyntax>();
-        var classifiableMembers = new List<MemberDeclarationSyntax>();
-        var nestedTypes = new List<BaseTypeDeclarationSyntax>();
-
-        foreach (var member in members)
-        {
-            if (member is BaseTypeDeclarationSyntax nested)
-            {
-                nestedTypes.Add(nested);
-            }
-            else if (IsCtorsGroupMemberForTopic(member))
-            {
-                ctorsGroup.Add(member);
-            }
-            else
-            {
-                classifiableMembers.Add(member);
-            }
-        }
-
-        var wordFrequency = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        var memberWords = new Dictionary<MemberDeclarationSyntax, List<string>>();
-
-        foreach (var member in classifiableMembers)
-        {
-            var name = GetMemberName(member);
-            var words = SplitPascalCase(name)
-                .Select(NormalizeWord)
-                .Where(w => w.Length > 1 && !excludedWords.Contains(w))
-                .ToList();
-            memberWords[member] = words;
-
-            foreach (var word in words)
-            {
-                wordFrequency.TryGetValue(word, out var count);
-                wordFrequency[word] = count + 1;
-            }
-        }
+        var (ctorsGroup, classifiableMembers, nestedTypes) = PartitionMembers(typeDecl.Members);
+        var (memberWords, wordFrequency) = CountMemberWords(classifiableMembers, excludedWords);
 
         var allCandidates = wordFrequency
             .Where(kvp => kvp.Value >= 2)
@@ -243,6 +190,95 @@ public partial class DSA034CodeFixProvider : CodeFixProvider
             memberWords,
             wordFrequency);
 
+        MoveNonViableTopicsToMisc(topTopics, topicGroups, miscGroup);
+
+        var partialFiles = BuildTopicPartialFiles(typeDecl.Identifier.ValueText, ctorsGroup, topTopics, topicGroups, miscGroup);
+
+        return BuildPartialSolution(document, root, typeDecl, partialFiles, nestedTypes, includeBaseTypes: true);
+    }
+
+    /// <summary>
+    /// The maximum number of topics, and the words that can't be a topic, from the .editorconfig (or their defaults).
+    /// </summary>
+    private static (int MaxTopics, HashSet<string> ExcludedWords) ReadTopicOptions(AnalyzerConfigOptions options)
+    {
+        var maxTopics = DefaultMaxTopics;
+        if (options.TryGetValue(MaxTopicsOptionKey, out var maxTopicsValue) &&
+            int.TryParse(maxTopicsValue, out var parsedMax) && parsedMax > 0)
+        {
+            maxTopics = parsedMax;
+        }
+
+        var excludedWords = DefaultExcludedTopicWords;
+        if (options.TryGetValue(ExcludedTopicWordsOptionKey, out var excludedValue) &&
+            !string.IsNullOrWhiteSpace(excludedValue))
+        {
+            excludedWords = new HashSet<string>(
+                excludedValue.Split(',').Select(w => w.Trim()).Where(w => w.Length > 0),
+                StringComparer.OrdinalIgnoreCase);
+        }
+
+        return (maxTopics, excludedWords);
+    }
+
+    /// <summary>
+    /// Splits the members of the type: the constructors group, the members to classify by topic, and the nested types.
+    /// </summary>
+    private static (List<MemberDeclarationSyntax> Ctors, List<MemberDeclarationSyntax> Classifiable, List<BaseTypeDeclarationSyntax> NestedTypes)
+        PartitionMembers(SyntaxList<MemberDeclarationSyntax> members)
+    {
+        var ctorsGroup = new List<MemberDeclarationSyntax>();
+        var classifiableMembers = new List<MemberDeclarationSyntax>();
+        var nestedTypes = new List<BaseTypeDeclarationSyntax>();
+
+        foreach (var member in members)
+        {
+            if (member is BaseTypeDeclarationSyntax nested)
+                nestedTypes.Add(nested);
+            else if (IsCtorsGroupMemberForTopic(member))
+                ctorsGroup.Add(member);
+            else
+                classifiableMembers.Add(member);
+        }
+
+        return (ctorsGroup, classifiableMembers, nestedTypes);
+    }
+
+    /// <summary>
+    /// The normalized words of the name of each member, and how many members use each word.
+    /// </summary>
+    private static (Dictionary<MemberDeclarationSyntax, List<string>> MemberWords, Dictionary<string, int> WordFrequency)
+        CountMemberWords(List<MemberDeclarationSyntax> members, HashSet<string> excludedWords)
+    {
+        var wordFrequency = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var memberWords = new Dictionary<MemberDeclarationSyntax, List<string>>();
+
+        foreach (var member in members)
+        {
+            var words = SplitPascalCase(GetMemberName(member))
+                .Select(NormalizeWord)
+                .Where(w => w.Length > 1 && !excludedWords.Contains(w))
+                .ToList();
+            memberWords[member] = words;
+
+            foreach (var word in words)
+            {
+                wordFrequency.TryGetValue(word, out var count);
+                wordFrequency[word] = count + 1;
+            }
+        }
+
+        return (memberWords, wordFrequency);
+    }
+
+    /// <summary>
+    /// A topic whose group is too small to be a file of its own gives its members to the miscellaneous group.
+    /// </summary>
+    private static void MoveNonViableTopicsToMisc(
+        List<string> topTopics,
+        Dictionary<string, List<MemberDeclarationSyntax>> topicGroups,
+        List<MemberDeclarationSyntax> miscGroup)
+    {
         foreach (var topic in topTopics.ToList())
         {
             var group = topicGroups[topic];
@@ -252,25 +288,33 @@ public partial class DSA034CodeFixProvider : CodeFixProvider
             miscGroup.AddRange(group);
             topicGroups[topic].Clear();
         }
+    }
 
+    /// <summary>
+    /// The partial files to create (name without extension -> members): constructors, one per topic, and miscellaneous.
+    /// </summary>
+    private static Dictionary<string, List<MemberDeclarationSyntax>> BuildTopicPartialFiles(
+        string typeName,
+        List<MemberDeclarationSyntax> ctorsGroup,
+        List<string> topTopics,
+        Dictionary<string, List<MemberDeclarationSyntax>> topicGroups,
+        List<MemberDeclarationSyntax> miscGroup)
+    {
         var partialFiles = new Dictionary<string, List<MemberDeclarationSyntax>>(StringComparer.Ordinal);
 
         if (ctorsGroup.Count > 0)
             partialFiles[$"{typeName}.Ctors"] = ctorsGroup;
 
-        foreach (var topic in topTopics)
+        foreach (var topic in topTopics.Where(topic => topicGroups[topic].Count > 0))
         {
-            if (topicGroups[topic].Count > 0)
-            {
-                var titleCaseTopic = char.ToUpper(topic[0], CultureInfo.InvariantCulture) + topic.Substring(1);
-                partialFiles[$"{typeName}.{titleCaseTopic}"] = topicGroups[topic];
-            }
+            var titleCaseTopic = char.ToUpper(topic[0], CultureInfo.InvariantCulture) + topic.Substring(1);
+            partialFiles[$"{typeName}.{titleCaseTopic}"] = topicGroups[topic];
         }
 
         if (miscGroup.Count > 0)
             partialFiles[$"{typeName}.Misc"] = miscGroup;
 
-        return BuildPartialSolution(document, root, typeDecl, partialFiles, nestedTypes, includeBaseTypes: true);
+        return partialFiles;
     }
 
     internal static Solution BuildPartialSolution(
