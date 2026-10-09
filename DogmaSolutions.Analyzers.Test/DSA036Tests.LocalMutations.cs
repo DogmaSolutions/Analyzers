@@ -52,6 +52,9 @@ public partial class DSA036Tests
         ["Local counter passed by out", LocalMutationSource("Produce(out n);", CounterRegexCreation)],
         ["Local counter mutated by tuple deconstruction", LocalMutationSource("(n, other) = (2, 3);", CounterRegexCreation)],
         ["Local counter mutated by nested tuple deconstruction", LocalMutationSource("((n, other), otherText) = ((2, 3), \"y\");", CounterRegexCreation)],
+        ["Local counter mutated by tuple deconstruction, after another target", LocalMutationSource("(other, n) = (3, 2);", CounterRegexCreation)],
+        ["Local counter mutated by tuple deconstruction, after a member target", LocalMutationSource("(holder.Number, n) = (3, 2);", CounterRegexCreation)],
+        ["Local counter mutated by nested tuple deconstruction, after another target", LocalMutationSource("(otherText, (other, n)) = (\"y\", (3, 2));", CounterRegexCreation)],
     ];
 
     [TestMethod]

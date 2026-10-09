@@ -333,7 +333,7 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
         {
             case AssignmentExpressionSyntax assignment:
                 return assignment.Parent is not EqualsValueClauseSyntax &&
-                       SymbolEqualityComparer.Default.Equals(GetAssignmentTargetSymbol(assignment.Left, model), local);
+                       GetAssignmentTargetSymbols(assignment.Left, model).Any(target => SymbolEqualityComparer.Default.Equals(target, local));
 
             case ArgumentSyntax { RefKindKeyword.RawKind: not 0 } arg:
                 return IsReferenceToLocal(arg.Expression, local, model);
@@ -356,23 +356,15 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
                SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(id).Symbol, local);
     }
 
-    private static ISymbol GetAssignmentTargetSymbol(ExpressionSyntax left, SemanticModel model)
+    /// <summary>
+    /// The symbols assigned by the left side of an assignment: a single one, or one per element for a tuple deconstruction
+    /// (<c>(a, (b, c)) = ...</c>).
+    /// </summary>
+    private static IEnumerable<ISymbol> GetAssignmentTargetSymbols(ExpressionSyntax left, SemanticModel model)
     {
-        switch (left)
-        {
-            case IdentifierNameSyntax id:
-                return model.GetSymbolInfo(id).Symbol;
-            case TupleExpressionSyntax tuple:
-                foreach (var arg in tuple.Arguments)
-                {
-                    var sym = GetAssignmentTargetSymbol(arg.Expression, model);
-                    if (sym != null)
-                        return sym;
-                }
-                return null;
-            default:
-                return model.GetSymbolInfo(left).Symbol;
-        }
+        return left is TupleExpressionSyntax tuple
+            ? tuple.Arguments.SelectMany(arg => GetAssignmentTargetSymbols(arg.Expression, model))
+            : new[] { model.GetSymbolInfo(left).Symbol };
     }
 
     private static bool IsInStaticReadOnlyFieldInitializer(SyntaxNode node)
