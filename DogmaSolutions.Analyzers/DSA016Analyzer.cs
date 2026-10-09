@@ -281,6 +281,19 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
 
     private static bool AreInMutuallyExclusiveBranches(SyntaxNode a, SyntaxNode b, SyntaxNode scope)
     {
+        var branching = FindCommonAncestor(a, b, scope);
+        if (branching == null)
+            return false;
+
+        return GetBranchIndexes(branching, a, b) is { } branches &&
+               branches.A >= 0 && branches.B >= 0 && branches.A != branches.B;
+    }
+
+    /// <summary>
+    /// The innermost node, up to the scope, containing both nodes; null if there is none.
+    /// </summary>
+    private static SyntaxNode FindCommonAncestor(SyntaxNode a, SyntaxNode b, SyntaxNode scope)
+    {
         var ancestorsOfA = new HashSet<SyntaxNode>();
         for (var cur = a; cur != null; cur = cur.Parent)
         {
@@ -292,54 +305,34 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         for (var cur = b; cur != null; cur = cur.Parent)
         {
             if (ancestorsOfA.Contains(cur))
-            {
-                switch (cur)
-                {
-                    case SwitchStatementSyntax switchStmt:
-                    {
-                        var idxA = GetSwitchSectionIndex(switchStmt, a);
-                        var idxB = GetSwitchSectionIndex(switchStmt, b);
-                        if (idxA >= 0 && idxB >= 0 && idxA != idxB)
-                            return true;
-                        break;
-                    }
-
-                    case IfStatementSyntax ifStmt:
-                    {
-                        var branchA = GetIfBranch(ifStmt, a);
-                        var branchB = GetIfBranch(ifStmt, b);
-                        if (branchA >= 0 && branchB >= 0 && branchA != branchB)
-                            return true;
-                        break;
-                    }
-
-                    case SwitchExpressionSyntax switchExpr:
-                    {
-                        var idxA = GetSwitchArmIndex(switchExpr, a);
-                        var idxB = GetSwitchArmIndex(switchExpr, b);
-                        if (idxA >= 0 && idxB >= 0 && idxA != idxB)
-                            return true;
-                        break;
-                    }
-
-                    case ConditionalExpressionSyntax condExpr:
-                    {
-                        var branchA = GetConditionalBranch(condExpr, a);
-                        var branchB = GetConditionalBranch(condExpr, b);
-                        if (branchA >= 0 && branchB >= 0 && branchA != branchB)
-                            return true;
-                        break;
-                    }
-                }
-
-                return false;
-            }
+                return cur;
 
             if (ReferenceEquals(cur, scope))
                 break;
         }
 
-        return false;
+        return null;
+    }
+
+    /// <summary>
+    /// For a node choosing between alternatives (switch statement or expression, if, ternary): the index of the
+    /// alternative containing each of the two nodes (negative when it is not inside one). Null for any other node.
+    /// </summary>
+    private static (int A, int B)? GetBranchIndexes(SyntaxNode branching, SyntaxNode a, SyntaxNode b)
+    {
+        switch (branching)
+        {
+            case SwitchStatementSyntax switchStmt:
+                return (GetSwitchSectionIndex(switchStmt, a), GetSwitchSectionIndex(switchStmt, b));
+            case IfStatementSyntax ifStmt:
+                return (GetIfBranch(ifStmt, a), GetIfBranch(ifStmt, b));
+            case SwitchExpressionSyntax switchExpr:
+                return (GetSwitchArmIndex(switchExpr, a), GetSwitchArmIndex(switchExpr, b));
+            case ConditionalExpressionSyntax condExpr:
+                return (GetConditionalBranch(condExpr, a), GetConditionalBranch(condExpr, b));
+            default:
+                return null;
+        }
     }
 
     private static int GetSwitchSectionIndex(SwitchStatementSyntax switchStmt, SyntaxNode descendant)
