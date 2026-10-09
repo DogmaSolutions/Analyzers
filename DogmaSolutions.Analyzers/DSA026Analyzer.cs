@@ -65,77 +65,88 @@ public sealed class DSA026Analyzer : DiagnosticAnalyzer
         properties.Add(NearestNameProperty, ctParameter.Name);
         var immutableProperties = properties.ToImmutable();
 
+        // A CancellationToken of an outer scope used instead of the one of this scope: ct2 ...
         foreach (var identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            if (identifier.Parent is NameColonSyntax)
-                continue;
-
-            if (IsInsideNestedScopeWithCancellationToken(identifier, context.Node, context.SemanticModel))
-                continue;
-
-            var symbol = context.SemanticModel.GetSymbolInfo(identifier).Symbol;
-            if (symbol == null)
-                continue;
-
-            ITypeSymbol type = symbol switch
+            if (TryGetCapturedTokenSymbol(identifier, ctParameter, context, out var symbol))
             {
-                IParameterSymbol p => p.Type,
-                ILocalSymbol l => l.Type,
-                _ => null
-            };
-
-            if (type == null || !IsCancellationTokenType(type))
-                continue;
-
-            if (SymbolEqualityComparer.Default.Equals(symbol, ctParameter))
-                continue;
-
-            if (!IsDeclaredOutsideScope(symbol, context.Node))
-                continue;
-
-            if (IsInsideCreateLinkedTokenSource(identifier, context.SemanticModel))
-                continue;
-
-            context.ReportDiagnostic(Diagnostic.Create(
-                _rule,
-                identifier.GetLocation(),
-                immutableProperties,
-                ctParameter.Name,
-                symbol.Name));
+                context.ReportDiagnostic(Diagnostic.Create(
+                    _rule,
+                    identifier.GetLocation(),
+                    immutableProperties,
+                    ctParameter.Name,
+                    symbol.Name));
+            }
         }
 
+        // ... or the Token of a CancellationTokenSource of an outer scope: cts.Token
         foreach (var memberAccess in body.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
         {
-            if (memberAccess.Name.Identifier.ValueText != "Token")
-                continue;
-
-            var memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
-            if (memberSymbol is not IPropertySymbol propSymbol || !IsCancellationTokenType(propSymbol.Type))
-                continue;
-
-            if (!IsCancellationTokenSourceType(propSymbol.ContainingType))
-                continue;
-
-            var receiverSymbol = context.SemanticModel.GetSymbolInfo(memberAccess.Expression).Symbol;
-            if (receiverSymbol is not ILocalSymbol && receiverSymbol is not IParameterSymbol)
-                continue;
-
-            if (!IsDeclaredOutsideScope(receiverSymbol, context.Node))
-                continue;
-
-            if (IsInsideNestedScopeWithCancellationToken(memberAccess, context.Node, context.SemanticModel))
-                continue;
-
-            if (IsInsideCreateLinkedTokenSource(memberAccess, context.SemanticModel))
-                continue;
-
-            context.ReportDiagnostic(Diagnostic.Create(
-                _rule,
-                memberAccess.GetLocation(),
-                immutableProperties,
-                ctParameter.Name,
-                memberAccess.ToString()));
+            if (IsCapturedTokenSourceToken(memberAccess, context))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    _rule,
+                    memberAccess.GetLocation(),
+                    immutableProperties,
+                    ctParameter.Name,
+                    memberAccess.ToString()));
+            }
         }
+    }
+
+    /// <summary>
+    /// An identifier naming a CancellationToken (parameter or local) declared outside the analyzed scope, other than
+    /// the token parameter of the scope, and not used to create a linked token source.
+    /// </summary>
+    private static bool TryGetCapturedTokenSymbol(
+        IdentifierNameSyntax identifier,
+        IParameterSymbol ctParameter,
+        SyntaxNodeAnalysisContext context,
+        out ISymbol symbol)
+    {
+        symbol = null;
+
+        if (identifier.Parent is NameColonSyntax)
+            return false;
+
+        if (IsInsideNestedScopeWithCancellationToken(identifier, context.Node, context.SemanticModel))
+            return false;
+
+        symbol = context.SemanticModel.GetSymbolInfo(identifier).Symbol;
+
+        ITypeSymbol type = symbol switch
+        {
+            IParameterSymbol p => p.Type,
+            ILocalSymbol l => l.Type,
+            _ => null
+        };
+
+        return type != null &&
+               IsCancellationTokenType(type) &&
+               !SymbolEqualityComparer.Default.Equals(symbol, ctParameter) &&
+               IsDeclaredOutsideScope(symbol, context.Node) &&
+               !IsInsideCreateLinkedTokenSource(identifier, context.SemanticModel);
+    }
+
+    /// <summary>
+    /// <c>source.Token</c> where source is a CancellationTokenSource (local or parameter) declared outside the analyzed scope,
+    /// not used to create a linked token source.
+    /// </summary>
+    private static bool IsCapturedTokenSourceToken(MemberAccessExpressionSyntax memberAccess, SyntaxNodeAnalysisContext context)
+    {
+        if (memberAccess.Name.Identifier.ValueText != "Token")
+            return false;
+
+        if (context.SemanticModel.GetSymbolInfo(memberAccess).Symbol is not IPropertySymbol propSymbol ||
+            !IsCancellationTokenType(propSymbol.Type) ||
+            !IsCancellationTokenSourceType(propSymbol.ContainingType))
+            return false;
+
+        var receiverSymbol = context.SemanticModel.GetSymbolInfo(memberAccess.Expression).Symbol;
+        return (receiverSymbol is ILocalSymbol || receiverSymbol is IParameterSymbol) &&
+               IsDeclaredOutsideScope(receiverSymbol, context.Node) &&
+               !IsInsideNestedScopeWithCancellationToken(memberAccess, context.Node, context.SemanticModel) &&
+               !IsInsideCreateLinkedTokenSource(memberAccess, context.SemanticModel);
     }
 
     private static IParameterSymbol FindCancellationTokenParameter(SyntaxNode scope, SemanticModel model)
