@@ -238,32 +238,51 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
       if (IsIgnoredMethodInBaseType(context))
          return;
 
-      SyntaxNode body;
-      if (context.Node is MethodDeclarationSyntax method)
-         body = (SyntaxNode)method.Body ?? method.ExpressionBody;
-      else if (context.Node is ConstructorDeclarationSyntax ctor)
-         body = (SyntaxNode)ctor.Body ?? ctor.ExpressionBody;
-      else
-         return;
-
+      var body = GetMethodOrConstructorBody(context.Node);
       if (body == null)
          return;
 
       var config = GetParsedConfig(context);
+      var groups = GroupStringLiterals(body, config, ignoredStrings);
+
+      foreach (var kvp in groups.Where(group => group.Value.Count > config.MaxDuplications))
+         ReportDuplicatedLiterals(context, kvp.Key, kvp.Value);
+   }
+
+   /// <summary>
+   /// The body (block or expression) of a method or a constructor; null for any other node, or when there is no body.
+   /// </summary>
+   private static SyntaxNode GetMethodOrConstructorBody(SyntaxNode node)
+   {
+      switch (node)
+      {
+         case MethodDeclarationSyntax method:
+            return (SyntaxNode)method.Body ?? method.ExpressionBody;
+         case ConstructorDeclarationSyntax ctor:
+            return (SyntaxNode)ctor.Body ?? ctor.ExpressionBody;
+         default:
+            return null;
+      }
+   }
+
+   /// <summary>
+   /// The string literals of the body that are long enough and not ignored, grouped by value.
+   /// </summary>
+   private static Dictionary<string, List<LiteralExpressionSyntax>> GroupStringLiterals(
+      SyntaxNode body,
+      ParsedConfig config,
+      ImmutableHashSet<string> ignoredStrings)
+   {
+      var groups = new Dictionary<string, List<LiteralExpressionSyntax>>();
 
       var stringLiterals = body.DescendantNodes()
          .OfType<LiteralExpressionSyntax>()
-         .Where(lit => lit.IsKind(SyntaxKind.StringLiteralExpression))
-         .ToList();
+         .Where(lit => lit.IsKind(SyntaxKind.StringLiteralExpression));
 
-      var groups = new Dictionary<string, List<LiteralExpressionSyntax>>();
       foreach (var literal in stringLiterals)
       {
          var value = literal.Token.ValueText;
-         if (value.Length < config.MinStringLength)
-            continue;
-
-         if (ignoredStrings.Contains(value))
+         if (value.Length < config.MinStringLength || ignoredStrings.Contains(value))
             continue;
 
          if (!groups.TryGetValue(value, out var list))
@@ -275,27 +294,26 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
          list.Add(literal);
       }
 
-      foreach (var kvp in groups)
+      return groups;
+   }
+
+   private static void ReportDuplicatedLiterals(SyntaxNodeAnalysisContext context, string value, List<LiteralExpressionSyntax> literals)
+   {
+      var properties = ImmutableDictionary.CreateBuilder<string, string>();
+      properties.Add(StringValueProperty, value);
+      var props = properties.ToImmutable();
+
+      foreach (var literal in literals)
       {
-         if (kvp.Value.Count <= config.MaxDuplications)
-            continue;
-
-         var properties = ImmutableDictionary.CreateBuilder<string, string>();
-         properties.Add(StringValueProperty, kvp.Key);
-         var props = properties.ToImmutable();
-
-         foreach (var literal in kvp.Value)
-         {
-            var diagnostic = Diagnostic.Create(
-               descriptor: _rule,
-               location: literal.GetLocation(),
-               effectiveSeverity: context.GetDiagnosticSeverity(_rule),
-               additionalLocations: null,
-               properties: props,
-               kvp.Key,
-               kvp.Value.Count);
-            context.ReportDiagnostic(diagnostic);
-         }
+         var diagnostic = Diagnostic.Create(
+            descriptor: _rule,
+            location: literal.GetLocation(),
+            effectiveSeverity: context.GetDiagnosticSeverity(_rule),
+            additionalLocations: null,
+            properties: props,
+            value,
+            literals.Count);
+         context.ReportDiagnostic(diagnostic);
       }
    }
 
