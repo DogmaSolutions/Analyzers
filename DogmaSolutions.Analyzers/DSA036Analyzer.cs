@@ -223,14 +223,14 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
         if (expression == null)
             return false;
 
-        var constantValue = model.GetConstantValue(expression);
-        if (constantValue.HasValue)
+        if (model.GetConstantValue(expression).HasValue)
             return true;
 
         switch (expression)
         {
             case LiteralExpressionSyntax:
             case DefaultExpressionSyntax:
+            case TypeOfExpressionSyntax:
                 return true;
 
             case ParenthesizedExpressionSyntax paren:
@@ -250,28 +250,27 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
                 return IsEffectivelyConstantSymbol(model.GetSymbolInfo(memberAccess).Symbol);
 
             case IdentifierNameSyntax identifier:
-            {
-                var symbol = model.GetSymbolInfo(identifier).Symbol;
-                if (IsEffectivelyConstantSymbol(symbol))
-                    return true;
-
-                if (symbol is ILocalSymbol local)
-                    return IsLocalEffectivelyConstant(local, identifier, model, enclosingScope);
-
-                return false;
-            }
-
-            case TypeOfExpressionSyntax:
-                return true;
+                return IsEffectivelyConstantIdentifier(identifier, model, enclosingScope);
 
             case InterpolatedStringExpressionSyntax interpolated:
-                return interpolated.Contents.All(c =>
-                    c is InterpolatedStringTextSyntax ||
-                    (c is InterpolationSyntax interp && IsEffectivelyConstant(interp.Expression, model, enclosingScope)));
+                return interpolated.Contents.All(content => IsEffectivelyConstantInterpolationPart(content, model, enclosingScope));
 
             default:
                 return false;
         }
+    }
+
+    private static bool IsEffectivelyConstantIdentifier(IdentifierNameSyntax identifier, SemanticModel model, SyntaxNode enclosingScope)
+    {
+        var symbol = model.GetSymbolInfo(identifier).Symbol;
+        return IsEffectivelyConstantSymbol(symbol) ||
+               (symbol is ILocalSymbol local && IsLocalEffectivelyConstant(local, identifier, model, enclosingScope));
+    }
+
+    private static bool IsEffectivelyConstantInterpolationPart(InterpolatedStringContentSyntax content, SemanticModel model, SyntaxNode enclosingScope)
+    {
+        return content is InterpolatedStringTextSyntax ||
+               (content is InterpolationSyntax interpolation && IsEffectivelyConstant(interpolation.Expression, model, enclosingScope));
     }
 
     private static bool IsEffectivelyConstantSymbol(ISymbol symbol)
