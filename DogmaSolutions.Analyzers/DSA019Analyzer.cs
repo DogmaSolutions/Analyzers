@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -18,7 +17,7 @@ namespace DogmaSolutions.Analyzers;
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 // ReSharper disable once InconsistentNaming
-public sealed class DSA019Analyzer : DiagnosticAnalyzer
+public sealed partial class DSA019Analyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "DSA019";
 
@@ -183,88 +182,6 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
                 count);
             context.ReportDiagnostic(diagnostic);
         }
-    }
-
-    /// <summary>
-    /// How many other deep-enough accesses of the scope are the same chain as <paramref name="access"/>. The accesses of a scope
-    /// are indexed once by their normalized text, so that each access only meets the ones that can possibly be equal to it.
-    /// </summary>
-    private static int CountSameAccessesInScope<T>(
-        T access,
-        string key,
-        SyntaxNode scope,
-        int threshold,
-        HashSet<string> ignoredMembers,
-        SemanticModel semanticModel)
-        where T : ExpressionSyntax
-    {
-        if (!GetScopeIndex<T>(scope, threshold).ByKey.TryGetValue(key, out var candidates))
-            return 0;
-
-        var count = 0;
-        foreach (var sibling in candidates)
-        {
-            if (!ReferenceEquals(sibling, access) &&
-                ComputeEffectiveChainDepth(sibling, semanticModel, ignoredMembers) >= threshold &&
-                AreSemanticallySame(access, sibling, semanticModel))
-                count++;
-        }
-
-        return count;
-    }
-
-    private static bool HasTextualDuplicateInScope<T>(string key, SyntaxNode scope, int threshold)
-        where T : ExpressionSyntax
-    {
-        return GetScopeIndex<T>(scope, threshold).ByKey.TryGetValue(key, out var candidates) && candidates.Count > 1;
-    }
-
-    /// <summary>
-    /// The accesses of a scope (outside nested scopes) whose syntactic chain is deep enough and that are not inside a nameof,
-    /// grouped by normalized text. Built once per scope and threshold.
-    /// </summary>
-    private sealed class ScopeIndex<T>
-        where T : ExpressionSyntax
-    {
-        internal ScopeIndex(int threshold, Dictionary<string, List<T>> byKey)
-        {
-            Threshold = threshold;
-            ByKey = byKey;
-        }
-
-        internal int Threshold { get; }
-
-        internal Dictionary<string, List<T>> ByKey { get; }
-    }
-
-    private static readonly ConditionalWeakTable<SyntaxNode, object> _memberAccessIndexes = new();
-    private static readonly ConditionalWeakTable<SyntaxNode, object> _elementAccessIndexes = new();
-
-    private static ScopeIndex<T> GetScopeIndex<T>(SyntaxNode scope, int threshold)
-        where T : ExpressionSyntax
-    {
-        var cache = typeof(T) == typeof(MemberAccessExpressionSyntax) ? _memberAccessIndexes : _elementAccessIndexes;
-        var index = (ScopeIndex<T>)cache.GetValue(scope, s => BuildScopeIndex<T>(s, threshold));
-        return index.Threshold == threshold ? index : BuildScopeIndex<T>(scope, threshold);
-    }
-
-    private static ScopeIndex<T> BuildScopeIndex<T>(SyntaxNode scope, int threshold)
-        where T : ExpressionSyntax
-    {
-        var byKey = new Dictionary<string, List<T>>(StringComparer.Ordinal);
-        foreach (var node in scope.DescendantNodes(n => !SyntaxUtils.IsNestedScope(n)).OfType<T>())
-        {
-            if (IsInsideNameof(node) || ComputeChainDepth(node) < threshold)
-                continue;
-
-            var key = SyntaxUtils.NormalizeWhitespace(node.ToString());
-            if (!byKey.TryGetValue(key, out var list))
-                byKey[key] = list = new List<T>();
-
-            list.Add(node);
-        }
-
-        return new ScopeIndex<T>(threshold, byKey);
     }
 
     private static int GetThreshold(SyntaxNodeAnalysisContext context)

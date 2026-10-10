@@ -334,6 +334,33 @@ public partial class DSA019Tests
             "testContext.CurrentUser.Tenant.Id",
             2
         ],
+        [
+            "Same text for three accesses, but only two of them refer to the same loop variable",
+            @"
+            namespace TestApp
+            {
+                public class Info { public string Name; }
+                public class Parent { public Info Info; }
+                public class Entry { public Parent Parent; }
+                public class MyService
+                {
+                    public void Process(Entry[] first, Entry[] second)
+                    {
+                        foreach (var entry in first)
+                        {
+                            var a = {|#0:entry.Parent.Info.Name|};
+                            var b = {|#1:entry.Parent.Info.Name|};
+                        }
+                        foreach (var entry in second)
+                        {
+                            var c = entry.Parent.Info.Name;
+                        }
+                    }
+                }
+            }",
+            "entry.Parent.Info.Name",
+            2
+        ],
     ];
 
     [TestMethod]
