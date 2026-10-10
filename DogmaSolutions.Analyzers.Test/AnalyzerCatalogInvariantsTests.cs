@@ -198,4 +198,17 @@ public class AnalyzerCatalogInvariantsTests
             Assert.IsTrue(context.RegistrationCount > 0, name + " registers no action");
         }
     }
+
+    [TestMethod]
+    public void Documented_severity_examples_use_the_editorconfig_vocabulary()
+    {
+        var valid = new HashSet<string>(new[] { "error", "warning", "suggestion", "silent", "none", "default" }, StringComparer.Ordinal);
+        var files = Directory.GetFiles(Path.Combine(RepositoryRoot, "docs", "rules"), "*.md").Concat(new[] { Path.Combine(RepositoryRoot, "README.md") });
+
+        foreach (var file in files)
+        {
+            foreach (Match match in Regex.Matches(File.ReadAllText(file), @"\.severity\s*=\s*(?<value>\S+)"))
+                Assert.IsTrue(valid.Contains(match.Groups["value"].Value), Path.GetFileName(file) + ": '" + match.Groups["value"].Value + "' is not an editorconfig severity");
+        }
+    }
 }

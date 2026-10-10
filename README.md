@@ -47,10 +47,28 @@ This section describes the rules included in this package.
 Every rule is accompanied by the following information and clues:
 
 - **Category** → identify the area of interest of the rule, and can have one of the following values: _Design / Code Smell / Best Practice / Bug / Security / Performance_
-- **Severity** → state the default severity level of the rule. The severity level can be changed by editing the _.editorconfig_ file used by the project/solution. Possible values are enumerated by
-  the [DiagnosticSeverity enum](https://docs.microsoft.com/en-us/dotnet/api/microsoft.codeanalysis.diagnosticseverity)
+- **Severity** → state the default severity level of the rule (`error`, `warning`, `suggestion`, ...). It can be changed per project/solution, see [Configuring the rules](#configuring-the-rules)
 - **Description, motivations and fixes** → a detailed explanation of the detected issue, and a brief description on how to change your code in order to solve it.
 - **See also** → a list of similar/related rules, or related knowledge base
+
+# Configuring the rules
+
+Every rule is configured through the `.editorconfig` file used by the project/solution, with the standard Roslyn syntax:
+
+```ini
+# severity of a rule
+dotnet_diagnostic.DSA012.severity = warning
+
+# every rule of the package at once
+dotnet_analyzer_diagnostic.category-Design.severity = suggestion
+```
+
+The accepted severities are the standard `.editorconfig` ones: `error`, `warning`, `suggestion`, `silent`, `none` (the rule is disabled) and `default` (the severity chosen by the rule's author). They are case-insensitive.
+
+Some rules have additional options, written in the same section with the form `dotnet_diagnostic.<RuleId>.<option_name> = <value>`, and documented in the page of the rule. Lists are comma separated.
+An option that is missing, blank, malformed (e.g. `abc` where a number is expected) or out of range is ignored, and the documented default is used instead: the analysis never fails because of the configuration. If a setting seems to have no effect, check its spelling against the page of the rule.
+
+A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[SuppressMessage]`.
 
 # Rules list
 
