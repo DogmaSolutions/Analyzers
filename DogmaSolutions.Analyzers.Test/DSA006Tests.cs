@@ -425,4 +425,46 @@ namespace WebApplication1
 
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    [TestMethod]
+    public async Task UserDefinedExceptionTypeWithSameName_NotMatched()
+    {
+        var sourceCode = @"
+namespace WebApplication1
+{
+    public class Exception : System.Exception { }
+
+    public class MyClass
+    {
+      public void IsOk(int id)
+      {
+        if(id < 0)
+          throw new Exception();
+      }
+    }
+}
+";
+        await CSharpAnalyzerVerifier<DSA006Analyzer>.VerifyAnalyzerAsync(sourceCode).ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task AliasedSystemException_Matched()
+    {
+        var sourceCode = @"
+using Boom = System.Exception;
+namespace WebApplication1
+{
+    public class MyClass
+    {
+      public void IsNotOk(int id)
+      {
+        if(id < 0)
+          {|#0:throw new Boom(""x"");|}
+      }
+    }
+}
+";
+        var expected = CSharpAnalyzerVerifier<DSA006Analyzer>.Diagnostic(DSA006Analyzer.DiagnosticId).WithLocation(0);
+        await CSharpAnalyzerVerifier<DSA006Analyzer>.VerifyAnalyzerAsync(sourceCode, expected).ConfigureAwait(false);
+    }
 }

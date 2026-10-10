@@ -85,13 +85,12 @@ namespace DogmaSolutions.Analyzers
         private static bool IsProhibitedExceptionType(ObjectCreationExpressionSyntax objectCreationExpressionSyntax, SemanticModel semanticModel)
         {
             var typeSyntax = objectCreationExpressionSyntax.Type;
-            var typeInfo = semanticModel.GetTypeInfo(typeSyntax);
-            var symbol = typeInfo.Type;
-            if (symbol != null)
+            var symbol = semanticModel.GetTypeInfo(objectCreationExpressionSyntax).Type;
+            if (symbol != null && symbol.TypeKind != TypeKind.Error)
             {
                 foreach (var exceptionType in _exceptionTypes)
                 {
-                    var excType = semanticModel.Compilation.GetTypeByMetadataName(exceptionType.AssemblyQualifiedName);
+                    var excType = semanticModel.Compilation.GetTypeByMetadataName(exceptionType.FullName);
                     if (symbol.Equals(excType, SymbolEqualityComparer.Default))
                         return true;
                 }
