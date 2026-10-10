@@ -55,18 +55,10 @@ namespace DogmaSolutions.Analyzers
         {
             var fromSymbolInfo = ctx.SemanticModel.GetSymbolInfo(identifier);
             var typeSymbol = GetTypeSymbol(fromSymbolInfo);
-            if (typeSymbol != null)
+            for (var current = typeSymbol; current != null; current = current.BaseType)
             {
-                var bt = typeSymbol.BaseType;
-                if (bt != null)
-                {
-                    var cn = bt.Name;
-                    var ns = bt.ContainingNamespace?.ToDisplayString();
-                    if (cn == "DbContext" && ns == "Microsoft.EntityFrameworkCore")
-                    {
-                        return true;
-                    }
-                }
+                if (current.Name == "DbContext" && current.ContainingNamespace?.ToDisplayString() == "Microsoft.EntityFrameworkCore")
+                    return true;
             }
 
             return false;

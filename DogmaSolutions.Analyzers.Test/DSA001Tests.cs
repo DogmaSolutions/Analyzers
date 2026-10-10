@@ -149,5 +149,68 @@ namespace WebApplication1.Controllers
 
          await test.RunAsync().ConfigureAwait(false);
       }
+
+      [TestMethod]
+      public async Task QueryExpressionSyntax_DbContextWithIntermediateBaseClass_Matched()
+      {
+         var sourceCode = @"
+using System.Collections.Generic;
+using System.Linq;
+
+namespace WebApplication1.Entities
+{
+    using Microsoft.EntityFrameworkCore;
+
+    public class MyEntity
+    {
+        public long Id { get; set; }
+    }
+
+    public abstract class BaseContext : DbContext
+    {
+    }
+
+    public class MyDbContext : BaseContext
+    {
+        public virtual DbSet<MyEntity> MyEntities { get; set; }
+    }
+}
+
+namespace WebApplication1.Controllers
+{
+    using Microsoft.AspNetCore.Mvc;
+    using WebApplication1.Entities;
+
+    public class MyEntitiesController : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        private readonly MyDbContext _dbContext;
+
+        public MyEntitiesController(MyDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        [HttpGet]
+        public IEnumerable<MyEntity> GetAll()
+        {
+            var query = {|#0:from entities in _dbContext.MyEntities where entities.Id > 0 select entities|};
+            return query.ToList();
+        }
+    }
+}
+";
+         var test = new VerifyCS.Test();
+         test.TestCode = sourceCode;
+         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages(
+            [
+                ..new PackageIdentity[]
+                {
+                    new("Microsoft.AspNetCore.Mvc", "2.2.0"),
+                    new("Microsoft.EntityFrameworkCore", "3.1.22")
+                }
+            ]);
+         test.ExpectedDiagnostics.Add(VerifyCS.Diagnostic(DSA001Analyzer.DiagnosticId).WithLocation(0).WithArguments("MyEntitiesController.GetAll"));
+         await test.RunAsync().ConfigureAwait(false);
+      }
    }
 }
