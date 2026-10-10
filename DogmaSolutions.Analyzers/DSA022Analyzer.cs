@@ -134,6 +134,11 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
         return new HashSet<ISymbol>(symbols.Where(symbol => symbol != null), SymbolEqualityComparer.Default);
     }
 
+    private static IEnumerable<ISymbol> GetMutatedSymbols(SyntaxNode expression, SemanticModel model)
+    {
+        return expression.DescendantNodesAndSelf().Select(node => GetMutationTargetSymbol(node, model));
+    }
+
     /// <summary>
     /// The symbols declared or modified by the header of the loop: the variables of a for / foreach, and what
     /// the incrementors of a for assign.
@@ -145,9 +150,15 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
             case ForStatementSyntax forStmt:
                 var declared = forStmt.Declaration?.Variables.Select(variable => model.GetDeclaredSymbol(variable))
                                ?? Enumerable.Empty<ISymbol>();
-                var incremented = forStmt.Incrementors.SelectMany(incrementor => incrementor.DescendantNodesAndSelf())
-                    .Select(node => GetMutationTargetSymbol(node, model));
-                return declared.Concat(incremented);
+                var incremented = forStmt.Incrementors.SelectMany(incrementor => GetMutatedSymbols(incrementor, model));
+                var conditioned = forStmt.Condition != null ? GetMutatedSymbols(forStmt.Condition, model) : Enumerable.Empty<ISymbol>();
+                return declared.Concat(incremented).Concat(conditioned);
+
+            case WhileStatementSyntax whileStmt:
+                return GetMutatedSymbols(whileStmt.Condition, model);
+
+            case DoStatementSyntax doStmt:
+                return GetMutatedSymbols(doStmt.Condition, model);
 
             case ForEachStatementSyntax forEachStmt:
                 return new[] { model.GetDeclaredSymbol(forEachStmt) };

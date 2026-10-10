@@ -719,6 +719,67 @@ public partial class DSA022Tests
                 }
             }"
         ],
+        [
+            "Variable modified by the while condition",
+            @"
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public int Test(int a)
+                    {
+                        int n = 0;
+                        int sum = 0;
+                        while ((n = n + a) < 100)
+                        {
+                            sum += n * 2;
+                        }
+                        return sum;
+                    }
+                }
+            }"
+        ],
+        [
+            "Variable incremented by the while condition",
+            @"
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public int Test(int a)
+                    {
+                        int i = 0;
+                        int sum = 0;
+                        while (i++ < 10)
+                        {
+                            sum += i * a;
+                        }
+                        return sum;
+                    }
+                }
+            }"
+        ],
+        [
+            "Variable modified by the do-while condition",
+            @"
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public int Test(int a)
+                    {
+                        int i = 0;
+                        int sum = 0;
+                        do
+                        {
+                            sum += i * a;
+                        }
+                        while (i++ < 10);
+                        return sum;
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]
