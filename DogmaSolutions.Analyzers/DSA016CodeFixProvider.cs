@@ -601,15 +601,10 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
             .WithTrailingTrivia(eolTrivia);
     }
 
+    // The line ending of the file (a one-line lambda has none of its own)
     private static string GetEndOfLineString(SyntaxNode node)
     {
-        foreach (var trivia in node.DescendantTrivia())
-        {
-            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-                return trivia.ToString();
-        }
-
-        return "\n";
+        return SyntaxUtils.GetEndOfLineTrivia(node).ToFullString();
     }
 
 }

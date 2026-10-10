@@ -15,6 +15,10 @@ namespace DogmaSolutions.Analyzers.Test;
 /// </summary>
 public partial class DSA035CodeFixTests
 {
+    // The line ending of this file: the verbatim sources below use it, and so must the lines added to them.
+    private static readonly string NewLine = @"
+".Contains("\r\n") ? "\r\n" : "\n";
+
     private static string LoopWith(string hoisted, string loopExpression) => @"
             using System;
             using System.Reflection;
@@ -26,7 +30,7 @@ public partial class DSA035CodeFixTests
                     private Type _type;
                     public void Test(object obj, Type type, Holder holder, int[] arr)
                     {
-" + (hoisted.Length == 0 ? string.Empty : hoisted + "\n") + @"                        for (int i = 0; i < arr.Length; i++)
+" + (hoisted.Length == 0 ? string.Empty : hoisted + NewLine) + @"                        for (int i = 0; i < arr.Length; i++)
                         {
                             var result = " + loopExpression + @";
                         }
