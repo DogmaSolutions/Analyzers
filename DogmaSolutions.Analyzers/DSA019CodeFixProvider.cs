@@ -172,31 +172,23 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         var identifierName = SyntaxFactory.IdentifierName(variableName);
 
         var insertionAnnotation = new SyntaxAnnotation("DSA019_insertion");
-        var replaceAnnotation = new SyntaxAnnotation("DSA019_replace");
 
+        // One pass over the tree: every occurrence becomes the identifier (an occurrence nested inside another one disappears with it)
+        // and the insertion statement is annotated, so that it can be found again in the rewritten tree.
         var nodesToReplaceSet = new HashSet<SyntaxNode>(nodesToReplace);
         var allNodesToAnnotate = new HashSet<SyntaxNode>(nodesToReplace) { insertionStatement };
 
-        var annotatedRoot = root.ReplaceNodes(allNodesToAnnotate, (original, rewritten) =>
+        var newRoot = root.ReplaceNodes(allNodesToAnnotate, (original, rewritten) =>
         {
-            var result = rewritten;
-            if (original == insertionStatement)
-                result = result.WithAdditionalAnnotations(insertionAnnotation);
             if (nodesToReplaceSet.Contains(original))
-                result = result.WithAdditionalAnnotations(replaceAnnotation);
-            return result;
-        });
+            {
+                return identifierName
+                    .WithLeadingTrivia(rewritten.GetLeadingTrivia())
+                    .WithTrailingTrivia(rewritten.GetTrailingTrivia());
+            }
 
-        var newRoot = annotatedRoot;
-        SyntaxNode nodeToReplace;
-        while ((nodeToReplace = newRoot.GetAnnotatedNodes(replaceAnnotation).FirstOrDefault()) != null)
-        {
-            newRoot = newRoot.ReplaceNode(
-                nodeToReplace,
-                identifierName
-                    .WithLeadingTrivia(nodeToReplace.GetLeadingTrivia())
-                    .WithTrailingTrivia(nodeToReplace.GetTrailingTrivia()));
-        }
+            return rewritten.WithAdditionalAnnotations(insertionAnnotation);
+        });
 
         var finalInsertion = newRoot.GetAnnotatedNodes(insertionAnnotation).First() as StatementSyntax;
         var containingBlock = finalInsertion.Parent as BlockSyntax;

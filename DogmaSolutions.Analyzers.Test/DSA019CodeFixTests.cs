@@ -792,4 +792,37 @@ namespace TestApp
     }
 
 
+
+    [TestMethod]
+    public async Task ExtractsEveryOccurrenceOfAChainRepeatedManyTimes()
+    {
+        const int occurrences = 60;
+        const string header = "namespace TestApp\n{\n    public class A { public string Name; }\n    public class B { public A A; }\n    public class C { public B B; }\n    public class S\n    {\n        public void M(C c)\n        {\n";
+        const string footer = "        }\n    }\n}";
+
+        var source = new System.Text.StringBuilder(header);
+        var fixedSource = new System.Text.StringBuilder(header);
+        fixedSource.Append("            var name = c.B.A.Name;\n");
+        for (var i = 0; i < occurrences; i++)
+        {
+            source.Append("            var v" + i + " = {|#" + i + ":c.B.A.Name|};\n");
+            fixedSource.Append("            var v" + i + " = name;\n");
+        }
+
+        source.Append(footer);
+        fixedSource.Append(footer);
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source.ToString();
+        test.FixedCode = fixedSource.ToString();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        for (var i = 0; i < occurrences; i++)
+        {
+            test.ExpectedDiagnostics.Add(
+                CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId)
+                    .WithLocation(i).WithArguments("c.B.A.Name", occurrences));
+        }
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }
