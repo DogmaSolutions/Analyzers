@@ -222,28 +222,12 @@ namespace DogmaSolutions.Analyzers
 
         internal static IReadOnlyList<string> ParseExcludedFilePatterns(AnalyzerConfigOptions options, string optionKey)
         {
-            if (options.TryGetValue(optionKey, out var value) && !string.IsNullOrWhiteSpace(value))
-            {
-                return value.Split(',')
-                    .Select(s => s.Trim())
-                    .Where(s => s.Length > 0)
-                    .ToList();
-            }
-
-            return DefaultExcludedFilePatterns;
+            return AnalyzerOptionsReader.ReadList(options, optionKey, defaultValue: null) ?? (IReadOnlyList<string>)DefaultExcludedFilePatterns;
         }
 
         internal static IReadOnlyList<string> ParseExcludedBaseTypes(AnalyzerConfigOptions options, string optionKey)
         {
-            if (options.TryGetValue(optionKey, out var value) && !string.IsNullOrWhiteSpace(value))
-            {
-                return value.Split(',')
-                    .Select(s => s.Trim())
-                    .Where(s => s.Length > 0)
-                    .ToList();
-            }
-
-            return DefaultExcludedBaseTypes;
+            return AnalyzerOptionsReader.ReadList(options, optionKey, defaultValue: null) ?? (IReadOnlyList<string>)DefaultExcludedBaseTypes;
         }
 
         internal static int CountNonBlankLines(SourceText text)

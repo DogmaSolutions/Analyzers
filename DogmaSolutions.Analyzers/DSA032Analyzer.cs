@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -72,7 +71,7 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
       description: _description,
       helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA032.md");
 
-   private static readonly ConditionalWeakTable<AnalyzerConfigOptions, ParsedConfig> _configCache = new();
+   private static readonly AnalyzerOptionsCache<ParsedConfig> _configCache = new(static o => new ParsedConfig(o));
 
    private sealed class ParsedConfig
    {
@@ -81,34 +80,15 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
 
       public ParsedConfig(AnalyzerConfigOptions config)
       {
-         if (config.TryGetValue(MaxDuplicationsOptionKey, out var maxDupValue) &&
-             int.TryParse(maxDupValue, out var maxDup) &&
-             maxDup > 0)
-         {
-            MaxDuplications = maxDup;
-         }
-         else
-         {
-            MaxDuplications = DefaultMaxDuplications;
-         }
-
-         if (config.TryGetValue(MinStringLengthOptionKey, out var minLenValue) &&
-             int.TryParse(minLenValue, out var minLen) &&
-             minLen >= 0)
-         {
-            MinStringLength = minLen;
-         }
-         else
-         {
-            MinStringLength = DefaultMinStringLength;
-         }
+         MaxDuplications = AnalyzerOptionsReader.ReadInt(config, MaxDuplicationsOptionKey, DefaultMaxDuplications, minInclusive: 1);
+         MinStringLength = AnalyzerOptionsReader.ReadInt(config, MinStringLengthOptionKey, DefaultMinStringLength, minInclusive: 0);
       }
    }
 
    private static ParsedConfig GetParsedConfig(SyntaxNodeAnalysisContext context)
    {
       var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-      return _configCache.GetValue(options, o => new ParsedConfig(o));
+      return _configCache.Get(options);
    }
 
    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];

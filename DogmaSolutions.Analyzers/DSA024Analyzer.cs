@@ -56,8 +56,10 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
 
     private static readonly string[] ExcludedNamespaces = { "System.Management" };
 
-    private static readonly ConditionalWeakTable<AnalyzerConfigOptions, string[]> _exactNamesCache = new();
-    private static readonly ConditionalWeakTable<AnalyzerConfigOptions, string[]> _prefixSuffixNamesCache = new();
+    private static readonly AnalyzerOptionsCache<string[]> _exactNamesCache =
+        new(static c => AnalyzerOptionsReader.ReadList(c, ExactNamesOptionKey, DefaultExactNames));
+    private static readonly AnalyzerOptionsCache<string[]> _prefixSuffixNamesCache =
+        new(static c => AnalyzerOptionsReader.ReadList(c, PrefixSuffixNamesOptionKey, DefaultPrefixSuffixNames));
 
     public override void Initialize(AnalysisContext context)
     {
@@ -268,36 +270,12 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
     internal static string[] GetExactNames(SyntaxNodeAnalysisContext context)
     {
         var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        return _exactNamesCache.GetValue(config, static c =>
-        {
-            if (c.TryGetValue(ExactNamesOptionKey, out var configValue) &&
-                !string.IsNullOrWhiteSpace(configValue))
-            {
-                return configValue.Split(',')
-                    .Select(p => p.Trim())
-                    .Where(p => p.Length > 0)
-                    .ToArray();
-            }
-
-            return DefaultExactNames;
-        });
+        return _exactNamesCache.Get(config);
     }
 
     internal static string[] GetPrefixSuffixNames(SyntaxNodeAnalysisContext context)
     {
         var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        return _prefixSuffixNamesCache.GetValue(config, static c =>
-        {
-            if (c.TryGetValue(PrefixSuffixNamesOptionKey, out var configValue) &&
-                !string.IsNullOrWhiteSpace(configValue))
-            {
-                return configValue.Split(',')
-                    .Select(p => p.Trim())
-                    .Where(p => p.Length > 0)
-                    .ToArray();
-            }
-
-            return DefaultPrefixSuffixNames;
-        });
+        return _prefixSuffixNamesCache.Get(config);
     }
 }

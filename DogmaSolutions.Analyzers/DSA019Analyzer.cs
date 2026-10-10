@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -48,7 +47,7 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
         description: _description,
         helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA019.md");
 
-    private static readonly ConditionalWeakTable<AnalyzerConfigOptions, ParsedConfig> _configCache = new();
+    private static readonly AnalyzerOptionsCache<ParsedConfig> _configCache = new(static o => new ParsedConfig(o));
 
     private sealed class ParsedConfig
     {
@@ -58,54 +57,20 @@ public sealed class DSA019Analyzer : DiagnosticAnalyzer
 
         public ParsedConfig(AnalyzerConfigOptions config)
         {
-            if (config.TryGetValue(MaxDepthOptionKey, out var depthValue) &&
-                int.TryParse(depthValue, out var threshold) &&
-                threshold > 0)
-            {
-                Threshold = threshold;
-            }
-            else
-            {
-                Threshold = DefaultMaxDepth;
-            }
+            Threshold = AnalyzerOptionsReader.ReadInt(config, MaxDepthOptionKey, DefaultMaxDepth, minInclusive: 1);
+            ExcludedPrefixes = AnalyzerOptionsReader.ReadList(config, ExcludedPrefixesOptionKey, DefaultExcludedPrefixes);
 
-            if (config.TryGetValue(ExcludedPrefixesOptionKey, out var prefixValue) &&
-                !string.IsNullOrWhiteSpace(prefixValue))
-            {
-                ExcludedPrefixes = prefixValue.Split(',')
-                    .Select(p => p.Trim())
-                    .Where(p => p.Length > 0)
-                    .ToArray();
-            }
-            else
-            {
-                ExcludedPrefixes = DefaultExcludedPrefixes;
-            }
-
-            if (config.TryGetValue(IgnoredIntermediateMembersOptionKey, out var membersValue) &&
-                !string.IsNullOrWhiteSpace(membersValue))
-            {
-                var set = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var name in membersValue.Split(','))
-                {
-                    var trimmed = name.Trim();
-                    if (trimmed.Length > 0)
-                        set.Add(trimmed);
-                }
-
-                IgnoredIntermediateMembers = set;
-            }
-            else
-            {
-                IgnoredIntermediateMembers = DefaultIgnoredIntermediateMembers;
-            }
+            var ignoredMembers = AnalyzerOptionsReader.ReadList(config, IgnoredIntermediateMembersOptionKey, defaultValue: null);
+            IgnoredIntermediateMembers = ignoredMembers == null
+                ? DefaultIgnoredIntermediateMembers
+                : new HashSet<string>(ignoredMembers, StringComparer.Ordinal);
         }
     }
 
     private static ParsedConfig GetParsedConfig(SyntaxNodeAnalysisContext context)
     {
         var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        return _configCache.GetValue(options, o => new ParsedConfig(o));
+        return _configCache.Get(options);
     }
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];

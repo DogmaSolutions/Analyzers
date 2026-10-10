@@ -55,22 +55,13 @@ public sealed class DSA034Analyzer : DiagnosticAnalyzer
         // 2. Line count
         var text = context.Tree.GetText(context.CancellationToken);
 
-        var countBlankLines = DefaultCountBlankLines;
-        if (options.TryGetValue(CountBlankLinesOptionKey, out var blankVal) &&
-            bool.TryParse(blankVal, out var blankParsed))
-        {
-            countBlankLines = blankParsed;
-        }
+        var countBlankLines = AnalyzerOptionsReader.ReadBool(options, CountBlankLinesOptionKey, DefaultCountBlankLines);
 
         var lineCount = countBlankLines
             ? text.Lines.Count
             : AnalyzersUtils.CountNonBlankLines(text);
-        var maxLines = DefaultMaxLines;
-        if (options.TryGetValue(MaxLinesOptionKey, out var value) &&
-            int.TryParse(value, out var parsed) && parsed > 0)
-        {
-            maxLines = parsed;
-        }
+        var maxLines = AnalyzerOptionsReader.ReadInt(options, MaxLinesOptionKey, DefaultMaxLines, minInclusive: 1);
+
         if (lineCount <= maxLines)
             return;
 

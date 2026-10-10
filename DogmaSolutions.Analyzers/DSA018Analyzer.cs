@@ -30,7 +30,8 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
         "JsonSerializerSettings.Converters",
     };
 
-    private static readonly ConditionalWeakTable<AnalyzerConfigOptions, string[]> _excludedMembersCache = new();
+    private static readonly AnalyzerOptionsCache<string[]> _excludedMembersCache =
+        new(static c => AnalyzerOptionsReader.ReadList(c, ExcludedMembersOptionKey, DefaultExcludedMembers));
 
     private static readonly LocalizableString _title =
         new LocalizableResourceString(nameof(Resources.DSA018AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
@@ -116,19 +117,7 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
     internal static string[] GetExcludedMembers(SyntaxNodeAnalysisContext context)
     {
         var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        return _excludedMembersCache.GetValue(config, static c =>
-        {
-            if (c.TryGetValue(ExcludedMembersOptionKey, out var configValue) &&
-                !string.IsNullOrWhiteSpace(configValue))
-            {
-                return configValue.Split(',')
-                    .Select(p => p.Trim())
-                    .Where(p => p.Length > 0)
-                    .ToArray();
-            }
-
-            return DefaultExcludedMembers;
-        });
+        return _excludedMembersCache.Get(config);
     }
 
     /// <summary>

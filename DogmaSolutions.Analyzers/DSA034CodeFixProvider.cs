@@ -202,21 +202,12 @@ public sealed partial class DSA034CodeFixProvider : CodeFixProvider
     /// </summary>
     private static (int MaxTopics, HashSet<string> ExcludedWords) ReadTopicOptions(AnalyzerConfigOptions options)
     {
-        var maxTopics = DefaultMaxTopics;
-        if (options.TryGetValue(MaxTopicsOptionKey, out var maxTopicsValue) &&
-            int.TryParse(maxTopicsValue, out var parsedMax) && parsedMax > 0)
-        {
-            maxTopics = parsedMax;
-        }
+        var maxTopics = AnalyzerOptionsReader.ReadInt(options, MaxTopicsOptionKey, DefaultMaxTopics, minInclusive: 1);
 
         var excludedWords = DefaultExcludedTopicWords;
-        if (options.TryGetValue(ExcludedTopicWordsOptionKey, out var excludedValue) &&
-            !string.IsNullOrWhiteSpace(excludedValue))
-        {
-            excludedWords = new HashSet<string>(
-                excludedValue.Split(',').Select(w => w.Trim()).Where(w => w.Length > 0),
-                StringComparer.OrdinalIgnoreCase);
-        }
+        var configuredWords = AnalyzerOptionsReader.ReadList(options, ExcludedTopicWordsOptionKey, defaultValue: null);
+        if (configuredWords != null)
+            excludedWords = new HashSet<string>(configuredWords, StringComparer.OrdinalIgnoreCase);
 
         return (maxTopics, excludedWords);
     }

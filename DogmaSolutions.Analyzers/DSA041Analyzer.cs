@@ -113,14 +113,7 @@ namespace DogmaSolutions.Analyzers
         private static int ReadMaxEnumMembers(SyntaxNodeAnalysisContext context)
         {
             var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-            if (options.TryGetValue(MaxEnumMembersOptionKey, out var value) &&
-                int.TryParse(value, out var parsed) &&
-                parsed > 0)
-            {
-                return parsed;
-            }
-
-            return DefaultMaxEnumMembers;
+            return AnalyzerOptionsReader.ReadInt(options, MaxEnumMembersOptionKey, DefaultMaxEnumMembers, minInclusive: 1);
         }
     }
 }
