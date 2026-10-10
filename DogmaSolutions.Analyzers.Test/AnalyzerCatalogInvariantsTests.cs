@@ -183,4 +183,19 @@ public class AnalyzerCatalogInvariantsTests
 
         Assert.AreEqual(0, withoutReviewComment.Count, "Rules whose review comment fix is not wired: " + string.Join(", ", withoutReviewComment));
     }
+
+    [TestMethod]
+    public void Every_analyzer_skips_generated_code_runs_concurrently_and_registers_something()
+    {
+        foreach (var analyzer in Analyzers)
+        {
+            var context = new RecordingAnalysisContext();
+            analyzer.Initialize(context);
+
+            var name = analyzer.GetType().Name;
+            Assert.AreEqual(GeneratedCodeAnalysisFlags.None, context.GeneratedCodeFlags, name + " must opt out of generated code analysis");
+            Assert.IsTrue(context.ConcurrentExecutionEnabled, name + " must enable concurrent execution");
+            Assert.IsTrue(context.RegistrationCount > 0, name + " registers no action");
+        }
+    }
 }
