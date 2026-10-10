@@ -132,7 +132,7 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
         while (current != null)
         {
             var typeInfo = semanticModel.GetTypeInfo(current);
-            if (typeInfo.Type != null && IsDbSetType(typeInfo.Type))
+            if (typeInfo.Type != null && EntityFrameworkSymbols.IsDbSetType(typeInfo.Type))
                 return true;
 
             if (current is InvocationExpressionSyntax invocation)
@@ -148,7 +148,7 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
         if (current != null)
         {
             var typeInfo = semanticModel.GetTypeInfo(current);
-            if (typeInfo.Type != null && IsDbSetType(typeInfo.Type))
+            if (typeInfo.Type != null && EntityFrameworkSymbols.IsDbSetType(typeInfo.Type))
                 return true;
 
             var symbolInfo = semanticModel.GetSymbolInfo(current);
@@ -156,40 +156,11 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
             {
                 if (typeInfo.Type != null && !ImplementsIQueryable(typeInfo.Type))
                     return false;
-                return LocalInitializerInvolvesEf(localSymbol, semanticModel);
+                return EntityFrameworkSymbols.LocalInitializerInvolvesEf(localSymbol, semanticModel);
             }
         }
 
         return false;
-    }
-
-    private static bool LocalInitializerInvolvesEf(ILocalSymbol localSymbol, SemanticModel semanticModel)
-    {
-        var initValue = GetLocalInitializerValue(localSymbol);
-        return initValue != null &&
-               (ContainsDbSetTypedNode(initValue, semanticModel) || ContainsEntityFrameworkInvocation(initValue, semanticModel));
-    }
-
-    /// <summary>
-    /// Returns the initializer of a local declared as <c>var x = value;</c>, or null when the local has no initializer
-    /// or is not declared by a variable declarator (foreach variables, pattern variables, out variables, ...).
-    /// </summary>
-    private static ExpressionSyntax GetLocalInitializerValue(ILocalSymbol localSymbol)
-    {
-        var declarator = localSymbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
-        return declarator?.Initializer?.Value;
-    }
-
-    private static bool ContainsDbSetTypedNode(ExpressionSyntax expression, SemanticModel semanticModel)
-    {
-        return expression.DescendantNodesAndSelf().Any(node => IsDbSetType(semanticModel.GetTypeInfo(node).Type));
-    }
-
-    private static bool ContainsEntityFrameworkInvocation(ExpressionSyntax expression, SemanticModel semanticModel)
-    {
-        return expression.DescendantNodesAndSelf()
-            .OfType<InvocationExpressionSyntax>()
-            .Any(invocation => semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol method && IsFromEntityFramework(method));
     }
 
     internal static bool HasTagInChain(
@@ -400,27 +371,7 @@ public sealed class DSA021Analyzer : DiagnosticAnalyzer
         if (!method.IsExtensionMethod && method.ReducedFrom == null)
             return false;
 
-        return IsFromEntityFramework(method);
-    }
-
-    private static bool IsFromEntityFramework(IMethodSymbol method)
-    {
-        var ns = method.ContainingType?.ContainingNamespace?.ToDisplayString();
-        return ns != null && ns.StartsWith("Microsoft.EntityFrameworkCore", StringComparison.Ordinal);
-    }
-
-    private static bool IsDbSetType(ITypeSymbol type)
-    {
-        var current = type;
-        while (current != null)
-        {
-            if (current.Name == "DbSet" &&
-                current.ContainingNamespace?.ToDisplayString() == "Microsoft.EntityFrameworkCore")
-                return true;
-            current = current.BaseType;
-        }
-
-        return false;
+        return EntityFrameworkSymbols.IsFromEntityFramework(method);
     }
 
     private static ExpressionSyntax GetReceiver(InvocationExpressionSyntax invocation)
