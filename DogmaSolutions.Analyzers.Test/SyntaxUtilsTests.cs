@@ -65,4 +65,71 @@ public class SyntaxUtilsTests
         var node = SyntaxFactory.ParseExpression("marker");
         Assert.IsNull(SyntaxUtils.GetContainingScope(node));
     }
+
+    // ---- loops and nested functions ---------------------------------------------------------------------------
+
+    [TestMethod]
+    [DataRow("for (;;) { marker; }", typeof(ForStatementSyntax))]
+    [DataRow("foreach (var a in b) { marker; }", typeof(ForEachStatementSyntax))]
+    [DataRow("foreach (var (a, c) in b) { marker; }", typeof(ForEachVariableStatementSyntax))]
+    [DataRow("while (true) { marker; }", typeof(WhileStatementSyntax))]
+    [DataRow("do { marker; } while (true);", typeof(DoStatementSyntax))]
+    [DataRow("while (true) marker;", typeof(WhileStatementSyntax))]
+    public void FindEnclosingLoop_and_GetLoopBody_cover_every_loop_form(string statement, System.Type loopKind)
+    {
+        var marker = GetMarker("class C { void M() { " + statement + " } }");
+
+        var loop = SyntaxUtils.FindEnclosingLoop(marker);
+
+        Assert.IsNotNull(loop);
+        Assert.IsInstanceOfType(loop, loopKind);
+        Assert.IsTrue(SyntaxUtils.IsLoopStatement(loop));
+        Assert.IsTrue(SyntaxUtils.GetLoopBody(loop).Span.Contains(marker.Span));
+    }
+
+    [TestMethod]
+    [DataRow("while (true) { System.Action a = () => { marker; }; }")]
+    [DataRow("while (true) { System.Action a = x => marker; }")]
+    [DataRow("while (true) { System.Action a = delegate { marker; }; }")]
+    [DataRow("while (true) { void Local() { marker; } }")]
+    public void FindEnclosingLoop_stops_at_a_function_boundary(string statement)
+    {
+        var marker = GetMarker("class C { void M() { " + statement + " } }");
+
+        Assert.IsNull(SyntaxUtils.FindEnclosingLoop(marker));
+    }
+
+    [TestMethod]
+    public void GetLoopBody_of_a_non_loop_is_null()
+    {
+        Assert.IsNull(SyntaxUtils.GetLoopBody(SyntaxFactory.ParseStatement("{ }")));
+        Assert.IsFalse(SyntaxUtils.IsLoopStatement(SyntaxFactory.ParseStatement("{ }")));
+    }
+
+    [TestMethod]
+    [DataRow("for (;;) { for (;;) { marker; } }", true)]
+    [DataRow("for (;;) { foreach (var (a, c) in b) { marker; } }", true)]
+    [DataRow("for (;;) { while (true) marker; }", true)]
+    [DataRow("for (;;) { if (x) { marker; } }", false)]
+    [DataRow("for (;;) { marker; }", false)]
+    public void IsInsideNestedLoop_only_looks_below_the_analyzed_loop_body(string statement, bool expected)
+    {
+        var marker = GetMarker("class C { void M() { " + statement + " } }");
+        var outer = marker.Ancestors().OfType<StatementSyntax>().Last(SyntaxUtils.IsLoopStatement);
+
+        Assert.AreEqual(expected, SyntaxUtils.IsInsideNestedLoop(marker, SyntaxUtils.GetLoopBody(outer)));
+    }
+
+    [TestMethod]
+    [DataRow("class C { void M() { System.Action a = () => { marker; }; } }", true)]
+    [DataRow("class C { void M() { System.Action a = delegate { marker; }; } }", true)]
+    [DataRow("class C { void M() { void Local() { marker; } } }", true)]
+    [DataRow("class C { void M() { marker; } }", false)]
+    public void IsInsideNestedFunction_detects_lambdas_anonymous_methods_and_local_functions(string code, bool expected)
+    {
+        var marker = GetMarker(code);
+        var method = marker.Ancestors().OfType<MethodDeclarationSyntax>().First();
+
+        Assert.AreEqual(expected, SyntaxUtils.IsInsideNestedFunction(marker, method));
+    }
 }

@@ -68,7 +68,7 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
     private static void AnalyzeLoop(SyntaxNodeAnalysisContext context)
     {
         var loopNode = context.Node;
-        var body = GetLoopBody(loopNode);
+        var body = SyntaxUtils.GetLoopBody(loopNode);
         if (body == null)
             return;
 
@@ -83,7 +83,7 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
             if (binExpr.IsKind(SyntaxKind.AddExpression) && IsStringConcatenation(binExpr, context.SemanticModel))
                 continue;
 
-            if (IsInsideNestedLoop(binExpr, body))
+            if (SyntaxUtils.IsInsideNestedLoop(binExpr, body))
                 continue;
 
             if (!IsInvariant(binExpr, modifiedSymbols, context.SemanticModel))
@@ -107,19 +107,6 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
                 properties: null,
                 expr.ToString());
             context.ReportDiagnostic(diagnostic);
-        }
-    }
-
-    private static StatementSyntax GetLoopBody(SyntaxNode loopNode)
-    {
-        switch (loopNode)
-        {
-            case ForStatementSyntax forStmt: return forStmt.Statement;
-            case ForEachStatementSyntax forEachStmt: return forEachStmt.Statement;
-            case ForEachVariableStatementSyntax forEachVarStmt: return forEachVarStmt.Statement;
-            case WhileStatementSyntax whileStmt: return whileStmt.Statement;
-            case DoStatementSyntax doStmt: return doStmt.Statement;
-            default: return null;
         }
     }
 
@@ -248,21 +235,6 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
         }
 
         return true;
-    }
-
-    private static bool IsInsideNestedLoop(SyntaxNode expr, StatementSyntax loopBody)
-    {
-        var current = expr.Parent;
-        while (current != null && current != loopBody)
-        {
-            if (current is ForStatementSyntax || current is ForEachStatementSyntax ||
-                current is ForEachVariableStatementSyntax ||
-                current is WhileStatementSyntax || current is DoStatementSyntax)
-                return true;
-            current = current.Parent;
-        }
-
-        return false;
     }
 
     private static bool IsCompileTimeConstant(ExpressionSyntax expr)

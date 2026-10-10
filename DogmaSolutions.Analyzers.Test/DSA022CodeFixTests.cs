@@ -459,4 +459,50 @@ public class DSA022CodeFixTests
                 .Diagnostic(DSA022Analyzer.DiagnosticId).WithLocation(0).WithArguments("Scale * a"));
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    [TestMethod]
+    public async Task HoistsFromForeachWithDeconstruction()
+    {
+        var source = @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(int a, int b, List<(int X, int Y)> points, int[] output)
+                    {
+                        foreach (var (x, y) in points)
+                        {
+                            output[x] = {|#0:a * b|} + y;
+                        }
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public void Test(int a, int b, List<(int X, int Y)> points, int[] output)
+                    {
+                        var hoisted_a_b = a * b;
+                        foreach (var (x, y) in points)
+                        {
+                            output[x] = hoisted_a_b + y;
+                        }
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA022Analyzer, DSA022CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA022Analyzer, DSA022CodeFixProvider>
+                .Diagnostic(DSA022Analyzer.DiagnosticId).WithLocation(0).WithArguments("a * b"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }

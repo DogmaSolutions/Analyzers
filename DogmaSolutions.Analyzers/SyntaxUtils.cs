@@ -159,4 +159,73 @@ internal static class SyntaxUtils
 
         return SyntaxFactory.TriviaList(result);
     }
+
+    /// <summary>True for the loop statements: for, foreach (both forms), while and do.</summary>
+    internal static bool IsLoopStatement(SyntaxNode node)
+    {
+        return node is ForStatementSyntax or
+            ForEachStatementSyntax or
+            ForEachVariableStatementSyntax or
+            WhileStatementSyntax or
+            DoStatementSyntax;
+    }
+
+    /// <summary>The embedded statement of a loop, or null when the node is not a loop.</summary>
+    internal static StatementSyntax GetLoopBody(SyntaxNode loop)
+    {
+        return loop switch
+        {
+            ForStatementSyntax forStatement => forStatement.Statement,
+            ForEachStatementSyntax forEachStatement => forEachStatement.Statement,
+            ForEachVariableStatementSyntax forEachVariableStatement => forEachVariableStatement.Statement,
+            WhileStatementSyntax whileStatement => whileStatement.Statement,
+            DoStatementSyntax doStatement => doStatement.Statement,
+            _ => null
+        };
+    }
+
+    /// <summary>True for the nodes that open a new function body: lambdas, anonymous methods and local functions.</summary>
+    internal static bool IsFunctionBoundary(SyntaxNode node)
+    {
+        return node is LambdaExpressionSyntax or AnonymousMethodExpressionSyntax or LocalFunctionStatementSyntax;
+    }
+
+    /// <summary>The nearest loop that contains the node within the same function body (null if a lambda, anonymous method or local function comes first).</summary>
+    internal static SyntaxNode FindEnclosingLoop(SyntaxNode node)
+    {
+        for (var current = node.Parent; current != null; current = current.Parent)
+        {
+            if (IsFunctionBoundary(current))
+                return null;
+
+            if (IsLoopStatement(current))
+                return current;
+        }
+
+        return null;
+    }
+
+    /// <summary>True when a lambda, anonymous method or local function sits between the node and the boundary.</summary>
+    internal static bool IsInsideNestedFunction(SyntaxNode node, SyntaxNode boundary)
+    {
+        for (var current = node.Parent; current != null && current != boundary; current = current.Parent)
+        {
+            if (IsFunctionBoundary(current))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>True when a loop sits between the node and the loop body that is being analyzed.</summary>
+    internal static bool IsInsideNestedLoop(SyntaxNode node, StatementSyntax loopBody)
+    {
+        for (var current = node.Parent; current != null && current != loopBody; current = current.Parent)
+        {
+            if (IsLoopStatement(current))
+                return true;
+        }
+
+        return false;
+    }
 }

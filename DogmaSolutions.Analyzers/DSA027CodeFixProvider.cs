@@ -33,7 +33,7 @@ public sealed class DSA027CodeFixProvider : CodeFixProvider
 
         if (node is AssignmentExpressionSyntax assignment)
         {
-            var loop = FindEnclosingLoop(assignment);
+            var loop = SyntaxUtils.FindEnclosingLoop(assignment);
             if (loop?.Parent is BlockSyntax)
             {
                 context.RegisterCodeFix(
@@ -66,13 +66,13 @@ public sealed class DSA027CodeFixProvider : CodeFixProvider
             return document;
 
         var variableName = leftSymbol.Name;
-        var loop = FindEnclosingLoop(assignment);
+        var loop = SyntaxUtils.FindEnclosingLoop(assignment);
         if (loop?.Parent is not BlockSyntax block)
             return document;
 
         var sbName = ResolveBuilderName(variableName, loop);
 
-        var loopBody = DSA027Analyzer.GetLoopBody(loop);
+        var loopBody = SyntaxUtils.GetLoopBody(loop);
         if (loopBody == null)
             return document;
 
@@ -252,27 +252,6 @@ public sealed class DSA027CodeFixProvider : CodeFixProvider
         }
 
         return result;
-    }
-
-    private static SyntaxNode FindEnclosingLoop(SyntaxNode node)
-    {
-        for (var current = node.Parent; current != null; current = current.Parent)
-        {
-            if (current is ParenthesizedLambdaExpressionSyntax or
-                SimpleLambdaExpressionSyntax or
-                AnonymousMethodExpressionSyntax or
-                LocalFunctionStatementSyntax)
-                return null;
-
-            if (current is ForStatementSyntax or
-                ForEachStatementSyntax or
-                ForEachVariableStatementSyntax or
-                WhileStatementSyntax or
-                DoStatementSyntax)
-                return current;
-        }
-
-        return null;
     }
 
     private static string ResolveBuilderName(string variableName, SyntaxNode scope)

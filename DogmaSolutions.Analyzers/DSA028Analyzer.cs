@@ -98,7 +98,7 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
             if (returnStatement.Expression == null)
                 continue;
 
-            if (IsInsideNestedFunction(returnStatement, method))
+            if (SyntaxUtils.IsInsideNestedFunction(returnStatement, method))
                 continue;
 
             CheckReturnedExpression(context, returnStatement.Expression, method.Body, semanticModel);
@@ -128,7 +128,7 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
             if (returnStatement.Expression == null)
                 continue;
 
-            if (IsInsideNestedFunction(returnStatement, localFunc))
+            if (SyntaxUtils.IsInsideNestedFunction(returnStatement, localFunc))
                 continue;
 
             CheckReturnedExpression(context, returnStatement.Expression, localFunc.Body, semanticModel);
@@ -168,7 +168,7 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
             if (returnStatement.Expression == null)
                 continue;
 
-            if (IsInsideNestedFunction(returnStatement, accessor))
+            if (SyntaxUtils.IsInsideNestedFunction(returnStatement, accessor))
                 continue;
 
             CheckReturnedExpression(context, returnStatement.Expression, accessor.Body, semanticModel);
@@ -446,21 +446,6 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
     private static bool IsMutatingMethod(string methodName)
     {
         return MutatingMethods.Contains(methodName);
-    }
-
-    private static bool IsInsideNestedFunction(SyntaxNode node, SyntaxNode boundary)
-    {
-        var current = node.Parent;
-        while (current != null && current != boundary)
-        {
-            if (current is LambdaExpressionSyntax ||
-                current is AnonymousMethodExpressionSyntax ||
-                current is LocalFunctionStatementSyntax)
-                return true;
-            current = current.Parent;
-        }
-
-        return false;
     }
 
     private static void ReportDiagnostic(SyntaxNodeAnalysisContext context, ExpressionSyntax toListExpression)

@@ -76,7 +76,7 @@ public sealed class DSA035CodeFixProvider : CodeFixProvider
         variableName = DSA022CodeFixProvider.ResolveNameConflicts(variableName, loopNode.Parent);
 
         var targetText = SyntaxUtils.NormalizeWhitespace(hoistTarget.ToString());
-        var loopBody = DSA022CodeFixProvider.GetLoopBody(loopNode);
+        var loopBody = SyntaxUtils.GetLoopBody(loopNode);
         if (loopBody == null)
             return document;
 
@@ -84,7 +84,7 @@ public sealed class DSA035CodeFixProvider : CodeFixProvider
         var newLoop = loopNode;
         for (;;)
         {
-            var body = DSA022CodeFixProvider.GetLoopBody(newLoop);
+            var body = SyntaxUtils.GetLoopBody(newLoop);
             SyntaxNode current;
             if (isConditionalAccess)
                 current = body?.DescendantNodesAndSelf()

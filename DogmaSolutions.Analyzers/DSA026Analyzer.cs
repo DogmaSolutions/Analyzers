@@ -243,10 +243,7 @@ public sealed class DSA026Analyzer : DiagnosticAnalyzer
         var current = node.Parent;
         while (current != null && current != outerScope)
         {
-            if (current is ParenthesizedLambdaExpressionSyntax or
-                SimpleLambdaExpressionSyntax or
-                AnonymousMethodExpressionSyntax or
-                LocalFunctionStatementSyntax)
+            if (SyntaxUtils.IsFunctionBoundary(current))
             {
                 if (FindCancellationTokenParameter(current, model) != null)
                     return true;

@@ -73,14 +73,14 @@ public sealed class DSA022CodeFixProvider : CodeFixProvider
         variableName = ResolveNameConflicts(variableName, loopNode.Parent);
 
         var expressionText = SyntaxUtils.NormalizeWhitespace(expression.ToString());
-        var loopBody = GetLoopBody(loopNode);
+        var loopBody = SyntaxUtils.GetLoopBody(loopNode);
         if (loopBody == null)
             return document;
 
         var newLoop = loopNode;
         for (;;)
         {
-            var body = GetLoopBody(newLoop);
+            var body = SyntaxUtils.GetLoopBody(newLoop);
             var current = body?.DescendantNodesAndSelf()
                 .OfType<BinaryExpressionSyntax>()
                 .FirstOrDefault(b => SyntaxUtils.NormalizeWhitespace(b.ToString()) == expressionText);
@@ -125,25 +125,12 @@ public sealed class DSA022CodeFixProvider : CodeFixProvider
         var current = node.Parent;
         while (current != null)
         {
-            if (current is ForStatementSyntax || current is ForEachStatementSyntax ||
-                current is WhileStatementSyntax || current is DoStatementSyntax)
+            if (SyntaxUtils.IsLoopStatement(current))
                 return current;
             current = current.Parent;
         }
 
         return null;
-    }
-
-    internal static StatementSyntax GetLoopBody(SyntaxNode loopNode)
-    {
-        switch (loopNode)
-        {
-            case ForStatementSyntax forStmt: return forStmt.Statement;
-            case ForEachStatementSyntax forEachStmt: return forEachStmt.Statement;
-            case WhileStatementSyntax whileStmt: return whileStmt.Statement;
-            case DoStatementSyntax doStmt: return doStmt.Statement;
-            default: return null;
-        }
     }
 
     private static string GenerateVariableName(BinaryExpressionSyntax expression)

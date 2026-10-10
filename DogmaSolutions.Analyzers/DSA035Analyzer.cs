@@ -84,7 +84,7 @@ public sealed class DSA035Analyzer : DiagnosticAnalyzer
     private static void AnalyzeLoop(SyntaxNodeAnalysisContext context)
     {
         var loopNode = context.Node;
-        var body = GetLoopBody(loopNode);
+        var body = SyntaxUtils.GetLoopBody(loopNode);
         if (body == null)
             return;
 
@@ -93,7 +93,7 @@ public sealed class DSA035Analyzer : DiagnosticAnalyzer
 
         foreach (var invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
-            if (IsInsideNestedLoop(invocation, body))
+            if (SyntaxUtils.IsInsideNestedLoop(invocation, body))
                 continue;
 
             if (!IsReflectionInvocation(invocation, context.SemanticModel))
@@ -114,34 +114,6 @@ public sealed class DSA035Analyzer : DiagnosticAnalyzer
                 invocation.ToString());
             context.ReportDiagnostic(diagnostic);
         }
-    }
-
-    private static StatementSyntax GetLoopBody(SyntaxNode loopNode)
-    {
-        switch (loopNode)
-        {
-            case ForStatementSyntax forStmt: return forStmt.Statement;
-            case ForEachStatementSyntax forEachStmt: return forEachStmt.Statement;
-            case ForEachVariableStatementSyntax forEachVarStmt: return forEachVarStmt.Statement;
-            case WhileStatementSyntax whileStmt: return whileStmt.Statement;
-            case DoStatementSyntax doStmt: return doStmt.Statement;
-            default: return null;
-        }
-    }
-
-    private static bool IsInsideNestedLoop(SyntaxNode expr, StatementSyntax loopBody)
-    {
-        var current = expr.Parent;
-        while (current != null && current != loopBody)
-        {
-            if (current is ForStatementSyntax || current is ForEachStatementSyntax ||
-                current is ForEachVariableStatementSyntax ||
-                current is WhileStatementSyntax || current is DoStatementSyntax)
-                return true;
-            current = current.Parent;
-        }
-
-        return false;
     }
 
     private static void CollectLambdaParameters(SyntaxNode body, SemanticModel model, HashSet<ISymbol> symbols)

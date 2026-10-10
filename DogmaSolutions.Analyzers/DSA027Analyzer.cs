@@ -70,11 +70,11 @@ public sealed class DSA027Analyzer : DiagnosticAnalyzer
                 return;
         }
 
-        var loop = FindEnclosingLoop(assignment);
+        var loop = SyntaxUtils.FindEnclosingLoop(assignment);
         if (loop == null)
             return;
 
-        var loopBody = GetLoopBody(loop);
+        var loopBody = SyntaxUtils.GetLoopBody(loop);
         if (loopBody == null)
             return;
 
@@ -112,40 +112,6 @@ public sealed class DSA027Analyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    private static SyntaxNode FindEnclosingLoop(SyntaxNode node)
-    {
-        for (var current = node.Parent; current != null; current = current.Parent)
-        {
-            if (current is ParenthesizedLambdaExpressionSyntax or
-                SimpleLambdaExpressionSyntax or
-                AnonymousMethodExpressionSyntax or
-                LocalFunctionStatementSyntax)
-                return null;
-
-            if (current is ForStatementSyntax or
-                ForEachStatementSyntax or
-                ForEachVariableStatementSyntax or
-                WhileStatementSyntax or
-                DoStatementSyntax)
-                return current;
-        }
-
-        return null;
-    }
-
-    internal static SyntaxNode GetLoopBody(SyntaxNode loop)
-    {
-        return loop switch
-        {
-            ForStatementSyntax f => f.Statement,
-            ForEachStatementSyntax fe => fe.Statement,
-            ForEachVariableStatementSyntax fev => fev.Statement,
-            WhileStatementSyntax w => w.Statement,
-            DoStatementSyntax d => d.Statement,
-            _ => null
-        };
     }
 
     private static bool IsDeclaredInsideNode(ISymbol symbol, SyntaxNode container)
