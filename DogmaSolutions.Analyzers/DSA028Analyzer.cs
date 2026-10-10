@@ -168,6 +168,9 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
             if (returnStatement.Expression == null)
                 continue;
 
+            if (IsInsideNestedFunction(returnStatement, accessor))
+                continue;
+
             CheckReturnedExpression(context, returnStatement.Expression, accessor.Body, semanticModel);
         }
     }

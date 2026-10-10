@@ -543,6 +543,28 @@ public partial class DSA028Tests
                 }
             }"
         ],
+        [
+            "ToList returned from a lambda inside a property getter — not the getter's own return",
+            @"
+            using System;
+            using System.Collections.Generic;
+            using System.Linq;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    private readonly int[] _data = new int[] { 1, 2, 3 };
+                    public IReadOnlyList<int> Items
+                    {
+                        get
+                        {
+                            Func<List<int>> factory = () => { return _data.Where(x => x > 0).ToList(); };
+                            return factory();
+                        }
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]
