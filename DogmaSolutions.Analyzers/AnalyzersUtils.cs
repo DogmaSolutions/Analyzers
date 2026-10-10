@@ -24,15 +24,30 @@ namespace DogmaSolutions.Analyzers
         {
             if (rule == null) throw new ArgumentNullException(nameof(rule));
             var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-            var severity = rule.DefaultSeverity;
-            if (config.TryGetValue($"dotnet_diagnostic.{diagnosticId}.severity", out var configValue) &&
-                !string.IsNullOrWhiteSpace(configValue) &&
-                Enum.TryParse<DiagnosticSeverity>(configValue, out var configuredSeverity))
-            {
-                severity = configuredSeverity;
-            }
+            config.TryGetValue($"dotnet_diagnostic.{diagnosticId}.severity", out var configValue);
+            return ParseSeverity(configValue, rule.DefaultSeverity);
+        }
 
-            return severity;
+        /// <summary>
+        /// Translates the value of a <c>dotnet_diagnostic.*.severity</c> editorconfig entry into a <see cref="DiagnosticSeverity"/>.
+        /// Accepts the editorconfig vocabulary (error, warning, suggestion, silent) and the enum names, case-insensitively.
+        /// Unknown, empty or non-mappable values (none, default) yield <paramref name="defaultSeverity"/>.
+        /// </summary>
+        internal static DiagnosticSeverity ParseSeverity(string configValue, DiagnosticSeverity defaultSeverity)
+        {
+            if (string.IsNullOrWhiteSpace(configValue))
+                return defaultSeverity;
+
+            switch (configValue.Trim().ToUpperInvariant())
+            {
+                case "ERROR": return DiagnosticSeverity.Error;
+                case "WARNING": return DiagnosticSeverity.Warning;
+                case "SUGGESTION":
+                case "INFO": return DiagnosticSeverity.Info;
+                case "SILENT":
+                case "HIDDEN": return DiagnosticSeverity.Hidden;
+                default: return defaultSeverity;
+            }
         }
 
 
