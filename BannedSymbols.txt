@@ -1,0 +1,2 @@
+P:System.DateTime.Now;Use DateTime.UtcNow: local time makes results depend on the machine (the rule DSA004 of this very package)
+P:System.DateTimeOffset.Now;Use DateTimeOffset.UtcNow: local time makes results depend on the machine (same reasoning as DSA004)

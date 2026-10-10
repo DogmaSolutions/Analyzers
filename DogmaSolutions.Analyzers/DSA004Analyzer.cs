@@ -47,6 +47,9 @@ namespace DogmaSolutions.Analyzers
 
        
 
+        // The analyzer is about DateTime.Now: naming it is not using it.
+#pragma warning disable RS0030
         protected override string MemberName => nameof(DateTime.Now);
+#pragma warning restore RS0030
     }
 }

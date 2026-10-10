@@ -22,12 +22,12 @@
         <NoWarn>$(NoWarn);NU1605</NoWarn>
         <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
         <NeutralLanguage>en</NeutralLanguage>
-        <CodeAnalysisRuleSet>$(SolutionDir)DogmaSolutions.ruleset</CodeAnalysisRuleSet>
+        <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)DogmaSolutions.ruleset</CodeAnalysisRuleSet>
         <DelaySign>true</DelaySign>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-        <DefineConstants>TRACE</DefineConstants>
+        <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
     </PropertyGroup>
 
 <!--
@@ -39,7 +39,7 @@
 -->
     
     <ItemGroup>
-        <None Include="$(SolutionDir)SharedResources\Logo_128x128.png">
+        <None Include="$(MSBuildThisFileDirectory)SharedResources\Logo_128x128.png">
             <Pack>True</Pack>
             <PackagePath>\</PackagePath>
         </None>
@@ -77,12 +77,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="$(SolutionDir).editorconfig" Link=".editorconfig"/>
+        <None Include="$(MSBuildThisFileDirectory).editorconfig" Link=".editorconfig"/>
     </ItemGroup>
 
     <ItemGroup>
-        <AdditionalFiles Include="$(SolutionDir)BannedSymbols.txt"/>
-        <AdditionalFiles Include="$(SolutionDir)DuplicateCode.Allowed.txt"/>
+        <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt"/>
+        <AdditionalFiles Include="$(MSBuildThisFileDirectory)DuplicateCode.Allowed.txt"/>
     </ItemGroup>
 
     <PropertyGroup>
