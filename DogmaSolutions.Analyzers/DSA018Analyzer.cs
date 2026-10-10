@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -30,7 +30,7 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
         "JsonSerializerSettings.Converters",
     };
 
-    private static readonly ConcurrentDictionary<AnalyzerConfigOptions, string[]> _excludedMembersCache = new();
+    private static readonly ConditionalWeakTable<AnalyzerConfigOptions, string[]> _excludedMembersCache = new();
 
     private static readonly LocalizableString _title =
         new LocalizableResourceString(nameof(Resources.DSA018AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
@@ -116,7 +116,7 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
     internal static string[] GetExcludedMembers(SyntaxNodeAnalysisContext context)
     {
         var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-        return _excludedMembersCache.GetOrAdd(config, static c =>
+        return _excludedMembersCache.GetValue(config, static c =>
         {
             if (c.TryGetValue(ExcludedMembersOptionKey, out var configValue) &&
                 !string.IsNullOrWhiteSpace(configValue))

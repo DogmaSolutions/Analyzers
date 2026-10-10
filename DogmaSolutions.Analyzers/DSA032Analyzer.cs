@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -72,8 +72,7 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
       description: _description,
       helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA032.md");
 
-   private static readonly ConcurrentDictionary<AnalyzerConfigOptions, ParsedConfig> _configCache =
-      new ConcurrentDictionary<AnalyzerConfigOptions, ParsedConfig>();
+   private static readonly ConditionalWeakTable<AnalyzerConfigOptions, ParsedConfig> _configCache = new();
 
    private sealed class ParsedConfig
    {
@@ -109,7 +108,7 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
    private static ParsedConfig GetParsedConfig(SyntaxNodeAnalysisContext context)
    {
       var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-      return _configCache.GetOrAdd(options, o => new ParsedConfig(o));
+      return _configCache.GetValue(options, o => new ParsedConfig(o));
    }
 
    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
