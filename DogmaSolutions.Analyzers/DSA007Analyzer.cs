@@ -137,13 +137,6 @@ namespace DogmaSolutions.Analyzers
 
             return null;
         }
-/*
-        private static bool IsWithinLockStatement( AssignmentExpressionSyntax assignment, SemanticModel semanticModel)
-        {
-            var ancestor = assignment.AncestorsAndSelf().OfType<LockStatementSyntax>().FirstOrDefault();
-            return ancestor != null;
-        }*/
-
         private static bool IsCoalesceAssignmentWithinGuardedLock(AssignmentExpressionSyntax assignment, SemanticModel semanticModel)
         {
             if (!assignment.IsKind(SyntaxKind.CoalesceAssignmentExpression))

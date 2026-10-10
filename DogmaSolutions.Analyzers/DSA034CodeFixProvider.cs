@@ -21,7 +21,7 @@ namespace DogmaSolutions.Analyzers;
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DSA034CodeFixProvider))]
 [Shared]
 // ReSharper disable once InconsistentNaming
-public partial class DSA034CodeFixProvider : CodeFixProvider
+public sealed partial class DSA034CodeFixProvider : CodeFixProvider
 {
     internal const string VisibilityEquivalenceKey = DSA034Analyzer.DiagnosticId + ".SplitByVisibility";
     internal const string TopicEquivalenceKey = DSA034Analyzer.DiagnosticId + ".SplitByTopic";

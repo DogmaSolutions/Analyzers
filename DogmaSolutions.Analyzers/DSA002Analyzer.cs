@@ -74,10 +74,10 @@ namespace DogmaSolutions.Analyzers
                 ClassDeclarationSyntax classDeclarationSyntax,
                 MethodDeclarationSyntax methodDeclarationSyntax)
             {
-                bool ProcessAnchestors(IEnumerable<MemberAccessExpressionSyntax> anchestors, IdentifierNameSyntax identifier, string methodName)
+                bool ProcessAncestors(IEnumerable<MemberAccessExpressionSyntax> ancestors, IdentifierNameSyntax identifier, string methodName)
                 {
-                    var anchestor = anchestors.FirstOrDefault(m => m.Name?.Identifier.ValueText == methodName);
-                    if (anchestor != null)
+                    var ancestor = ancestors.FirstOrDefault(m => m.Name?.Identifier.ValueText == methodName);
+                    if (ancestor != null)
                     {
                         var diagnostic = Diagnostic.Create(
                             descriptor: _rule,
@@ -105,11 +105,11 @@ namespace DogmaSolutions.Analyzers
                 {
                     if (identifier.IsEfDbSet(ctx))
                     {
-                        var anchestors = identifier.Ancestors().OfType<MemberAccessExpressionSyntax>().ToArray();
-                        ProcessAnchestors(anchestors, identifier, "Where");
-                        ProcessAnchestors(anchestors, identifier, "Select");
-                        ProcessAnchestors(anchestors, identifier, "OrderBy");
-                        ProcessAnchestors(anchestors, identifier, "GroupBy");
+                        var ancestors = identifier.Ancestors().OfType<MemberAccessExpressionSyntax>().ToArray();
+                        ProcessAncestors(ancestors, identifier, "Where");
+                        ProcessAncestors(ancestors, identifier, "Select");
+                        ProcessAncestors(ancestors, identifier, "OrderBy");
+                        ProcessAncestors(ancestors, identifier, "GroupBy");
                     }
                 }
             }

@@ -41,7 +41,7 @@ public sealed class DSA011Analyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         if (context == null) throw new ArgumentNullException(nameof(context));
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterSyntaxNodeAction(AnalyzePropertyDeclaration, SyntaxKind.PropertyDeclaration);
     }

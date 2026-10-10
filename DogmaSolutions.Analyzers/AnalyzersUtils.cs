@@ -66,7 +66,7 @@ namespace DogmaSolutions.Analyzers
 
             var ds = typeSymbol.ToDisplayString();
 
-            if (ds.StartsWith("Microsoft.EntityFrameworkCore.DbSet<", StringComparison.InvariantCulture) && ds.EndsWith(">", StringComparison.InvariantCulture))
+            if (ds.StartsWith("Microsoft.EntityFrameworkCore.DbSet<", StringComparison.Ordinal) && ds.EndsWith(">", StringComparison.Ordinal))
                 return true;
 
             return false;
