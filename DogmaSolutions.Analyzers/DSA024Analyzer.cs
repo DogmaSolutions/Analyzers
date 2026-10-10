@@ -74,6 +74,9 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
+        if (!SyntaxUtils.HasAddExpressionArgument(invocation.ArgumentList))
+            return;
+
         var methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
         if (methodSymbol == null)
             return;
@@ -87,6 +90,9 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
     private static void AnalyzeObjectCreation(SyntaxNodeAnalysisContext context)
     {
         var creation = (ObjectCreationExpressionSyntax)context.Node;
+        if (!SyntaxUtils.HasAddExpressionArgument(creation.ArgumentList))
+            return;
+
         var ctorSymbol = context.SemanticModel.GetSymbolInfo(creation).Symbol as IMethodSymbol;
         if (ctorSymbol == null)
             return;
@@ -103,6 +109,9 @@ public sealed class DSA024Analyzer : DiagnosticAnalyzer
     private static void AnalyzeImplicitObjectCreation(SyntaxNodeAnalysisContext context)
     {
         var creation = (ImplicitObjectCreationExpressionSyntax)context.Node;
+        if (!SyntaxUtils.HasAddExpressionArgument(creation.ArgumentList))
+            return;
+
         var ctorSymbol = context.SemanticModel.GetSymbolInfo(creation).Symbol as IMethodSymbol;
         if (ctorSymbol == null)
             return;

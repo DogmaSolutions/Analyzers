@@ -132,4 +132,59 @@ public class SyntaxUtilsTests
 
         Assert.AreEqual(expected, SyntaxUtils.IsInsideNestedFunction(marker, method));
     }
+
+    // ---- syntactic pre-filters ---------------------------------------------------------------------------------
+
+    [TestMethod]
+    [DataRow("M(a + b)", true)]
+    [DataRow("M((a + b))", true)]
+    [DataRow("M(x, ((a + b)))", true)]
+    [DataRow("M(name: a + b)", true)]
+    [DataRow("M(a)", false)]
+    [DataRow("M(a - b)", false)]
+    [DataRow("M(a, b)", false)]
+    [DataRow("M(f(a + b))", false)]
+    [DataRow("M()", false)]
+    public void HasAddExpressionArgument_looks_through_parentheses_only(string invocation, bool expected)
+    {
+        var syntax = (InvocationExpressionSyntax)SyntaxFactory.ParseExpression(invocation);
+
+        Assert.AreEqual(expected, SyntaxUtils.HasAddExpressionArgument(syntax.ArgumentList));
+    }
+
+    [TestMethod]
+    public void HasAddExpressionArgument_of_a_missing_list_is_false()
+    {
+        Assert.IsFalse(SyntaxUtils.HasAddExpressionArgument(null));
+    }
+
+    [TestMethod]
+    [DataRow("Next()", "Next")]
+    [DataRow("rnd.Next()", "Next")]
+    [DataRow("a.b.NextBytes(x)", "NextBytes")]
+    [DataRow("rnd.Next<int>()", "Next")]
+    [DataRow("Next<int>()", "Next")]
+    public void GetInvokedName_returns_the_simple_name_of_the_callee(string invocation, string expected)
+    {
+        var syntax = (InvocationExpressionSyntax)SyntaxFactory.ParseExpression(invocation);
+        Assert.AreEqual(expected, SyntaxUtils.GetInvokedName(syntax));
+    }
+
+    [TestMethod]
+    public void GetInvokedName_of_a_conditional_access_call_is_found_through_the_member_binding()
+    {
+        var conditional = (ConditionalAccessExpressionSyntax)SyntaxFactory.ParseExpression("rnd?.Next()");
+
+        Assert.AreEqual("Next", SyntaxUtils.GetInvokedName((InvocationExpressionSyntax)conditional.WhenNotNull));
+    }
+
+    [TestMethod]
+    [DataRow("f()()")]
+    [DataRow("d[0]()")]
+    public void GetInvokedName_of_a_callee_that_is_not_a_plain_name_is_null(string invocation)
+    {
+        var syntax = (InvocationExpressionSyntax)SyntaxFactory.ParseExpression(invocation);
+
+        Assert.IsNull(SyntaxUtils.GetInvokedName(syntax));
+    }
 }

@@ -190,6 +190,10 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
 
     private static bool IsImmutableCollectionReturnType(TypeSyntax typeSyntax, SemanticModel semanticModel)
     {
+        // void, int, string, ... and arrays can never be one of the collection types: skip the semantic query
+        if (typeSyntax is PredefinedTypeSyntax or ArrayTypeSyntax)
+            return false;
+
         var typeSymbol = semanticModel.GetTypeInfo(typeSyntax).Type;
         if (typeSymbol == null)
             return false;

@@ -81,6 +81,9 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
         ObjectCreationExpressionSyntax creation,
         ArgumentListSyntax argumentList)
     {
+        if (argumentList == null || argumentList.Arguments.Count == 0)
+            return;
+
         var typeInfo = context.SemanticModel.GetTypeInfo(creation, context.CancellationToken);
         if (!IsRegexType(typeInfo.Type))
             return;
@@ -92,6 +95,9 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         ImplicitObjectCreationExpressionSyntax creation)
     {
+        if (creation.ArgumentList == null || creation.ArgumentList.Arguments.Count == 0)
+            return;
+
         var typeInfo = context.SemanticModel.GetTypeInfo(creation, context.CancellationToken);
         if (!IsRegexType(typeInfo.ConvertedType))
             return;

@@ -65,6 +65,11 @@ namespace DogmaSolutions.Analyzers
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
 
+            // Cheap syntactic pre-filter: a System.Random producer is always called by a name starting with "Next"
+            var invokedName = SyntaxUtils.GetInvokedName(invocation);
+            if (invokedName != null && !IsNextMethodName(invokedName))
+                return;
+
             if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol method)
                 return;
 

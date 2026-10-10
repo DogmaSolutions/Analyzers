@@ -228,4 +228,43 @@ internal static class SyntaxUtils
 
         return false;
     }
+
+    /// <summary>
+    /// True when at least one argument is a (possibly parenthesized) addition, i.e. a candidate for string concatenation.
+    /// A cheap syntactic test that lets callers skip the semantic work for the vast majority of calls.
+    /// </summary>
+    internal static bool HasAddExpressionArgument(ArgumentListSyntax argumentList)
+    {
+        if (argumentList == null)
+            return false;
+
+        foreach (var argument in argumentList.Arguments)
+        {
+            var expression = argument.Expression;
+            while (expression is ParenthesizedExpressionSyntax parenthesized)
+                expression = parenthesized.Expression;
+
+            if (expression.IsKind(SyntaxKind.AddExpression))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// The simple name of the method an invocation calls (<c>M</c> in <c>M()</c>, <c>x.M()</c>, <c>x?.M()</c>, <c>x.M&lt;T&gt;()</c>),
+    /// or null when the callee is not a plain name (delegate invocation, parenthesized expression, ...).
+    /// </summary>
+    internal static string GetInvokedName(InvocationExpressionSyntax invocation)
+    {
+        var name = invocation.Expression switch
+        {
+            SimpleNameSyntax simple => simple,
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
+            MemberBindingExpressionSyntax memberBinding => memberBinding.Name,
+            _ => null
+        };
+
+        return name?.Identifier.ValueText;
+    }
 }
