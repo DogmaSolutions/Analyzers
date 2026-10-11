@@ -25,7 +25,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
 {
     public override ImmutableArray<string> FixableDiagnosticIds => [DSA019Analyzer.DiagnosticId];
 
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    public override FixAllProvider GetFixAllProvider() => DSA019FixAllProvider.Instance;
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
@@ -36,19 +36,7 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         var diagnostic = context.Diagnostics[0];
         var diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        // The diagnostic may be on a MemberAccessExpression or an ElementAccessExpression
-        ExpressionSyntax targetExpression = root.FindToken(diagnosticSpan.Start).Parent?
-            .AncestorsAndSelf()
-            .OfType<MemberAccessExpressionSyntax>()
-            .FirstOrDefault(ma => ma.Span == diagnosticSpan);
-
-        if (targetExpression == null)
-        {
-            targetExpression = root.FindToken(diagnosticSpan.Start).Parent?
-                .AncestorsAndSelf()
-                .OfType<ElementAccessExpressionSyntax>()
-                .FirstOrDefault(ea => ea.Span == diagnosticSpan);
-        }
+        var targetExpression = FindTargetExpression(root, diagnosticSpan);
 
         if (targetExpression == null)
             return;
@@ -116,6 +104,19 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         }
 
         ReviewCommentCodeFix.Register(context, diagnostic, targetExpression, DSA019Analyzer.DiagnosticId, nameof(Resources.DSA019ReviewComment));
+    }
+
+    /// <summary>
+    /// The member access or element access the diagnostic is reported on (null if the span does not match one).
+    /// </summary>
+    internal static ExpressionSyntax FindTargetExpression(SyntaxNode root, Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan)
+    {
+        var parent = root.FindToken(diagnosticSpan.Start).Parent;
+        if (parent == null)
+            return null;
+
+        return (ExpressionSyntax)parent.AncestorsAndSelf().OfType<MemberAccessExpressionSyntax>().FirstOrDefault(ma => ma.Span == diagnosticSpan)
+               ?? parent.AncestorsAndSelf().OfType<ElementAccessExpressionSyntax>().FirstOrDefault(ea => ea.Span == diagnosticSpan);
     }
 
     private static async Task<Document> ExtractToVariableAsync(

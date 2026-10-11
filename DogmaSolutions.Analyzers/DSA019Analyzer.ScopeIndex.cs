@@ -117,7 +117,7 @@ public sealed partial class DSA019Analyzer
         }
     }
 
-    private static ISymbol[] GetIdentifierSymbols(ExpressionSyntax expression, SemanticModel semanticModel)
+    internal static ISymbol[] GetIdentifierSymbols(ExpressionSyntax expression, SemanticModel semanticModel)
     {
         return expression.DescendantNodes().OfType<IdentifierNameSyntax>().Select(id => semanticModel.GetSymbolInfo(id).Symbol).ToArray();
     }
