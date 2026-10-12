@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <!-- RS1038: Analyzers and CodeFix providers coexist in this assembly.
@@ -10,10 +9,36 @@
              Analyzers still function correctly in CLI builds where Workspaces is unavailable;
              only the CodeFix provider is skipped in that scenario. -->
         <NoWarn>$(NoWarn);RS1038</NoWarn>
-
-        <!-- Avoid ID conflicts with the package project. -->
-        <PackageId>*$(MSBuildProjectFile)*</PackageId>
     </PropertyGroup>
+
+    <!-- NuGet package: this project packs itself (a Release build emits bin/Release/*.nupkg).
+         The assembly ships only as an analyzer (analyzers/dotnet/cs), never as a library (lib/),
+         and the package declares no dependencies: the compiler host provides Roslyn. -->
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <NoPackageAnalysis>true</NoPackageAnalysis>
+        <PackageId>DogmaSolutions.Analyzers</PackageId>
+        <Description>A set of Roslyn Analyzer aimed to enforce some design good practices and code quality (QA) rules.</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageReleaseNotes>Added rules: DSA003, DSA004</PackageReleaseNotes>
+        <PackageTags>DogmaSolutions.Analyzers, analyzers, QA, Quality Assurance</PackageTags>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddAnalyzerAssemblyToPackage</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    </ItemGroup>
+
+    <!-- Places the built (and, in CI, strong-name signed) analyzer assembly where the compiler loads analyzers from. -->
+    <Target Name="AddAnalyzerAssemblyToPackage">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="$(TargetPath)" PackagePath="analyzers/dotnet/cs" />
+        </ItemGroup>
+    </Target>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.*">
