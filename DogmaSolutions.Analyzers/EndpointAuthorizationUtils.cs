@@ -182,29 +182,23 @@ internal static class EndpointAuthorizationUtils
 
         var foundAnySite = false;
 
-        foreach (var tree in compilation.SyntaxTrees)
+        foreach (var (model, invocation) in CallSiteIndex.FindCandidates(compilation, containingMethod.Name))
         {
-            var model = compilation.GetSemanticModel(tree);
-            var root = tree.GetRoot();
+            var invokedSymbol = model.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+            if (invokedSymbol == null)
+                continue;
 
-            foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
-            {
-                var invokedSymbol = model.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-                if (invokedSymbol == null)
-                    continue;
+            if (!IsCallToMethod(invokedSymbol, containingMethod))
+                continue;
 
-                if (!IsCallToMethod(invokedSymbol, containingMethod))
-                    continue;
+            foundAnySite = true;
 
-                foundAnySite = true;
+            var argExpr = GetArgumentForParameter(invocation, parameter, invokedSymbol);
+            if (argExpr == null)
+                return false; // Cannot determine argument → assume no auth
 
-                var argExpr = GetArgumentForParameter(invocation, parameter, invokedSymbol);
-                if (argExpr == null)
-                    return false; // Cannot determine argument → assume no auth
-
-                if (!ExpressionHasAuth(argExpr, model, compilation, maxDepth - 1))
-                    return false; // This call site lacks auth
-            }
+            if (!ExpressionHasAuth(argExpr, model, compilation, maxDepth - 1))
+                return false; // This call site lacks auth
         }
 
         return foundAnySite;

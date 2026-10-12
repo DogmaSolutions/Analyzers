@@ -259,16 +259,11 @@ public sealed class DSA030Analyzer : DiagnosticAnalyzer
         Compilation compilation,
         IMethodSymbol targetMethod)
     {
-        foreach (var tree in compilation.SyntaxTrees)
+        foreach (var (model, invocation) in CallSiteIndex.FindCandidates(compilation, targetMethod.Name))
         {
-            var model = compilation.GetSemanticModel(tree);
-
-            foreach (var invocation in tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>())
-            {
-                if (model.GetSymbolInfo(invocation).Symbol is IMethodSymbol invokedSymbol &&
-                    IsCallToMethod(invokedSymbol, targetMethod))
-                    yield return (model, invocation, invokedSymbol);
-            }
+            if (model.GetSymbolInfo(invocation).Symbol is IMethodSymbol invokedSymbol &&
+                IsCallToMethod(invokedSymbol, targetMethod))
+                yield return (model, invocation, invokedSymbol);
         }
     }
 
