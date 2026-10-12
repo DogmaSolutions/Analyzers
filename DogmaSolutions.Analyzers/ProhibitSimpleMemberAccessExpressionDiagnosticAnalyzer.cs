@@ -1,6 +1,7 @@
 using System;
 using System.Data.Common;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -98,13 +99,18 @@ public abstract class ProhibitSimpleMemberAccessExpressionDiagnosticAnalyzer<T> 
         return IsTypeImportedWithUsingStatic(identifierNameSyntax);
     }
 
+    // The answer depends on the file only: it is worked out once per compilation unit instead of once per matched node.
+    private readonly ConditionalWeakTable<CompilationUnitSyntax, object> _usingStaticByRoot = new();
+
     private bool IsTypeImportedWithUsingStatic(SyntaxNode node)
     {
         var root = node.Ancestors().OfType<CompilationUnitSyntax>().FirstOrDefault(); // navigate "up" and find the root
         return root != null &&
-               root.DescendantNodes().
-                   OfType<UsingDirectiveSyntax>(). // navigate "down" and search the "using" directives
-                   Any(IsUsingStaticOfType);
+               (bool)_usingStaticByRoot.GetValue(
+                   root,
+                   r => r.DescendantNodes(). // navigate "down" and search the "using" directives
+                       OfType<UsingDirectiveSyntax>().
+                       Any(IsUsingStaticOfType));
     }
 
     // consider only "using static TypeFullName" or "using static global::TypeFullName"
