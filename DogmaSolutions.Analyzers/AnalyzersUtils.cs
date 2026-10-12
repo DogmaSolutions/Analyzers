@@ -288,5 +288,43 @@ namespace DogmaSolutions.Analyzers
         /// </summary>
         internal static bool IsSpanOnTypeDeclarationHeader(BaseTypeDeclarationSyntax typeDeclaration, TextSpan span) =>
             GetTypeDeclarationHeaderSpan(typeDeclaration).IntersectsWith(span);
+
+        /// <summary>
+        /// The "header" span of a namespace declaration: from the <c>namespace</c> keyword up to — but not including — the
+        /// opening brace of a block namespace, or up to the end of the semicolon of a file-scoped namespace.
+        /// </summary>
+        internal static TextSpan GetNamespaceHeaderSpan(BaseNamespaceDeclarationSyntax namespaceDeclaration)
+        {
+            var start = namespaceDeclaration.SpanStart;
+            var end = namespaceDeclaration switch
+            {
+                NamespaceDeclarationSyntax block => block.OpenBraceToken.SpanStart,
+                FileScopedNamespaceDeclarationSyntax fileScoped => fileScoped.SemicolonToken.Span.End,
+                _ => namespaceDeclaration.Name.Span.End
+            };
+
+            return TextSpan.FromBounds(start, System.Math.Max(start, end));
+        }
+
+        /// <summary>
+        /// True when the caret/selection <paramref name="span"/> lies entirely within the header of the type declaration or within
+        /// the header of one of the namespaces that contain it — the only places where the type-level actions (split into partial
+        /// files, ...) make sense. Unlike <see cref="IsSpanOnTypeDeclarationHeader"/> it requires the whole span to be inside the
+        /// header: a selection that starts in a header but extends into the body, or that covers the whole file, is not "at class
+        /// or namespace level".
+        /// </summary>
+        internal static bool IsSpanWithinTypeOrNamespaceHeader(BaseTypeDeclarationSyntax typeDeclaration, TextSpan span)
+        {
+            if (GetTypeDeclarationHeaderSpan(typeDeclaration).Contains(span))
+                return true;
+
+            foreach (var namespaceDeclaration in typeDeclaration.Ancestors().OfType<BaseNamespaceDeclarationSyntax>())
+            {
+                if (GetNamespaceHeaderSpan(namespaceDeclaration).Contains(span))
+                    return true;
+            }
+
+            return false;
+        }
     }
 }

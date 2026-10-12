@@ -29,9 +29,9 @@ public sealed class DSR004RefactoringProvider : CodeRefactoringProvider
         if (typeDecl.Members.Count < 2)
             return;
 
-        // Only offer the split refactorings when the caret is on the type declaration line (its header), not
-        // anywhere inside the body — otherwise the IDE surfaces them on every member of the class.
-        if (!AnalyzersUtils.IsSpanOnTypeDeclarationHeader(typeDecl, context.Span))
+        // Only offer the split refactorings at class level (the type declaration header) or namespace level (the
+        // namespace declaration header), not anywhere else in the file — otherwise the IDE surfaces them on every member.
+        if (!AnalyzersUtils.IsSpanWithinTypeOrNamespaceHeader(typeDecl, context.Span))
             return;
 
         context.RegisterRefactoring(
