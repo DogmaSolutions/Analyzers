@@ -9,8 +9,6 @@
     <File Path="LICENSE" />
     <File Path="README.md" />
   </Folder>
-  <Project Path="DogmaSolutions.Analyzers.Package/DogmaSolutions.Analyzers.Package.csproj" />
   <Project Path="DogmaSolutions.Analyzers.Test/DogmaSolutions.Analyzers.Test.csproj" />
-  <Project Path="DogmaSolutions.Analyzers.WorkbenchLibrary/DogmaSolutions.Analyzers.WorkbenchLibrary.csproj" />
   <Project Path="DogmaSolutions.Analyzers/DogmaSolutions.Analyzers.csproj" />
 </Solution>
