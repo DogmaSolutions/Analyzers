@@ -17,7 +17,7 @@ namespace DogmaSolutions.Analyzers;
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 // ReSharper disable once InconsistentNaming
-public sealed class DSA016Analyzer : DiagnosticAnalyzer
+public sealed partial class DSA016Analyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "DSA016";
 
@@ -81,6 +81,17 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         if (!TrackedMethods.Contains(methodName))
             return;
 
+        var scope = SyntaxUtils.GetContainingScope(invocation);
+        if (scope == null)
+            return;
+
+        var normalizedArgs = SyntaxUtils.NormalizeWhitespace(argsText);
+
+        // Nothing to report unless the same call (method and arguments) appears more than once in the scope: decide it before any semantic work
+        var group = GetScopeIndex(scope).FindGroup(methodName, normalizedArgs);
+        if (group == null || group.Count + (ReferenceEquals(invocation, scope) ? 1 : 0) < 2)
+            return;
+
         // Skip static method calls (e.g., File.Exists, Directory.Exists) — these are
         // not instance enumeration methods and calling them twice is perfectly valid
         if (IsStaticMethodCall(invocation, context.SemanticModel))
@@ -89,36 +100,8 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         var symbolKey = GetReceiverSymbolKey(invocation, context.SemanticModel);
         var key = BuildKey(receiverText, methodName, argsText, symbolKey);
 
-        var scope = SyntaxUtils.GetContainingScope(invocation);
-        if (scope == null)
-            return;
-
-        var normalizedArgs = SyntaxUtils.NormalizeWhitespace(argsText);
-
         // Count how many invocations in the same scope have the same key (including self)
-        var count = 1; // count self
-        foreach (var sibling in GetInvocationsInScope(scope))
-        {
-            if (ReferenceEquals(sibling, invocation))
-                continue;
-
-            if (!TryGetInvocationParts(sibling, out var sibReceiver, out var sibMethod, out var sibArgs))
-                continue;
-
-            if (!string.Equals(sibMethod, methodName, StringComparison.Ordinal))
-                continue;
-
-            if (SyntaxUtils.NormalizeWhitespace(sibArgs) != normalizedArgs)
-                continue;
-
-            if (IsStaticMethodCall(sibling, context.SemanticModel))
-                continue;
-
-            var sibSymbolKey = GetReceiverSymbolKey(sibling, context.SemanticModel);
-            if (BuildKey(sibReceiver, sibMethod, sibArgs, sibSymbolKey) == key &&
-                !AreInMutuallyExclusiveBranches(invocation, sibling, scope))
-                count++;
-        }
+        var count = group.CountSameCalls(invocation, key, scope, context.SemanticModel);
 
         if (count > 1)
         {
@@ -257,12 +240,6 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static IEnumerable<InvocationExpressionSyntax> GetInvocationsInScope(SyntaxNode scope)
-    {
-        return scope.DescendantNodes(n => !SyntaxUtils.IsNestedScope(n))
-            .OfType<InvocationExpressionSyntax>();
-    }
-
     /// <summary>
     /// Returns true if the invocation is a static method call on a type (e.g., File.Exists,
     /// Directory.Exists) rather than an instance method on a collection.
@@ -294,17 +271,10 @@ public sealed class DSA016Analyzer : DiagnosticAnalyzer
     /// </summary>
     private static SyntaxNode FindCommonAncestor(SyntaxNode a, SyntaxNode b, SyntaxNode scope)
     {
-        var ancestorsOfA = new HashSet<SyntaxNode>();
+        // the lowest ancestor-or-self of a (up to the scope) that contains b
         for (var cur = a; cur != null; cur = cur.Parent)
         {
-            ancestorsOfA.Add(cur);
-            if (ReferenceEquals(cur, scope))
-                break;
-        }
-
-        for (var cur = b; cur != null; cur = cur.Parent)
-        {
-            if (ancestorsOfA.Contains(cur))
+            if (cur.FullSpan.Contains(b.FullSpan))
                 return cur;
 
             if (ReferenceEquals(cur, scope))
