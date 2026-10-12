@@ -210,25 +210,7 @@ public sealed partial class DSA019Analyzer : DiagnosticAnalyzer
                 depth++;
                 current = elementAccess.Expression;
             }
-            else if (current is InvocationExpressionSyntax invocation)
-            {
-                // Method calls are traversed without adding depth;
-                // the dereference is in the inner MemberAccessExpression
-                current = invocation.Expression;
-            }
-            else if (current is ParenthesizedExpressionSyntax paren)
-            {
-                current = paren.Expression;
-            }
-            else if (current is AwaitExpressionSyntax awaitExpr)
-            {
-                current = awaitExpr.Expression;
-            }
-            else if (current is CastExpressionSyntax castExpr)
-            {
-                current = castExpr.Expression;
-            }
-            else
+            else if (!TryStepThroughTransparentNode(current, out current))
             {
                 break;
             }
@@ -252,35 +234,12 @@ public sealed partial class DSA019Analyzer : DiagnosticAnalyzer
             if (current is MemberAccessExpressionSyntax ma)
             {
                 // If the receiver is a namespace, everything below is namespace navigation — stop
-                var receiverSymbol = semanticModel.GetSymbolInfo(ma.Expression).Symbol;
-                if (receiverSymbol is INamespaceSymbol)
+                if (semanticModel.GetSymbolInfo(ma.Expression).Symbol is INamespaceSymbol)
                     break;
 
-                // Check what THIS access resolves to
-                var accessSymbol = semanticModel.GetSymbolInfo(ma).Symbol;
+                if (!IsCompileTimeAccess(ma, semanticModel, ignoredIntermediateMembers))
+                    depth++;
 
-                // Nested type resolution (e.g., Outer.Inner.Nested) — compile-time, not a dereference
-                if (accessSymbol is INamespaceSymbol || accessSymbol is INamedTypeSymbol)
-                {
-                    current = ma.Expression;
-                    continue;
-                }
-
-                // Constant fields and enum members — compile-time inlined, not a dereference
-                if (accessSymbol is IFieldSymbol field && field.IsConst)
-                {
-                    current = ma.Expression;
-                    continue;
-                }
-
-                if (ignoredIntermediateMembers != null &&
-                    ignoredIntermediateMembers.Contains(ma.Name.Identifier.ValueText))
-                {
-                    current = ma.Expression;
-                    continue;
-                }
-
-                depth++;
                 current = ma.Expression;
             }
             else if (current is ElementAccessExpressionSyntax ea)
@@ -288,29 +247,51 @@ public sealed partial class DSA019Analyzer : DiagnosticAnalyzer
                 depth++;
                 current = ea.Expression;
             }
-            else if (current is InvocationExpressionSyntax inv)
-            {
-                current = inv.Expression;
-            }
-            else if (current is ParenthesizedExpressionSyntax paren)
-            {
-                current = paren.Expression;
-            }
-            else if (current is AwaitExpressionSyntax awaitExpr)
-            {
-                current = awaitExpr.Expression;
-            }
-            else if (current is CastExpressionSyntax castExpr)
-            {
-                current = castExpr.Expression;
-            }
-            else
+            else if (!TryStepThroughTransparentNode(current, out current))
             {
                 break;
             }
         }
 
         return depth;
+    }
+
+    /// <summary>
+    /// A member access that is not a runtime dereference: nested type resolution (e.g. <c>Outer.Inner.Nested</c>), constant fields and
+    /// enum members (compile-time inlined), or one of the members configured as ignorable (e.g. <c>AsNoTracking</c>).
+    /// </summary>
+    private static bool IsCompileTimeAccess(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel, HashSet<string> ignoredIntermediateMembers)
+    {
+        var accessSymbol = semanticModel.GetSymbolInfo(memberAccess).Symbol;
+
+        return accessSymbol is INamespaceSymbol or INamedTypeSymbol or IFieldSymbol { IsConst: true } ||
+               (ignoredIntermediateMembers != null && ignoredIntermediateMembers.Contains(memberAccess.Name.Identifier.ValueText));
+    }
+
+    /// <summary>
+    /// For the nodes that a chain goes through without adding a level — invocations (the dereference is in the inner member access),
+    /// parentheses, await and casts — moves to the wrapped expression.
+    /// </summary>
+    private static bool TryStepThroughTransparentNode(ExpressionSyntax node, out ExpressionSyntax inner)
+    {
+        switch (node)
+        {
+            case InvocationExpressionSyntax invocation:
+                inner = invocation.Expression;
+                return true;
+            case ParenthesizedExpressionSyntax parenthesized:
+                inner = parenthesized.Expression;
+                return true;
+            case AwaitExpressionSyntax awaitExpression:
+                inner = awaitExpression.Expression;
+                return true;
+            case CastExpressionSyntax cast:
+                inner = cast.Expression;
+                return true;
+            default:
+                inner = node;
+                return false;
+        }
     }
 
     private static bool MatchesExcludedPrefix(string normalizedKey, SyntaxNodeAnalysisContext context)

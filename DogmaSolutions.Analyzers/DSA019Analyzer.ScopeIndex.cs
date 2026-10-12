@@ -85,36 +85,48 @@ public sealed partial class DSA019Analyzer
             // only the accesses that are deep enough once the ignored members are not counted can be the same chain as another one
             var eligible = Candidates.Where(c => ComputeEffectiveChainDepth(c, semanticModel, ignoredMembers) >= threshold).ToArray();
             var symbols = eligible.Select(c => GetIdentifierSymbols(c, semanticModel)).ToArray();
+            var sameCounts = symbols.All(array => Array.IndexOf(array, null) < 0)
+                ? CountEqualSymbolLists(symbols)
+                : CountMatchingSymbolLists(symbols);
+
             var counts = new Dictionary<T, int>(eligible.Length);
-
-            if (symbols.All(array => Array.IndexOf(array, null) < 0))
-            {
-                // every identifier is resolved: the chains are the same exactly when the symbol lists are equal
-                var classes = new Dictionary<ISymbol[], int>(SymbolListComparer.Instance);
-                foreach (var array in symbols)
-                    classes[array] = classes.TryGetValue(array, out var size) ? size + 1 : 1;
-
-                for (var i = 0; i < eligible.Length; i++)
-                    counts[eligible[i]] = classes[symbols[i]] - 1;
-            }
-            else
-            {
-                // an unresolved identifier matches anything: compare the lists one by one (still without any new semantic query)
-                for (var i = 0; i < eligible.Length; i++)
-                {
-                    var same = 0;
-                    for (var j = 0; j < eligible.Length; j++)
-                    {
-                        if (i != j && AreSameSymbols(symbols[i], symbols[j]))
-                            same++;
-                    }
-
-                    counts[eligible[i]] = same;
-                }
-            }
+            for (var i = 0; i < eligible.Length; i++)
+                counts[eligible[i]] = sameCounts[i];
 
             return counts;
         }
+    }
+
+    /// <summary>
+    /// Every identifier is resolved: the chains are the same exactly when the symbol lists are equal. For each list, how many other
+    /// lists are equal to it.
+    /// </summary>
+    private static int[] CountEqualSymbolLists(ISymbol[][] symbols)
+    {
+        var classes = new Dictionary<ISymbol[], int>(SymbolListComparer.Instance);
+        foreach (var array in symbols)
+            classes[array] = classes.TryGetValue(array, out var size) ? size + 1 : 1;
+
+        return symbols.Select(array => classes[array] - 1).ToArray();
+    }
+
+    /// <summary>
+    /// An unresolved identifier matches anything: the lists are compared one by one (still without any new semantic query). For each list,
+    /// how many other lists it matches.
+    /// </summary>
+    private static int[] CountMatchingSymbolLists(ISymbol[][] symbols)
+    {
+        var counts = new int[symbols.Length];
+        for (var i = 0; i < symbols.Length; i++)
+        {
+            for (var j = 0; j < symbols.Length; j++)
+            {
+                if (i != j && AreSameSymbols(symbols[i], symbols[j]))
+                    counts[i]++;
+            }
+        }
+
+        return counts;
     }
 
     internal static ISymbol[] GetIdentifierSymbols(ExpressionSyntax expression, SemanticModel semanticModel)
