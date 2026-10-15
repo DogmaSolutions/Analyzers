@@ -214,7 +214,68 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <data name="DSA011AnalyzerMessageFormat" xml:space="preserve">
     <value>Avoid lazily initialized, self-contained, static singleton properties</value>
   </data>
-    <data name="DSA011AnalyzerTitle" xml:space="preserve">
+    <data name="DSA010AnalyzerTitle" xml:space="preserve">
+    <value>A lock around a single field access does not protect your logic</value>
+  </data>
+  <data name="DSA010AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA010AnalyzerDescription" xml:space="preserve">
+    <value>A lock whose critical section is a single plain read or assignment of a field cannot protect any logic of the class: a single access of a field is already atomic, and the races that corrupt state live between operations (check-then-act, read-modify-write), not inside one access. Wrapping each access of a field in a lock gives a false sense of thread safety. Lock the whole operation instead, or express what you really need with volatile, Interlocked or an immutable snapshot. The message explains the specific scenario: dedicated or shared lock, lock on this, plain, wide (tearable), volatile or readonly field.</value>
+  </data>
+  <data name="DSA010ReviewComment" xml:space="preserve">
+    <value>/* [DSA010 / QA + Code Smell]: Lock around a single field access (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA010.md)
+ * CWE-667: Improper Locking - https://cwe.mitre.org/data/definitions/667.html
+ * CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition') - https://cwe.mitre.org/data/definitions/362.html
+ * CWE-820: Missing Synchronization - https://cwe.mitre.org/data/definitions/820.html
+ */</value>
+  </data>
+  <data name="DSA010MessageReadDedicated" xml:space="preserve">
+    <value>Locking '{1}' just to read '{0}' protects nothing: a single read is already atomic, and no other code ever takes this lock, so no sequence of operations is made consistent. Callers that read and then act (if (x) ...) still race. Lock the whole operation, or use 'volatile' if visibility is all you need.</value>
+  </data>
+  <data name="DSA010MessageReadDedicatedTearable" xml:space="preserve">
+    <value>Locking '{1}' just to read '{0}' does not protect your logic: no other code takes this lock, so no sequence of operations is made consistent (callers that read and then act still race). At most it keeps a wide value from being read half-updated (torn); if that is the intent, say it explicitly (Interlocked.Read, or an immutable snapshot) and document it.</value>
+  </data>
+  <data name="DSA010MessageReadShared" xml:space="preserve">
+    <value>The lock '{1}' around the read of '{0}' guards a single atomic access, so it cannot protect your logic: its only effects are memory ordering and making this reader wait while another thread holds '{1}' elsewhere. If waiting is intended, say so explicitly; otherwise remove it. A multi-step invariant needs one critical section around the whole sequence.</value>
+  </data>
+  <data name="DSA010MessageReadSharedTearable" xml:space="preserve">
+    <value>The lock '{1}' around the read of '{0}' guards a single access, so it cannot protect your logic: it only orders memory, makes this reader wait while another thread holds '{1}' elsewhere, and may keep a wide value from being read torn. If one of these is the intent, express it explicitly (Interlocked.Read, an immutable snapshot, a documented wait); otherwise remove the lock.</value>
+  </data>
+  <data name="DSA010MessageReadThis" xml:space="preserve">
+    <value>lock (this) around the read of '{0}' protects nothing: one atomic read needs no lock, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. Use a private lock object around the whole operation, or 'volatile' if visibility is all you need.</value>
+  </data>
+  <data name="DSA010MessageReadThisTearable" xml:space="preserve">
+    <value>lock (this) around the read of '{0}' does not protect your logic, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. At most it keeps a wide value from being read torn; if that is the intent, say it explicitly (Interlocked.Read, an immutable snapshot) with a private lock object, and document it.</value>
+  </data>
+  <data name="DSA010MessageReadonlyField" xml:space="preserve">
+    <value>'{0}' is readonly: it never changes after construction, so reading it under '{1}' protects nothing at all, and the lock only makes readers wait. Remove it. (If '{0}' points to a mutable object, protect the operations on that object, not the read of the reference.)</value>
+  </data>
+  <data name="DSA010MessageVolatileRead" xml:space="preserve">
+    <value>'{0}' is volatile: every read already sees the latest value, so the lock '{1}' adds nothing around a single read. Locking each access does not make sequences of operations safe; lock the whole operation, or use Interlocked.CompareExchange for atomic updates.</value>
+  </data>
+  <data name="DSA010MessageVolatileWrite" xml:space="preserve">
+    <value>'{0}' is volatile: every write is already published to the other threads, so the lock '{1}' adds nothing around a single assignment. Locking each access does not make sequences of operations safe; lock the whole operation, or use Interlocked.CompareExchange for atomic updates.</value>
+  </data>
+  <data name="DSA010MessageWriteDedicated" xml:space="preserve">
+    <value>Locking '{1}' just to assign '{0}' protects nothing: a single assignment is already atomic, and no other code takes this lock. Races live between operations (check-then-act, read-modify-write), not inside one assignment. Lock the whole operation, or use 'volatile' / 'Interlocked' for visibility or atomic updates.</value>
+  </data>
+  <data name="DSA010MessageWriteDedicatedTearable" xml:space="preserve">
+    <value>Locking '{1}' just to assign '{0}' does not protect your logic: no other code takes this lock, and races live between operations (check-then-act, read-modify-write), not inside one assignment. At most it keeps a wide value from being written half-way (torn); if that is the intent, say it explicitly (Interlocked.Exchange, or swap an immutable snapshot) and document it.</value>
+  </data>
+  <data name="DSA010MessageWriteShared" xml:space="preserve">
+    <value>The lock '{1}' around the assignment of '{0}' guards a single atomic access, so it cannot protect your logic: it only orders memory and makes this writer wait while another thread holds '{1}' elsewhere. Multi-step invariants need one critical section around the whole sequence, not one around each field access.</value>
+  </data>
+  <data name="DSA010MessageWriteSharedTearable" xml:space="preserve">
+    <value>The lock '{1}' around the assignment of '{0}' guards a single access, so it cannot protect your logic: it only orders memory, makes this writer wait while another thread holds '{1}' elsewhere, and may keep a wide value from being written torn. If one of these is the intent, express it explicitly (Interlocked.Exchange, an immutable snapshot); multi-step invariants need one critical section around the whole sequence.</value>
+  </data>
+  <data name="DSA010MessageWriteThis" xml:space="preserve">
+    <value>lock (this) around the assignment of '{0}' protects nothing: one atomic assignment needs no lock, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. Use a private lock object around the whole operation, or 'volatile' / 'Interlocked' if that is all you need.</value>
+  </data>
+  <data name="DSA010MessageWriteThisTearable" xml:space="preserve">
+    <value>lock (this) around the assignment of '{0}' does not protect your logic, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. At most it keeps a wide value from being written torn; if that is the intent, say it explicitly (Interlocked.Exchange, an immutable snapshot) with a private lock object, and document it.</value>
+  </data>
+  <data name="DSA011AnalyzerTitle" xml:space="preserve">
     <value>Avoid lazily initialized, self-contained, static singleton properties</value>
   </data>
 
@@ -840,6 +901,37 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  * CWE-1078: Inappropriate Source Code Style or Formatting - https://cwe.mitre.org/data/definitions/1078.html
  */</value>
   </data>
+  <data name="DSA043AnalyzerTitle" xml:space="preserve">
+    <value>Complex class neither injects nor uses a logger</value>
+  </data>
+  <data name="DSA043AnalyzerMessageFormat" xml:space="preserve">
+    <value>The class '{0}' is complex (cyclomatic complexity {1}, {2} lines of code) but neither injects nor uses a logger; without any log its behavior cannot be observed in production</value>
+  </data>
+  <data name="DSA043AnalyzerDescription" xml:space="preserve">
+    <value>A large or branchy class that catches exceptions, awaits, throws or calls into I/O is where production incidents are diagnosed, and without a single log entry its behavior is invisible (CWE-778, insufficient logging). Inject an ILogger&lt;T&gt; (Microsoft.Extensions.Logging) and log the relevant events. What counts as complex, which classes are checked and what counts as a logger are configurable through .editorconfig (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA043.md).</value>
+  </data>
+  <data name="DSA043ReviewComment" xml:space="preserve">
+    <value>/* [DSA043 / QA + Best Practice]: Complex class without logging (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA043.md)
+ * CWE-778: Insufficient Logging - https://cwe.mitre.org/data/definitions/778.html
+ * OWASP Top 10 A09:2021 Security Logging and Monitoring Failures - https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/
+ * Logging in .NET - https://learn.microsoft.com/dotnet/core/extensions/logging
+ */</value>
+  </data>
+  <data name="DSA044AnalyzerTitle" xml:space="preserve">
+    <value>Use the available logger instead of Console.Write* or Debug.Write*</value>
+  </data>
+  <data name="DSA044AnalyzerMessageFormat" xml:space="preserve">
+    <value>'{0}' is called where the logger '{1}' is available; write to the log instead, so the message gets a level, a category and a timestamp and reaches the configured sinks</value>
+  </data>
+  <data name="DSA044AnalyzerDescription" xml:space="preserve">
+    <value>A call to Console.Write*, Console.Error.Write* or Debug.Write* in code that has a logger available (Microsoft.Extensions.Logging, Serilog, NLog, log4net, Castle, Common.Logging, NServiceBus, Akka.NET, TraceSource) bypasses the logging pipeline: the text has no level, category, timestamp or structure, it is lost where there is no console (services, containers, IIS) and it cannot be filtered or shipped. Use the logger. Which calls, which loggers and which places are checked are configurable through .editorconfig (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA044.md).</value>
+  </data>
+  <data name="DSA044ReviewComment" xml:space="preserve">
+    <value>/* [DSA044 / QA + Best Practice]: Console or debug output where a logger is available (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA044.md)
+ * CWE-778: Insufficient Logging - https://cwe.mitre.org/data/definitions/778.html
+ * Logging in .NET - https://learn.microsoft.com/dotnet/core/extensions/logging
+ */</value>
+  </data>
   <data name="CheckThenActSuggestionTryAddOrIndexer" xml:space="preserve">
     <value>TryAdd or indexer assignment [key] = value</value>
   </data>
@@ -857,5 +949,20 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   </data>
   <data name="CheckThenActSuggestionImmutableDictionarySetItem" xml:space="preserve">
     <value>SetItem (upsert semantics)</value>
+  </data>
+  <data name="DSA045AnalyzerTitle" xml:space="preserve">
+    <value>A pure data carrier should be excluded from the code coverage</value>
+  </data>
+  <data name="DSA045AnalyzerMessageFormat" xml:space="preserve">
+    <value>The {0} '{1}' is a pure data carrier ({2}, no logic{3}): there is nothing to cover in it, and measuring it only inflates the coverage figures; decorate it with [ExcludeFromCodeCoverage]</value>
+  </data>
+  <data name="DSA045AnalyzerDescription" xml:space="preserve">
+    <value>A class (or struct, or record) made only of properties, with no logic and no explicit constructor, and whose base types are data carriers too, has no behavior to test: its lines are executed by any test that happens to create it, or never. Counting them inflates the coverage percentage when they are executed in passing and distorts it when they are not, so the metric stops saying how much of the real logic is verified. Decorate such a type with [ExcludeFromCodeCoverage] and keep the coverage figures about the code that can break. The rule is silent as soon as the type, or one of its base types, contains logic.</value>
+  </data>
+  <data name="DSA045ReviewComment" xml:space="preserve">
+    <value>/* [DSA045 / QA + Best Practice]: Pure data carrier not excluded from the code coverage (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA045.md)
+ * ExcludeFromCodeCoverageAttribute - https://learn.microsoft.com/dotnet/api/system.diagnostics.codeanalysis.excludefromcodecoverageattribute
+ * Code coverage - https://en.wikipedia.org/wiki/Code_coverage
+ */</value>
   </data>
 </root>

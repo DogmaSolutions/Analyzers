@@ -321,6 +321,177 @@ namespace DogmaSolutions.Analyzers {
         }
         
         /// <summary>
+        ///   Looks up a localized string for DSA010AnalyzerTitle.
+        /// </summary>
+        internal static string DSA010AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA010AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA010AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA010AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010AnalyzerDescription.
+        /// </summary>
+        internal static string DSA010AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA010AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010ReviewComment.
+        /// </summary>
+        internal static string DSA010ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA010ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageReadDedicated.
+        /// </summary>
+        internal static string DSA010MessageReadDedicated {
+            get {
+                return ResourceManager.GetString("DSA010MessageReadDedicated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageReadDedicatedTearable.
+        /// </summary>
+        internal static string DSA010MessageReadDedicatedTearable {
+            get {
+                return ResourceManager.GetString("DSA010MessageReadDedicatedTearable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageReadShared.
+        /// </summary>
+        internal static string DSA010MessageReadShared {
+            get {
+                return ResourceManager.GetString("DSA010MessageReadShared", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageReadSharedTearable.
+        /// </summary>
+        internal static string DSA010MessageReadSharedTearable {
+            get {
+                return ResourceManager.GetString("DSA010MessageReadSharedTearable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageReadThis.
+        /// </summary>
+        internal static string DSA010MessageReadThis {
+            get {
+                return ResourceManager.GetString("DSA010MessageReadThis", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageReadThisTearable.
+        /// </summary>
+        internal static string DSA010MessageReadThisTearable {
+            get {
+                return ResourceManager.GetString("DSA010MessageReadThisTearable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageReadonlyField.
+        /// </summary>
+        internal static string DSA010MessageReadonlyField {
+            get {
+                return ResourceManager.GetString("DSA010MessageReadonlyField", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageVolatileRead.
+        /// </summary>
+        internal static string DSA010MessageVolatileRead {
+            get {
+                return ResourceManager.GetString("DSA010MessageVolatileRead", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageVolatileWrite.
+        /// </summary>
+        internal static string DSA010MessageVolatileWrite {
+            get {
+                return ResourceManager.GetString("DSA010MessageVolatileWrite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageWriteDedicated.
+        /// </summary>
+        internal static string DSA010MessageWriteDedicated {
+            get {
+                return ResourceManager.GetString("DSA010MessageWriteDedicated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageWriteDedicatedTearable.
+        /// </summary>
+        internal static string DSA010MessageWriteDedicatedTearable {
+            get {
+                return ResourceManager.GetString("DSA010MessageWriteDedicatedTearable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageWriteShared.
+        /// </summary>
+        internal static string DSA010MessageWriteShared {
+            get {
+                return ResourceManager.GetString("DSA010MessageWriteShared", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageWriteSharedTearable.
+        /// </summary>
+        internal static string DSA010MessageWriteSharedTearable {
+            get {
+                return ResourceManager.GetString("DSA010MessageWriteSharedTearable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageWriteThis.
+        /// </summary>
+        internal static string DSA010MessageWriteThis {
+            get {
+                return ResourceManager.GetString("DSA010MessageWriteThis", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010MessageWriteThisTearable.
+        /// </summary>
+        internal static string DSA010MessageWriteThisTearable {
+            get {
+                return ResourceManager.GetString("DSA010MessageWriteThisTearable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Self-contained static singleton properties, particularly when they involve lazy initialization within the property itself, can lead to several problems, especially in multithreaded environments. Use a IoC/DI framework instead, or at least use proper locking when initializing the instance (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA011.md)..
         /// </summary>
         internal static string DSA011AnalyzerDescription {
@@ -1067,6 +1238,54 @@ namespace DogmaSolutions.Analyzers {
             }
         }
 
+        internal static string DSA043AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA043AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        internal static string DSA043AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA043AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        internal static string DSA043AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA043AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        internal static string DSA043ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA043ReviewComment", resourceCulture);
+            }
+        }
+
+        internal static string DSA044AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA044AnalyzerDescription", resourceCulture);
+            }
+        }
+
+        internal static string DSA044AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA044AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+
+        internal static string DSA044AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA044AnalyzerTitle", resourceCulture);
+            }
+        }
+
+        internal static string DSA044ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA044ReviewComment", resourceCulture);
+            }
+        }
+
         internal static string DSA036ReviewComment {
             get {
                 return ResourceManager.GetString("DSA036ReviewComment", resourceCulture);
@@ -1292,6 +1511,41 @@ namespace DogmaSolutions.Analyzers {
         internal static string CheckThenActSuggestionImmutableDictionarySetItem {
             get {
                 return ResourceManager.GetString("CheckThenActSuggestionImmutableDictionarySetItem", resourceCulture);
+            }
+        }
+        /// <summary>
+        ///   Looks up a localized string for DSA045AnalyzerTitle.
+        /// </summary>
+        internal static string DSA045AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA045AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA045AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA045AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA045AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA045AnalyzerDescription.
+        /// </summary>
+        internal static string DSA045AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA045AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA045ReviewComment.
+        /// </summary>
+        internal static string DSA045ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA045ReviewComment", resourceCulture);
             }
         }
     }

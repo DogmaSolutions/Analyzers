@@ -31,7 +31,7 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
         _title,
         _messageFormat,
         Category,
-        DiagnosticSeverity.Info,
+        DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: _description,
         helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA036.md");
