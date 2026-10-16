@@ -1548,5 +1548,428 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA045ReviewComment", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046AnalyzerTitle.
+        /// </summary>
+        internal static string DSA046AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA046AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA046AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA046AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046AnalyzerDescription.
+        /// </summary>
+        internal static string DSA046AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA046AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046ReviewComment.
+        /// </summary>
+        internal static string DSA046ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA046ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046MessageIncrementInterlocked.
+        /// </summary>
+        internal static string DSA046MessageIncrementInterlocked {
+            get {
+                return ResourceManager.GetString("DSA046MessageIncrementInterlocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046MessageIncrementValue.
+        /// </summary>
+        internal static string DSA046MessageIncrementValue {
+            get {
+                return ResourceManager.GetString("DSA046MessageIncrementValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046MessageIncrementReference.
+        /// </summary>
+        internal static string DSA046MessageIncrementReference {
+            get {
+                return ResourceManager.GetString("DSA046MessageIncrementReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046MessageCompoundInterlocked.
+        /// </summary>
+        internal static string DSA046MessageCompoundInterlocked {
+            get {
+                return ResourceManager.GetString("DSA046MessageCompoundInterlocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046MessageCompoundValue.
+        /// </summary>
+        internal static string DSA046MessageCompoundValue {
+            get {
+                return ResourceManager.GetString("DSA046MessageCompoundValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046MessageCompoundReference.
+        /// </summary>
+        internal static string DSA046MessageCompoundReference {
+            get {
+                return ResourceManager.GetString("DSA046MessageCompoundReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046MessageAssignmentInterlocked.
+        /// </summary>
+        internal static string DSA046MessageAssignmentInterlocked {
+            get {
+                return ResourceManager.GetString("DSA046MessageAssignmentInterlocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046MessageAssignmentValue.
+        /// </summary>
+        internal static string DSA046MessageAssignmentValue {
+            get {
+                return ResourceManager.GetString("DSA046MessageAssignmentValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046MessageAssignmentReference.
+        /// </summary>
+        internal static string DSA046MessageAssignmentReference {
+            get {
+                return ResourceManager.GetString("DSA046MessageAssignmentReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047AnalyzerTitle.
+        /// </summary>
+        internal static string DSA047AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA047AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA047AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA047AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047AnalyzerDescription.
+        /// </summary>
+        internal static string DSA047AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA047AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047ReviewComment.
+        /// </summary>
+        internal static string DSA047ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA047ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047ReasonField.
+        /// </summary>
+        internal static string DSA047ReasonField {
+            get {
+                return ResourceManager.GetString("DSA047ReasonField", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047ReasonReturned.
+        /// </summary>
+        internal static string DSA047ReasonReturned {
+            get {
+                return ResourceManager.GetString("DSA047ReasonReturned", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047ReasonProperty.
+        /// </summary>
+        internal static string DSA047ReasonProperty {
+            get {
+                return ResourceManager.GetString("DSA047ReasonProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047MessageFieldSwapped.
+        /// </summary>
+        internal static string DSA047MessageFieldSwapped {
+            get {
+                return ResourceManager.GetString("DSA047MessageFieldSwapped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047MessageFieldExposed.
+        /// </summary>
+        internal static string DSA047MessageFieldExposed {
+            get {
+                return ResourceManager.GetString("DSA047MessageFieldExposed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047MessageFieldSwappedAndExposed.
+        /// </summary>
+        internal static string DSA047MessageFieldSwappedAndExposed {
+            get {
+                return ResourceManager.GetString("DSA047MessageFieldSwappedAndExposed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047MessagePropertySwapped.
+        /// </summary>
+        internal static string DSA047MessagePropertySwapped {
+            get {
+                return ResourceManager.GetString("DSA047MessagePropertySwapped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047MessagePropertyExposed.
+        /// </summary>
+        internal static string DSA047MessagePropertyExposed {
+            get {
+                return ResourceManager.GetString("DSA047MessagePropertyExposed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA047MessagePropertySwappedAndExposed.
+        /// </summary>
+        internal static string DSA047MessagePropertySwappedAndExposed {
+            get {
+                return ResourceManager.GetString("DSA047MessagePropertySwappedAndExposed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA048AnalyzerTitle.
+        /// </summary>
+        internal static string DSA048AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA048AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA048AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA048AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA048AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA048AnalyzerDescription.
+        /// </summary>
+        internal static string DSA048AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA048AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA048ReviewComment.
+        /// </summary>
+        internal static string DSA048ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA048ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA048MessageNoTimeout.
+        /// </summary>
+        internal static string DSA048MessageNoTimeout {
+            get {
+                return ResourceManager.GetString("DSA048MessageNoTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA048MessageWithTimeout.
+        /// </summary>
+        internal static string DSA048MessageWithTimeout {
+            get {
+                return ResourceManager.GetString("DSA048MessageWithTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA049AnalyzerTitle.
+        /// </summary>
+        internal static string DSA049AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA049AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA049AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA049AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA049AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA049AnalyzerDescription.
+        /// </summary>
+        internal static string DSA049AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA049AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA049ReviewComment.
+        /// </summary>
+        internal static string DSA049ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA049ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA049MessageUnlockedWrite.
+        /// </summary>
+        internal static string DSA049MessageUnlockedWrite {
+            get {
+                return ResourceManager.GetString("DSA049MessageUnlockedWrite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA049MessageUnlockedRead.
+        /// </summary>
+        internal static string DSA049MessageUnlockedRead {
+            get {
+                return ResourceManager.GetString("DSA049MessageUnlockedRead", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA049MessageDifferentLocks.
+        /// </summary>
+        internal static string DSA049MessageDifferentLocks {
+            get {
+                return ResourceManager.GetString("DSA049MessageDifferentLocks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA050AnalyzerTitle.
+        /// </summary>
+        internal static string DSA050AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA050AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA050AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA050AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA050AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA050AnalyzerDescription.
+        /// </summary>
+        internal static string DSA050AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA050AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA050ReviewComment.
+        /// </summary>
+        internal static string DSA050ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA050ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA050MessageSetOnce.
+        /// </summary>
+        internal static string DSA050MessageSetOnce {
+            get {
+                return ResourceManager.GetString("DSA050MessageSetOnce", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA050MessageConsume.
+        /// </summary>
+        internal static string DSA050MessageConsume {
+            get {
+                return ResourceManager.GetString("DSA050MessageConsume", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA050MessageTransition.
+        /// </summary>
+        internal static string DSA050MessageTransition {
+            get {
+                return ResourceManager.GetString("DSA050MessageTransition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA050VolatileNote.
+        /// </summary>
+        internal static string DSA050VolatileNote {
+            get {
+                return ResourceManager.GetString("DSA050VolatileNote", resourceCulture);
+            }
+        }
     }
 }

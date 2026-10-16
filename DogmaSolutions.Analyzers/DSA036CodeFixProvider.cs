@@ -111,8 +111,9 @@ public sealed class DSA036CodeFixProvider : CodeFixProvider
             .WithLeadingTrivia(creation.GetLeadingTrivia())
             .WithTrailingTrivia(creation.GetTrailingTrivia());
 
+        var anchor = GetAnchorIndex(typeDecl, creation);
         var newTypeDecl = typeDecl.ReplaceNode(creation, fieldReference);
-        newTypeDecl = InsertField(newTypeDecl, fieldDecl);
+        newTypeDecl = InsertField(newTypeDecl, fieldDecl, anchor);
 
         var newRoot = root.ReplaceNode(typeDecl, newTypeDecl);
         return document.WithSyntaxRoot(newRoot);
@@ -172,8 +173,9 @@ public sealed class DSA036CodeFixProvider : CodeFixProvider
             .WithLeadingTrivia(invocation.GetLeadingTrivia())
             .WithTrailingTrivia(invocation.GetTrailingTrivia());
 
+        var anchor = GetAnchorIndex(typeDecl, invocation);
         var newTypeDecl = typeDecl.ReplaceNode(invocation, instanceCall);
-        newTypeDecl = InsertField(newTypeDecl, fieldDecl);
+        newTypeDecl = InsertField(newTypeDecl, fieldDecl, anchor);
 
         var newRoot = root.ReplaceNode(typeDecl, newTypeDecl);
         return document.WithSyntaxRoot(newRoot);
@@ -232,9 +234,26 @@ public sealed class DSA036CodeFixProvider : CodeFixProvider
             .WithTrailingTrivia(eolTrivia);
     }
 
+    /// <summary>The index of the field declaration the node is the initializer of (or part of), or -1 when the node is anywhere else.</summary>
+    private static int GetAnchorIndex(TypeDeclarationSyntax typeDecl, SyntaxNode node)
+    {
+        for (var i = 0; i < typeDecl.Members.Count; i++)
+        {
+            if (typeDecl.Members[i] is FieldDeclarationSyntax && typeDecl.Members[i].Span.Contains(node.Span))
+                return i;
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// The new field goes after the last field, or, when the regex was created by the initializer of a field, right before that field: the static
+    /// initializers of a type run in textual order, and a field that reads one that is declared after it would read null.
+    /// </summary>
     private static TypeDeclarationSyntax InsertField(
         TypeDeclarationSyntax typeDecl,
-        FieldDeclarationSyntax fieldDecl)
+        FieldDeclarationSyntax fieldDecl,
+        int anchorIndex)
     {
         var lastFieldIndex = -1;
         for (var i = 0; i < typeDecl.Members.Count; i++)
@@ -243,7 +262,7 @@ public sealed class DSA036CodeFixProvider : CodeFixProvider
                 lastFieldIndex = i;
         }
 
-        var insertIndex = lastFieldIndex >= 0 ? lastFieldIndex + 1 : 0;
+        var insertIndex = anchorIndex >= 0 ? anchorIndex : lastFieldIndex >= 0 ? lastFieldIndex + 1 : 0;
         return typeDecl.WithMembers(typeDecl.Members.Insert(insertIndex, fieldDecl));
     }
 

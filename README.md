@@ -119,6 +119,11 @@ A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[S
 | [DSA043](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA043.md) | Best Practice | A complex class (cyclomatic complexity, lines, ... configurable) should inject or use a logger (`Microsoft.Extensions.Logging.ILogger`) | 💡 Suggestion | ✅ | ❌ | ✅ |
 | [DSA044](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA044.md) | Best Practice | Use the available logger (Microsoft.Extensions.Logging, Serilog, NLog, log4net, ...) instead of `Console.Write*` or `Debug.Write*` | 💡 Suggestion | ✅ | ✅ | ✅ |
 | [DSA045](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA045.md) | Best Practice | A pure data carrier (DTO: properties only, no logic, no explicit constructor, base types included) should be excluded from the code coverage with `[ExcludeFromCodeCoverage]` | ⚠ Warning | ✅ | ✅ | ✅ |
+| [DSA046](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA046.md) | Code Smell | A read-modify-write of a `volatile` field (`x++`, `x += v`, `x = f(x)`) is not atomic: use `Interlocked` or a `lock` | ⚠ Warning | ✅ | ✅ | ✅ |
+| [DSA047](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA047.md) | Code Smell | A lock object must be private and never reassigned: a swapped or exposed lock object protects nothing | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA048](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA048.md) | Code Smell | Do not wait for a change of state by sleeping in a loop: signal it, and wait with a timeout | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA049](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA049.md) | Code Smell | A field written under a lock must be accessed under that same lock everywhere: a lock excludes only the code that takes it | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA050](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA050.md) | Code Smell | Testing a flag (or a state) and then changing it is not atomic: two threads can both pass the test | ⚠ Warning | ✅ | ❌ | ✅ |
 
 # Refactorings list
 
@@ -362,6 +367,7 @@ dotnet_diagnostic.DSA044.accept_logger_parameters = true
 dotnet_diagnostic.DSA044.require_accessible_logger = true
 dotnet_diagnostic.DSA044.accept_static_logger_calls = true
 dotnet_diagnostic.DSA044.static_logger_types = Serilog.Log
+dotnet_diagnostic.DSA044.skip_explicit_logger_checks = true
 dotnet_diagnostic.DSA044.skip_interactive_members = true
 dotnet_diagnostic.DSA044.excluded_type_name_patterns = Program
 dotnet_diagnostic.DSA044.excluded_member_name_patterns = Main
@@ -390,6 +396,75 @@ dotnet_diagnostic.DSA045.excluded_namespace_patterns =
 dotnet_diagnostic.DSA045.excluded_base_types =
 dotnet_diagnostic.DSA045.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 dotnet_diagnostic.DSA045.code_fix_justification =
+
+# DSA046: A read-modify-write of a volatile field (x++, x += v, x = f(x)) is not atomic: use Interlocked or a lock
+dotnet_diagnostic.DSA046.severity = warning
+dotnet_diagnostic.DSA046.report_increments = true
+dotnet_diagnostic.DSA046.report_compound_assignments = true
+dotnet_diagnostic.DSA046.report_self_assignments = true
+dotnet_diagnostic.DSA046.report_interlocked_types = true
+dotnet_diagnostic.DSA046.report_other_value_types = true
+dotnet_diagnostic.DSA046.report_reference_types = true
+dotnet_diagnostic.DSA046.skip_inside_lock = true
+dotnet_diagnostic.DSA046.skip_constructors = true
+dotnet_diagnostic.DSA046.excluded_type_name_patterns =
+dotnet_diagnostic.DSA046.excluded_namespace_patterns =
+dotnet_diagnostic.DSA046.excluded_base_types =
+dotnet_diagnostic.DSA046.excluded_field_name_patterns =
+dotnet_diagnostic.DSA046.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA047: A lock object must be private and never reassigned: a swapped or exposed lock object protects nothing
+dotnet_diagnostic.DSA047.severity = warning
+dotnet_diagnostic.DSA047.report_swapped_locks = true
+dotnet_diagnostic.DSA047.report_exposed_locks = true
+dotnet_diagnostic.DSA047.report_internal_locks = false
+dotnet_diagnostic.DSA047.report_fields = true
+dotnet_diagnostic.DSA047.report_properties = true
+dotnet_diagnostic.DSA047.excluded_type_name_patterns =
+dotnet_diagnostic.DSA047.excluded_namespace_patterns =
+dotnet_diagnostic.DSA047.excluded_base_types =
+dotnet_diagnostic.DSA047.excluded_lock_name_patterns =
+dotnet_diagnostic.DSA047.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA048: Do not wait for a change of state by sleeping in a loop: signal it, and wait with a timeout
+dotnet_diagnostic.DSA048.severity = warning
+dotnet_diagnostic.DSA048.report_loops_with_timeout = true
+dotnet_diagnostic.DSA048.include_task_delay = true
+dotnet_diagnostic.DSA048.include_do_loops = true
+dotnet_diagnostic.DSA048.excluded_type_name_patterns =
+dotnet_diagnostic.DSA048.excluded_namespace_patterns =
+dotnet_diagnostic.DSA048.excluded_base_types =
+dotnet_diagnostic.DSA048.excluded_member_name_patterns =
+dotnet_diagnostic.DSA048.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA049: A field written under a lock must be accessed under that same lock everywhere: a lock excludes only the code that takes it
+dotnet_diagnostic.DSA049.severity = warning
+dotnet_diagnostic.DSA049.report_unlocked_writes = true
+dotnet_diagnostic.DSA049.report_unlocked_reads = true
+dotnet_diagnostic.DSA049.report_different_locks = true
+dotnet_diagnostic.DSA049.infer_locks_of_private_helpers = true
+dotnet_diagnostic.DSA049.excluded_type_name_patterns =
+dotnet_diagnostic.DSA049.excluded_namespace_patterns =
+dotnet_diagnostic.DSA049.excluded_base_types =
+dotnet_diagnostic.DSA049.excluded_field_name_patterns =
+dotnet_diagnostic.DSA049.excluded_member_name_patterns =
+dotnet_diagnostic.DSA049.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA050: Testing a flag (or a state) and then changing it is not atomic: two threads can both pass the test
+dotnet_diagnostic.DSA050.severity = warning
+dotnet_diagnostic.DSA050.report_set_once = true
+dotnet_diagnostic.DSA050.report_consume = true
+dotnet_diagnostic.DSA050.report_state_transitions = true
+dotnet_diagnostic.DSA050.report_volatile_fields = true
+dotnet_diagnostic.DSA050.skip_inside_lock = true
+dotnet_diagnostic.DSA050.skip_constructors = true
+dotnet_diagnostic.DSA050.require_shared_access = true
+dotnet_diagnostic.DSA050.excluded_type_name_patterns =
+dotnet_diagnostic.DSA050.excluded_namespace_patterns =
+dotnet_diagnostic.DSA050.excluded_base_types =
+dotnet_diagnostic.DSA050.excluded_field_name_patterns =
+dotnet_diagnostic.DSA050.excluded_member_name_patterns =
+dotnet_diagnostic.DSA050.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## Good / Professional
@@ -599,6 +674,7 @@ dotnet_diagnostic.DSA044.accept_logger_parameters = true
 dotnet_diagnostic.DSA044.require_accessible_logger = true
 dotnet_diagnostic.DSA044.accept_static_logger_calls = true
 dotnet_diagnostic.DSA044.static_logger_types = Serilog.Log
+dotnet_diagnostic.DSA044.skip_explicit_logger_checks = true
 dotnet_diagnostic.DSA044.skip_interactive_members = true
 dotnet_diagnostic.DSA044.excluded_type_name_patterns = Program
 dotnet_diagnostic.DSA044.excluded_member_name_patterns = Main
@@ -627,6 +703,75 @@ dotnet_diagnostic.DSA045.excluded_namespace_patterns =
 dotnet_diagnostic.DSA045.excluded_base_types =
 dotnet_diagnostic.DSA045.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 dotnet_diagnostic.DSA045.code_fix_justification =
+
+# DSA046: A read-modify-write of a volatile field (x++, x += v, x = f(x)) is not atomic: use Interlocked or a lock
+dotnet_diagnostic.DSA046.severity = warning
+dotnet_diagnostic.DSA046.report_increments = true
+dotnet_diagnostic.DSA046.report_compound_assignments = true
+dotnet_diagnostic.DSA046.report_self_assignments = true
+dotnet_diagnostic.DSA046.report_interlocked_types = true
+dotnet_diagnostic.DSA046.report_other_value_types = true
+dotnet_diagnostic.DSA046.report_reference_types = true
+dotnet_diagnostic.DSA046.skip_inside_lock = true
+dotnet_diagnostic.DSA046.skip_constructors = true
+dotnet_diagnostic.DSA046.excluded_type_name_patterns =
+dotnet_diagnostic.DSA046.excluded_namespace_patterns =
+dotnet_diagnostic.DSA046.excluded_base_types =
+dotnet_diagnostic.DSA046.excluded_field_name_patterns =
+dotnet_diagnostic.DSA046.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA047: A lock object must be private and never reassigned: a swapped or exposed lock object protects nothing
+dotnet_diagnostic.DSA047.severity = warning
+dotnet_diagnostic.DSA047.report_swapped_locks = true
+dotnet_diagnostic.DSA047.report_exposed_locks = true
+dotnet_diagnostic.DSA047.report_internal_locks = false
+dotnet_diagnostic.DSA047.report_fields = true
+dotnet_diagnostic.DSA047.report_properties = true
+dotnet_diagnostic.DSA047.excluded_type_name_patterns =
+dotnet_diagnostic.DSA047.excluded_namespace_patterns =
+dotnet_diagnostic.DSA047.excluded_base_types =
+dotnet_diagnostic.DSA047.excluded_lock_name_patterns =
+dotnet_diagnostic.DSA047.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA048: Do not wait for a change of state by sleeping in a loop: signal it, and wait with a timeout
+dotnet_diagnostic.DSA048.severity = warning
+dotnet_diagnostic.DSA048.report_loops_with_timeout = true
+dotnet_diagnostic.DSA048.include_task_delay = true
+dotnet_diagnostic.DSA048.include_do_loops = true
+dotnet_diagnostic.DSA048.excluded_type_name_patterns =
+dotnet_diagnostic.DSA048.excluded_namespace_patterns =
+dotnet_diagnostic.DSA048.excluded_base_types =
+dotnet_diagnostic.DSA048.excluded_member_name_patterns =
+dotnet_diagnostic.DSA048.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA049: A field written under a lock must be accessed under that same lock everywhere: a lock excludes only the code that takes it
+dotnet_diagnostic.DSA049.severity = warning
+dotnet_diagnostic.DSA049.report_unlocked_writes = true
+dotnet_diagnostic.DSA049.report_unlocked_reads = true
+dotnet_diagnostic.DSA049.report_different_locks = true
+dotnet_diagnostic.DSA049.infer_locks_of_private_helpers = true
+dotnet_diagnostic.DSA049.excluded_type_name_patterns =
+dotnet_diagnostic.DSA049.excluded_namespace_patterns =
+dotnet_diagnostic.DSA049.excluded_base_types =
+dotnet_diagnostic.DSA049.excluded_field_name_patterns =
+dotnet_diagnostic.DSA049.excluded_member_name_patterns =
+dotnet_diagnostic.DSA049.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA050: Testing a flag (or a state) and then changing it is not atomic: two threads can both pass the test
+dotnet_diagnostic.DSA050.severity = warning
+dotnet_diagnostic.DSA050.report_set_once = true
+dotnet_diagnostic.DSA050.report_consume = true
+dotnet_diagnostic.DSA050.report_state_transitions = true
+dotnet_diagnostic.DSA050.report_volatile_fields = true
+dotnet_diagnostic.DSA050.skip_inside_lock = true
+dotnet_diagnostic.DSA050.skip_constructors = true
+dotnet_diagnostic.DSA050.require_shared_access = true
+dotnet_diagnostic.DSA050.excluded_type_name_patterns =
+dotnet_diagnostic.DSA050.excluded_namespace_patterns =
+dotnet_diagnostic.DSA050.excluded_base_types =
+dotnet_diagnostic.DSA050.excluded_field_name_patterns =
+dotnet_diagnostic.DSA050.excluded_member_name_patterns =
+dotnet_diagnostic.DSA050.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## SSDLC (Secure Software Development Lifecycle) and/or AI-Driven development
@@ -836,6 +981,7 @@ dotnet_diagnostic.DSA044.accept_logger_parameters = true
 dotnet_diagnostic.DSA044.require_accessible_logger = true
 dotnet_diagnostic.DSA044.accept_static_logger_calls = true
 dotnet_diagnostic.DSA044.static_logger_types = Serilog.Log
+dotnet_diagnostic.DSA044.skip_explicit_logger_checks = true
 dotnet_diagnostic.DSA044.skip_interactive_members = true
 dotnet_diagnostic.DSA044.excluded_type_name_patterns = Program
 dotnet_diagnostic.DSA044.excluded_member_name_patterns = Main
@@ -864,6 +1010,75 @@ dotnet_diagnostic.DSA045.excluded_namespace_patterns =
 dotnet_diagnostic.DSA045.excluded_base_types =
 dotnet_diagnostic.DSA045.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 dotnet_diagnostic.DSA045.code_fix_justification =
+
+# DSA046: A read-modify-write of a volatile field (x++, x += v, x = f(x)) is not atomic: use Interlocked or a lock
+dotnet_diagnostic.DSA046.severity = error
+dotnet_diagnostic.DSA046.report_increments = true
+dotnet_diagnostic.DSA046.report_compound_assignments = true
+dotnet_diagnostic.DSA046.report_self_assignments = true
+dotnet_diagnostic.DSA046.report_interlocked_types = true
+dotnet_diagnostic.DSA046.report_other_value_types = true
+dotnet_diagnostic.DSA046.report_reference_types = true
+dotnet_diagnostic.DSA046.skip_inside_lock = true
+dotnet_diagnostic.DSA046.skip_constructors = true
+dotnet_diagnostic.DSA046.excluded_type_name_patterns =
+dotnet_diagnostic.DSA046.excluded_namespace_patterns =
+dotnet_diagnostic.DSA046.excluded_base_types =
+dotnet_diagnostic.DSA046.excluded_field_name_patterns =
+dotnet_diagnostic.DSA046.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA047: A lock object must be private and never reassigned: a swapped or exposed lock object protects nothing
+dotnet_diagnostic.DSA047.severity = error
+dotnet_diagnostic.DSA047.report_swapped_locks = true
+dotnet_diagnostic.DSA047.report_exposed_locks = true
+dotnet_diagnostic.DSA047.report_internal_locks = false
+dotnet_diagnostic.DSA047.report_fields = true
+dotnet_diagnostic.DSA047.report_properties = true
+dotnet_diagnostic.DSA047.excluded_type_name_patterns =
+dotnet_diagnostic.DSA047.excluded_namespace_patterns =
+dotnet_diagnostic.DSA047.excluded_base_types =
+dotnet_diagnostic.DSA047.excluded_lock_name_patterns =
+dotnet_diagnostic.DSA047.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA048: Do not wait for a change of state by sleeping in a loop: signal it, and wait with a timeout
+dotnet_diagnostic.DSA048.severity = error
+dotnet_diagnostic.DSA048.report_loops_with_timeout = true
+dotnet_diagnostic.DSA048.include_task_delay = true
+dotnet_diagnostic.DSA048.include_do_loops = true
+dotnet_diagnostic.DSA048.excluded_type_name_patterns =
+dotnet_diagnostic.DSA048.excluded_namespace_patterns =
+dotnet_diagnostic.DSA048.excluded_base_types =
+dotnet_diagnostic.DSA048.excluded_member_name_patterns =
+dotnet_diagnostic.DSA048.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA049: A field written under a lock must be accessed under that same lock everywhere: a lock excludes only the code that takes it
+dotnet_diagnostic.DSA049.severity = error
+dotnet_diagnostic.DSA049.report_unlocked_writes = true
+dotnet_diagnostic.DSA049.report_unlocked_reads = true
+dotnet_diagnostic.DSA049.report_different_locks = true
+dotnet_diagnostic.DSA049.infer_locks_of_private_helpers = true
+dotnet_diagnostic.DSA049.excluded_type_name_patterns =
+dotnet_diagnostic.DSA049.excluded_namespace_patterns =
+dotnet_diagnostic.DSA049.excluded_base_types =
+dotnet_diagnostic.DSA049.excluded_field_name_patterns =
+dotnet_diagnostic.DSA049.excluded_member_name_patterns =
+dotnet_diagnostic.DSA049.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA050: Testing a flag (or a state) and then changing it is not atomic: two threads can both pass the test
+dotnet_diagnostic.DSA050.severity = error
+dotnet_diagnostic.DSA050.report_set_once = true
+dotnet_diagnostic.DSA050.report_consume = true
+dotnet_diagnostic.DSA050.report_state_transitions = true
+dotnet_diagnostic.DSA050.report_volatile_fields = true
+dotnet_diagnostic.DSA050.skip_inside_lock = true
+dotnet_diagnostic.DSA050.skip_constructors = true
+dotnet_diagnostic.DSA050.require_shared_access = true
+dotnet_diagnostic.DSA050.excluded_type_name_patterns =
+dotnet_diagnostic.DSA050.excluded_namespace_patterns =
+dotnet_diagnostic.DSA050.excluded_base_types =
+dotnet_diagnostic.DSA050.excluded_field_name_patterns =
+dotnet_diagnostic.DSA050.excluded_member_name_patterns =
+dotnet_diagnostic.DSA050.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ---

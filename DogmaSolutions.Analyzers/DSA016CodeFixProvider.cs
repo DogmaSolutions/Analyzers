@@ -58,8 +58,11 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
         if (displayFragment.Length > 60)
             displayFragment = displayFragment.Substring(0, 57) + "...";
 
-        // A conditional access we can't extract without changing its null semantics (e.g. items?.Method().Name) gets no extraction.
-        if (!(invocation.Expression is MemberBindingExpressionSyntax) || TryGetReplaceableConditionalAccess(invocation, out _))
+        // A conditional access we can't extract without changing its null semantics (e.g. items?.Method().Name) gets no extraction, and neither does
+        // a call that the declaration would evaluate where the code does not (past a guard, outside a try).
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if ((!(invocation.Expression is MemberBindingExpressionSyntax) || TryGetReplaceableConditionalAccess(invocation, out _)) &&
+            semanticModel != null && CanExtract(semanticModel, invocation))
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
@@ -106,13 +109,10 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
         if (lambdaParent != null)
             return ExtractInExpressionBodyLambda(document, root, lambdaParent, nodesToReplace, expressionToExtract, variableName);
 
-        // Block body: find the insertion point (earliest statement containing an occurrence)
-        var insertionStatement = FindEarliestContainingStatement(nodesToReplace, scope);
+        // Block body: find the insertion point
+        var insertionStatement = FindInsertionStatement(nodesToReplace, expressionToExtract, scope, semanticModel);
         if (insertionStatement == null)
             return document;
-
-        insertionStatement = ConstrainInsertionToLoopScope(insertionStatement, expressionToExtract, nodesToReplace, semanticModel)
-                             ?? insertionStatement;
 
         variableName = ResolveNameConflicts(variableName, scope);
 
@@ -154,15 +154,58 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
                 WrapInBlock(variableDeclaration, finalInsertion, embeddingStatement, eolTrivia)));
         }
 
-        var containingBlock = finalInsertion?.Parent as BlockSyntax;
-        if (containingBlock == null)
-            return document.WithSyntaxRoot(newRoot);
-
-        var idx = containingBlock.Statements.IndexOf(finalInsertion);
-        var newStatements = containingBlock.Statements.Insert(idx, variableDeclaration);
-        newRoot = newRoot.ReplaceNode(containingBlock, containingBlock.WithStatements(newStatements));
+        newRoot = finalInsertion?.Parent switch
+        {
+            BlockSyntax block => newRoot.ReplaceNode(block, block.WithStatements(block.Statements.Insert(block.Statements.IndexOf(finalInsertion), variableDeclaration))),
+            SwitchSectionSyntax section => newRoot.ReplaceNode(section, section.WithStatements(section.Statements.Insert(section.Statements.IndexOf(finalInsertion), variableDeclaration))),
+            _ => newRoot,
+        };
 
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    /// <summary>
+    /// Whether the extraction can be offered: the declaration has a place where the first occurrence is evaluated unconditionally.
+    /// </summary>
+    internal static bool CanExtract(SemanticModel semanticModel, InvocationExpressionSyntax targetInvocation)
+    {
+        var scope = SyntaxUtils.GetContainingScope(targetInvocation);
+        if (scope == null)
+            return false;
+
+        var allOccurrences = FindDuplicateInvocations(targetInvocation, scope, semanticModel);
+        if (allOccurrences.Count < 2)
+            return false;
+
+        var extractionTarget = DetermineExtractionTarget(allOccurrences);
+        if (extractionTarget == null)
+            return false;
+
+        // an expression-bodied lambda is converted to a block: its only expression is evaluated unconditionally
+        if (FindExpressionBodyLambda(targetInvocation) != null)
+            return true;
+
+        var (nodesToReplace, expressionToExtract) = extractionTarget.Value;
+        return FindInsertionStatement(nodesToReplace, expressionToExtract, scope, semanticModel) != null;
+    }
+
+    /// <summary>
+    /// The statement the declaration goes before: in the narrowest block that contains all the occurrences, the first statement that contains one.
+    /// A declaration hoisted past a guard would evaluate the call where the code did not (and an exception that a guard or a <c>catch</c> handles
+    /// would escape), so null is returned when the first occurrence is not evaluated first on every path from that statement.
+    /// </summary>
+    private static StatementSyntax FindInsertionStatement(
+        List<SyntaxNode> nodesToReplace,
+        ExpressionSyntax expressionToExtract,
+        SyntaxNode scope,
+        SemanticModel semanticModel)
+    {
+        var insertionStatement = FindEarliestContainingStatement(nodesToReplace, ExtractionPlacement.FindNarrowestContainer(nodesToReplace, scope));
+        if (insertionStatement == null)
+            return null;
+
+        insertionStatement = ConstrainInsertionToLoopScope(insertionStatement, expressionToExtract, nodesToReplace, semanticModel) ?? insertionStatement;
+        return ExtractionPlacement.EvaluatesOnEveryPath(insertionStatement, nodesToReplace) ? insertionStatement : null;
     }
 
     /// <summary>

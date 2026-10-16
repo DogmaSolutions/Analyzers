@@ -113,7 +113,7 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
         if (argumentList == null || argumentList.Arguments.Count == 0)
             return;
 
-        if (IsInStaticReadOnlyFieldInitializer(creation))
+        if (RunsOnlyOnce(creation))
             return;
 
         var enclosingMethod = GetEnclosingMethodBody(creation);
@@ -159,7 +159,7 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
         if (!IsRegexType(methodSymbol.ContainingType))
             return;
 
-        if (IsInStaticReadOnlyFieldInitializer(invocation))
+        if (RunsOnlyOnce(invocation))
             return;
 
         var enclosingMethod = GetEnclosingMethodBody(invocation);
@@ -372,31 +372,31 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
             : new[] { model.GetSymbolInfo(left).Symbol };
     }
 
-    private static bool IsInStaticReadOnlyFieldInitializer(SyntaxNode node)
+    /// <summary>
+    /// True when the code runs once per type, not once per call or per instance: the initializer of a static field (readonly or not) or of a static
+    /// property, and the body of a static constructor. Nothing is gained by hoisting a regex that is already created only once.
+    /// </summary>
+    private static bool RunsOnlyOnce(SyntaxNode node)
     {
-        var current = node.Parent;
-        while (current != null)
+        var child = node;
+        for (var current = node.Parent; current != null; child = current, current = current.Parent)
         {
-            if (current is FieldDeclarationSyntax fieldDecl)
+            switch (current)
             {
-                var hasStatic = fieldDecl.Modifiers.Any(SyntaxKind.StaticKeyword);
-                var hasReadonly = fieldDecl.Modifiers.Any(SyntaxKind.ReadOnlyKeyword);
-                return hasStatic && hasReadonly;
+                case FieldDeclarationSyntax field:
+                    return field.Modifiers.Any(SyntaxKind.StaticKeyword);
+
+                case PropertyDeclarationSyntax property:
+                    return property.Initializer == child && property.Modifiers.Any(SyntaxKind.StaticKeyword);
+
+                case ConstructorDeclarationSyntax constructor:
+                    return constructor.Modifiers.Any(SyntaxKind.StaticKeyword);
+
+                case BaseMethodDeclarationSyntax:
+                case LocalFunctionStatementSyntax:
+                case AnonymousFunctionExpressionSyntax:
+                    return false;
             }
-
-            if (current is PropertyDeclarationSyntax)
-                return false;
-
-            if (current is BaseMethodDeclarationSyntax)
-                return false;
-
-            if (current is LocalFunctionStatementSyntax)
-                return false;
-
-            if (current is AnonymousFunctionExpressionSyntax)
-                return false;
-
-            current = current.Parent;
         }
 
         return false;

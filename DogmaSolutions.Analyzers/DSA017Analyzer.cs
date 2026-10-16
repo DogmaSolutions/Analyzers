@@ -62,6 +62,10 @@ public sealed class DSA017Analyzer : DiagnosticAnalyzer
         if (CheckThenActUtils.CategorizeReceiverType(receiverType) != CheckThenActUtils.ReceiverCategory.AtomicAlternative)
             return;
 
+        // Skip if already protected by a lock statement: the check and the act cannot be interleaved by the threads that take the lock
+        if (CheckThenActUtils.IsInsideLockStatement(ifStatement))
+            return;
+
         // Skip if the receiver is a local variable — local scope eliminates the cross-thread TOCTOU risk
         var receiverSymbol = context.SemanticModel.GetSymbolInfo(receiver).Symbol;
         if (receiverSymbol is ILocalSymbol)

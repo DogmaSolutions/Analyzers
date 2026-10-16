@@ -74,7 +74,8 @@ namespace DogmaSolutions.Analyzers
                 return;
 
             var logger = DSA044LoggerAvailability.Find(enclosing, context.Compilation, settings, context.CancellationToken);
-            if (logger == null || DSA044Exclusions.IsInteractive(invocation, context.SemanticModel, settings, context.CancellationToken))
+            if (logger == null || DSA044Exclusions.IsInteractive(invocation, context.SemanticModel, settings, context.CancellationToken) ||
+                DSA044ExplicitLoggerChecks.IsFallbackOfAnExplicitCheck(invocation, enclosing, context.SemanticModel, settings, context.CancellationToken))
                 return;
 
             Report(context, invocation, flagged, logger);

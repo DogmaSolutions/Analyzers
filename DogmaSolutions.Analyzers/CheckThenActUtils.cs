@@ -351,4 +351,23 @@ internal static class CheckThenActUtils
     {
         return expression.IsKind(SyntaxKind.NullLiteralExpression);
     }
+
+    /// <summary>
+    /// Whether the node is inside a <c>lock</c> statement of its own member: the check and the act are then protected from the threads that take
+    /// the same lock. The search stops at the boundary of a member, a local function or a lambda, which can run elsewhere and are not protected by
+    /// the lock that surrounds their declaration.
+    /// </summary>
+    internal static bool IsInsideLockStatement(SyntaxNode node)
+    {
+        for (var current = node.Parent; current != null; current = current.Parent)
+        {
+            if (current is LockStatementSyntax)
+                return true;
+
+            if (current is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax)
+                return false;
+        }
+
+        return false;
+    }
 }

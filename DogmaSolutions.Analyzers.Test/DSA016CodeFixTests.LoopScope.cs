@@ -190,7 +190,7 @@ namespace TestApp
     }
 
     [TestMethod]
-    public async Task FixForEachLoopVariable_UsedInANestedBlock_DeclaresBeforeTheEarliestStatementOfTheLoopBody()
+    public async Task FixForEachLoopVariable_UsedInANestedBlock_DeclaresInThatBlock()
     {
         var source = LoopSource(@"
             foreach (var item in items)
@@ -205,9 +205,9 @@ namespace TestApp
         var fixedSource = LoopSource(@"
             foreach (var item in items)
             {
-                var count = item.Children.Count();
                 if (id > 0)
                 {
+                    var count = item.Children.Count();
                     var a = count;
                     var b = count;
                 }

@@ -28,6 +28,7 @@ public class DSA044SettingsTests
         Assert.IsTrue(settings.RequireAccessibleLogger);
         Assert.IsTrue(settings.AcceptStaticLoggerCalls);
         CollectionAssert.AreEqual(new[] { "Serilog.Log" }, settings.StaticLoggerTypes.ToArrayOrNull());
+        Assert.IsTrue(settings.SkipExplicitLoggerChecks);
         Assert.IsTrue(settings.SkipInteractiveMembers);
         CollectionAssert.AreEqual(new[] { "Program" }, settings.ExcludedTypeNamePatterns.ToArrayOrNull());
         CollectionAssert.AreEqual(new[] { "Main" }, settings.ExcludedMemberNamePatterns.ToArrayOrNull());
@@ -49,6 +50,7 @@ public class DSA044SettingsTests
             (DSA044Settings.RequireAccessibleLoggerKey, "false"),
             (DSA044Settings.AcceptStaticLoggerCallsKey, "false"),
             (DSA044Settings.StaticLoggerTypesKey, "My.StaticLog"),
+            (DSA044Settings.SkipExplicitLoggerChecksKey, "false"),
             (DSA044Settings.SkipInteractiveMembersKey, "false"),
             (DSA044Settings.ExcludedTypeNamePatternsKey, "*Cli"),
             (DSA044Settings.ExcludedMemberNamePatternsKey, "Run*"),
@@ -65,6 +67,7 @@ public class DSA044SettingsTests
         Assert.IsFalse(settings.RequireAccessibleLogger);
         Assert.IsFalse(settings.AcceptStaticLoggerCalls);
         CollectionAssert.AreEqual(new[] { "My.StaticLog" }, settings.StaticLoggerTypes.ToArrayOrNull());
+        Assert.IsFalse(settings.SkipExplicitLoggerChecks);
         Assert.IsFalse(settings.SkipInteractiveMembers);
         CollectionAssert.AreEqual(new[] { "*Cli" }, settings.ExcludedTypeNamePatterns.ToArrayOrNull());
         CollectionAssert.AreEqual(new[] { "Run*" }, settings.ExcludedMemberNamePatterns.ToArrayOrNull());

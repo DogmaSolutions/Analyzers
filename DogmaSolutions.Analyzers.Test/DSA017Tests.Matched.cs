@@ -174,6 +174,109 @@ public partial class DSA017Tests
             "Dictionary",
             "TryAdd or indexer assignment [key] = value"
         ],
+        [
+            "Dictionary check-then-add in a lambda declared inside a lock (the lock does not protect the lambda)",
+            @"
+            using System.Collections.Concurrent;
+            using System.Collections.Generic;
+            using System;
+            namespace TestApp
+            {
+                public class Page { }
+                public class Catalog
+                {
+                    private readonly object _pagesLock = new object();
+                    private readonly Dictionary<string, Page> _pages = new Dictionary<string, Page>();
+                    public Func<string, Page> Make()
+                    {
+                        lock (_pagesLock)
+                        {
+                            return key =>
+                            {
+                                {|#0:if (!_pages.ContainsKey(key))
+                                {
+                                    _pages.Add(key, new Page());
+                                }|}
+
+                                return _pages[key];
+                            };
+                        }
+                    }
+                }
+            }",
+            "Dictionary",
+            "TryAdd or indexer assignment [key] = value"
+        ],
+        [
+            "Dictionary check-then-add in a local function declared inside a lock",
+            @"
+            using System.Collections.Concurrent;
+            using System.Collections.Generic;
+            using System;
+            namespace TestApp
+            {
+                public class Page { }
+                public class Catalog
+                {
+                    private readonly object _pagesLock = new object();
+                    private readonly Dictionary<string, Page> _pages = new Dictionary<string, Page>();
+                    public Func<string, Page> Make()
+                    {
+                        lock (_pagesLock)
+                        {
+                            Page Local(string key)
+                            {
+                                {|#0:if (!_pages.ContainsKey(key))
+                                {
+                                    _pages.Add(key, new Page());
+                                }|}
+
+                                return _pages[key];
+                            }
+
+                            return Local;
+                        }
+                    }
+                }
+            }",
+            "Dictionary",
+            "TryAdd or indexer assignment [key] = value"
+        ],
+        [
+            "Dictionary check-then-add after the lock statement",
+            @"
+            using System.Collections.Concurrent;
+            using System.Collections.Generic;
+            using System;
+            namespace TestApp
+            {
+                public class Page { }
+                public class Catalog
+                {
+                    private readonly object _pagesLock = new object();
+                    private readonly Dictionary<string, Page> _pages = new Dictionary<string, Page>();
+                    public Func<string, Page> Make()
+                    {
+                        lock (_pagesLock)
+                        {
+                            Console.WriteLine(_pages.Count);
+                        }
+
+                        return key =>
+                        {
+                            {|#0:if (!_pages.ContainsKey(key))
+                            {
+                                _pages.Add(key, new Page());
+                            }|}
+
+                            return _pages[key];
+                        };
+                    }
+                }
+            }",
+            "Dictionary",
+            "TryAdd or indexer assignment [key] = value"
+        ],
     ];
 
     [TestMethod]

@@ -245,6 +245,170 @@ public partial class DSA017Tests
                 }
             }"
         ],
+        [
+            "Dictionary TryGetValue then Add with a complex body, inside a lock",
+            @"
+            using System.Collections.Concurrent;
+            using System.Collections.Generic;
+            using System;
+            namespace TestApp
+            {
+                public class Page { }
+                public class Catalog
+                {
+                    private readonly object _pagesLock = new object();
+                    private readonly Dictionary<string, Page> _pages = new Dictionary<string, Page>();
+                    private readonly HashSet<string> _names = new HashSet<string>();
+                    private readonly ConcurrentDictionary<string, Page> _shared = new ConcurrentDictionary<string, Page>();
+                    public Page Get(string key)
+                    {
+                        Page page = null;
+                        lock (_pagesLock)
+                        {
+                            if (!_pages.TryGetValue(key, out page))
+                            {
+                                page = new Page();
+                                foreach (var part in key.Split('/'))
+                                {
+                                    Console.WriteLine(part);
+                                }
+
+                                _pages.Add(key, page);
+                            }
+                        }
+
+                        return page;
+                    }
+                }
+            }"
+        ],
+        [
+            "Dictionary ContainsKey then Add, inside a lock",
+            @"
+            using System.Collections.Concurrent;
+            using System.Collections.Generic;
+            using System;
+            namespace TestApp
+            {
+                public class Page { }
+                public class Catalog
+                {
+                    private readonly object _pagesLock = new object();
+                    private readonly Dictionary<string, Page> _pages = new Dictionary<string, Page>();
+                    private readonly HashSet<string> _names = new HashSet<string>();
+                    private readonly ConcurrentDictionary<string, Page> _shared = new ConcurrentDictionary<string, Page>();
+                    public Page Get(string key)
+                    {
+                        lock (_pagesLock)
+                        {
+                            if (!_pages.ContainsKey(key))
+                            {
+                                _pages.Add(key, new Page());
+                            }
+
+                            return _pages[key];
+                        }
+                    }
+                }
+            }"
+        ],
+        [
+            "HashSet Contains then Add, inside a lock",
+            @"
+            using System.Collections.Concurrent;
+            using System.Collections.Generic;
+            using System;
+            namespace TestApp
+            {
+                public class Page { }
+                public class Catalog
+                {
+                    private readonly object _pagesLock = new object();
+                    private readonly Dictionary<string, Page> _pages = new Dictionary<string, Page>();
+                    private readonly HashSet<string> _names = new HashSet<string>();
+                    private readonly ConcurrentDictionary<string, Page> _shared = new ConcurrentDictionary<string, Page>();
+                    public Page Get(string key)
+                    {
+                        lock (_pagesLock)
+                        {
+                            if (!_names.Contains(key))
+                            {
+                                _names.Add(key);
+                            }
+                        }
+
+                        return null;
+                    }
+                }
+            }"
+        ],
+        [
+            "ConcurrentDictionary ContainsKey then TryAdd, inside a lock",
+            @"
+            using System.Collections.Concurrent;
+            using System.Collections.Generic;
+            using System;
+            namespace TestApp
+            {
+                public class Page { }
+                public class Catalog
+                {
+                    private readonly object _pagesLock = new object();
+                    private readonly Dictionary<string, Page> _pages = new Dictionary<string, Page>();
+                    private readonly HashSet<string> _names = new HashSet<string>();
+                    private readonly ConcurrentDictionary<string, Page> _shared = new ConcurrentDictionary<string, Page>();
+                    public Page Get(string key)
+                    {
+                        lock (_pagesLock)
+                        {
+                            if (!_shared.ContainsKey(key))
+                            {
+                                _shared.TryAdd(key, new Page());
+                            }
+                        }
+
+                        return null;
+                    }
+                }
+            }"
+        ],
+        [
+            "Dictionary check-then-act in a try inside a lock",
+            @"
+            using System.Collections.Concurrent;
+            using System.Collections.Generic;
+            using System;
+            namespace TestApp
+            {
+                public class Page { }
+                public class Catalog
+                {
+                    private readonly object _pagesLock = new object();
+                    private readonly Dictionary<string, Page> _pages = new Dictionary<string, Page>();
+                    private readonly HashSet<string> _names = new HashSet<string>();
+                    private readonly ConcurrentDictionary<string, Page> _shared = new ConcurrentDictionary<string, Page>();
+                    public Page Get(string key)
+                    {
+                        lock (_pagesLock)
+                        {
+                            try
+                            {
+                                if (!_pages.ContainsKey(key))
+                                {
+                                    _pages.Add(key, new Page());
+                                }
+                            }
+                            finally
+                            {
+                                Console.WriteLine(key);
+                            }
+                        }
+
+                        return null;
+                    }
+                }
+            }"
+        ],
     ];
 
     [TestMethod]

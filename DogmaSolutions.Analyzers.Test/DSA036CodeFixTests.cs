@@ -572,4 +572,84 @@ public class DSA036CodeFixTests
                 .WithArguments(@"new Regex(@""\d+"")"));
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    [TestMethod]
+    public async Task ExtractsTheRegexOfAnInstanceFieldOfANestedClassBeforeTheField()
+    {
+        var source = @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Report
+                {
+                    internal class Section
+                    {
+                        private int _count;
+                        private Regex _heading = {|#0:new Regex(@""^#+\s"")|};
+                        private Regex _other = null;
+                    }
+                }
+            }";
+
+        var fixedSource = @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Report
+                {
+                    internal class Section
+                    {
+                        private int _count;
+                        private static readonly System.Text.RegularExpressions.Regex _regex = new Regex(@""^#+\s"");
+                        private Regex _heading = _regex;
+                        private Regex _other = null;
+                    }
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA036Analyzer, DSA036CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA036Analyzer, DSA036CodeFixProvider>
+                .Diagnostic(DSA036Analyzer.DiagnosticId).WithLocation(0).WithArguments(@"new Regex(@""^#+\s"")"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExtractsAStaticRegexMethodOfAnInstanceFieldBeforeTheField()
+    {
+        var source = @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Report
+                {
+                    private int _count;
+                    private bool _ok = {|#0:Regex.IsMatch(""abc"", ""a+"")|};
+                }
+            }";
+
+        var fixedSource = @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Report
+                {
+                    private int _count;
+                    private static readonly System.Text.RegularExpressions.Regex _regex = new System.Text.RegularExpressions.Regex(""a+"");
+                    private bool _ok = _regex.IsMatch(""abc"");
+                }
+            }";
+
+        var test = new CSharpCodeFixVerifier<DSA036Analyzer, DSA036CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(
+            CSharpCodeFixVerifier<DSA036Analyzer, DSA036CodeFixProvider>
+                .Diagnostic(DSA036Analyzer.DiagnosticId).WithLocation(0).WithArguments(@"Regex.IsMatch(""abc"", ""a+"")"));
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }

@@ -38,6 +38,106 @@ public partial class DSA036Tests
             }"
         ],
 
+        // ── Code that runs only once per type ───────────────────────────
+
+        [
+            "new Regex in a static non-readonly field initializer",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    private static Regex _regex = new Regex(@""\d+"");
+                    public bool Check(string input) => _regex.IsMatch(input);
+                }
+            }"
+        ],
+        [
+            "new Regex in a static field initializer, modifiers in another order",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    static internal Regex Blank = new Regex(@""^\s*$"");
+                }
+            }"
+        ],
+        [
+            "Regex.IsMatch in a static field initializer",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    private static bool _ok = Regex.IsMatch(""abc"", ""a+"");
+                }
+            }"
+        ],
+        [
+            "new Regex in a static property initializer",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    public static Regex Pattern { get; } = new Regex(@""\d+"");
+                }
+            }"
+        ],
+        [
+            "new Regex in a static constructor",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    private static Regex _regex;
+                    static Validator() { _regex = new Regex(@""\d+""); }
+                    public bool Check(string input) => _regex.IsMatch(input);
+                }
+            }"
+        ],
+
+        [
+            "new Regex in a static field initializer of a nested class",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Report
+                {
+                    internal class Section
+                    {
+                        private static Regex Heading = new Regex(@""^#+\s"");
+                    }
+                }
+            }"
+        ],
+        [
+            "new Regex in a static field initializer of a class nested twice",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Outer
+                {
+                    public class Middle
+                    {
+                        private class Inner
+                        {
+                            private static Regex Digits = new Regex(@""\d+"", RegexOptions.Compiled);
+                        }
+                    }
+                }
+            }"
+        ],
+
         // ── Pattern is a method parameter (not constant) ───────────────
 
         [

@@ -965,4 +965,165 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  * Code coverage - https://en.wikipedia.org/wiki/Code_coverage
  */</value>
   </data>
+  <data name="DSA046AnalyzerTitle" xml:space="preserve">
+    <value>A read-modify-write of a volatile field is not atomic</value>
+  </data>
+  <data name="DSA046AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA046AnalyzerDescription" xml:space="preserve">
+    <value>'volatile' makes each single read and each single write of a field visible to the other threads, but a read-modify-write (x++, x += v, x = f(x)) is a read followed by a write, and another thread can run in between: two threads read the same value and one update is lost. The keyword gives a false sense of thread safety. Use Interlocked (Increment, Add, Exchange, CompareExchange) or take a lock around every access of the field. The message explains the specific scenario: the operation, and the kind of field (int or uint, another value type, a reference).</value>
+  </data>
+  <data name="DSA046ReviewComment" xml:space="preserve">
+    <value>/* [DSA046 / QA + Code Smell]: Read-modify-write of a volatile field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA046.md)
+ * CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition') - https://cwe.mitre.org/data/definitions/362.html
+ * CWE-366: Race Condition within a Thread - https://cwe.mitre.org/data/definitions/366.html
+ * CWE-820: Missing Synchronization - https://cwe.mitre.org/data/definitions/820.html
+ */</value>
+  </data>
+  <data name="DSA046MessageIncrementInterlocked" xml:space="preserve">
+    <value>The '{1}' on the volatile field '{0}' is not atomic: it reads the field, computes the new value and writes it back, and another thread can run in between, so two threads can read the same value and one update is lost. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Use Interlocked (Increment, Decrement, Add, Exchange, or a CompareExchange loop for any other computation), or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046MessageIncrementValue" xml:space="preserve">
+    <value>The '{1}' on the volatile field '{0}' is not atomic: it reads the field, computes the new value and writes it back, and another thread can run in between, so two threads can read the same value and one update is lost. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Interlocked does not work on this type: widen the field to int and use Interlocked (or a CompareExchange loop), or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046MessageIncrementReference" xml:space="preserve">
+    <value>The '{1}' on the volatile field '{0}' is not atomic: it reads the field, computes the new value and writes it back, and another thread can run in between, so two threads can read the same value and one update is lost. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. For a reference or a delegate, retry with Interlocked.CompareExchange until the value you computed from is still the current one, or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046MessageCompoundInterlocked" xml:space="preserve">
+    <value>The '{1}' on the volatile field '{0}' is a read followed by a write, not one atomic operation: another thread can change the field between the two, and its update is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Use Interlocked (Increment, Decrement, Add, Exchange, or a CompareExchange loop for any other computation), or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046MessageCompoundValue" xml:space="preserve">
+    <value>The '{1}' on the volatile field '{0}' is a read followed by a write, not one atomic operation: another thread can change the field between the two, and its update is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Interlocked does not work on this type: widen the field to int and use Interlocked (or a CompareExchange loop), or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046MessageCompoundReference" xml:space="preserve">
+    <value>The '{1}' on the volatile field '{0}' is a read followed by a write, not one atomic operation: another thread can change the field between the two, and its update is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. For a reference or a delegate, retry with Interlocked.CompareExchange until the value you computed from is still the current one, or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046MessageAssignmentInterlocked" xml:space="preserve">
+    <value>The assignment to the volatile field '{0}' computes the new value from the current value of '{0}': that is a read followed by a write, not one atomic operation, and an update made by another thread in between is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Use Interlocked (Increment, Decrement, Add, Exchange, or a CompareExchange loop for any other computation), or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046MessageAssignmentValue" xml:space="preserve">
+    <value>The assignment to the volatile field '{0}' computes the new value from the current value of '{0}': that is a read followed by a write, not one atomic operation, and an update made by another thread in between is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Interlocked does not work on this type: widen the field to int and use Interlocked (or a CompareExchange loop), or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046MessageAssignmentReference" xml:space="preserve">
+    <value>The assignment to the volatile field '{0}' computes the new value from the current value of '{0}': that is a read followed by a write, not one atomic operation, and an update made by another thread in between is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. For a reference or a delegate, retry with Interlocked.CompareExchange until the value you computed from is still the current one, or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA047AnalyzerTitle" xml:space="preserve">
+    <value>A lock object must be private and never reassigned</value>
+  </data>
+  <data name="DSA047AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA047AnalyzerDescription" xml:space="preserve">
+    <value>A lock excludes the threads that lock the very same object. If the field (or property) that holds the lock object is reassigned after construction, threads lock different objects and exclude nobody. If code outside of the class can reach the lock object (a public or protected member, or a member that returns it), it can lock on it too and entangle its critical sections with yours, which leads to unexpected blocking and deadlocks. Use a private readonly object created once. The message explains the specific scenario: swapped, exposed, or both; field or property.</value>
+  </data>
+  <data name="DSA047ReviewComment" xml:space="preserve">
+    <value>/* [DSA047 / QA + Code Smell]: Lock object that is swapped or exposed (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA047.md)
+ * CWE-667: Improper Locking - https://cwe.mitre.org/data/definitions/667.html
+ * CWE-413: Improper Resource Locking - https://cwe.mitre.org/data/definitions/413.html
+ * CWE-820: Missing Synchronization - https://cwe.mitre.org/data/definitions/820.html
+ */</value>
+  </data>
+  <data name="DSA047ReasonField" xml:space="preserve">
+    <value>it is not private</value>
+  </data>
+  <data name="DSA047ReasonReturned" xml:space="preserve">
+    <value>it is returned by '{0}'</value>
+  </data>
+  <data name="DSA047ReasonProperty" xml:space="preserve">
+    <value>it is a property whose getter is not private</value>
+  </data>
+  <data name="DSA047MessageFieldSwapped" xml:space="preserve">
+    <value>The lock object '{0}' is a field that can be reassigned after construction: the lock protects nothing: a thread that locks the old object and a thread that locks the new one do not exclude each other, whatever they do inside the critical sections. Make it readonly and create the lock object once (private readonly object _gate = new object();), so that every thread locks the same one.</value>
+  </data>
+  <data name="DSA047MessageFieldExposed" xml:space="preserve">
+    <value>The lock object '{0}' is exposed: code outside of this class ({1}) can reach it, and lock on it too: its critical sections get entangled with the ones of this class, and the unexpected blocking and the deadlocks that follow cannot be seen from either side. Keep the lock object private, and never return it.</value>
+  </data>
+  <data name="DSA047MessageFieldSwappedAndExposed" xml:space="preserve">
+    <value>The lock object '{0}' is a field that can be reassigned after construction, and is exposed. Swapped: the lock protects nothing: a thread that locks the old object and a thread that locks the new one do not exclude each other, whatever they do inside the critical sections. Make it readonly and create the lock object once (private readonly object _gate = new object();), so that every thread locks the same one. Exposed: code outside of this class ({1}) can reach it, and lock on it too: its critical sections get entangled with the ones of this class, and the unexpected blocking and the deadlocks that follow cannot be seen from either side. Keep the lock object private, and never return it.</value>
+  </data>
+  <data name="DSA047MessagePropertySwapped" xml:space="preserve">
+    <value>The lock object '{0}' is a property that can be reassigned after construction: the lock protects nothing: a thread that locks the old object and a thread that locks the new one do not exclude each other, whatever they do inside the critical sections. Make it readonly and create the lock object once (private readonly object _gate = new object();), so that every thread locks the same one.</value>
+  </data>
+  <data name="DSA047MessagePropertyExposed" xml:space="preserve">
+    <value>The lock object '{0}' is exposed: code outside of this class ({1}) can reach it, and lock on it too: its critical sections get entangled with the ones of this class, and the unexpected blocking and the deadlocks that follow cannot be seen from either side. Keep the lock object private, and never return it.</value>
+  </data>
+  <data name="DSA047MessagePropertySwappedAndExposed" xml:space="preserve">
+    <value>The lock object '{0}' is a property that can be reassigned after construction, and is exposed. Swapped: the lock protects nothing: a thread that locks the old object and a thread that locks the new one do not exclude each other, whatever they do inside the critical sections. Make it readonly and create the lock object once (private readonly object _gate = new object();), so that every thread locks the same one. Exposed: code outside of this class ({1}) can reach it, and lock on it too: its critical sections get entangled with the ones of this class, and the unexpected blocking and the deadlocks that follow cannot be seen from either side. Keep the lock object private, and never return it.</value>
+  </data>
+  <data name="DSA048AnalyzerTitle" xml:space="preserve">
+    <value>Do not wait for a change of state by sleeping in a loop</value>
+  </data>
+  <data name="DSA048AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA048AnalyzerDescription" xml:space="preserve">
+    <value>A loop that sleeps (Thread.Sleep, Task.Delay) and checks again whether a field, a property or a method of its own class has changed is polling. If nothing in the loop gives up, it waits forever when the other thread fails, stops or never signals. Even with a timeout, polling adds latency to every change and wakes the thread for nothing. Signal the change with a ManualResetEventSlim, a SemaphoreSlim, a TaskCompletionSource or Monitor.Wait/Pulse, and wait with a timeout and a CancellationToken. The message explains the specific scenario: with or without a way to give up.</value>
+  </data>
+  <data name="DSA048ReviewComment" xml:space="preserve">
+    <value>/* [DSA048 / QA + Code Smell]: Polling loop that waits for a change of state (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA048.md)
+ * CWE-833: Deadlock - https://cwe.mitre.org/data/definitions/833.html
+ * CWE-835: Loop with Unreachable Exit Condition ('Infinite Loop') - https://cwe.mitre.org/data/definitions/835.html
+ * CWE-400: Uncontrolled Resource Consumption - https://cwe.mitre.org/data/definitions/400.html
+ */</value>
+  </data>
+  <data name="DSA048MessageNoTimeout" xml:space="preserve">
+    <value>This loop waits for '{0}' to change by calling '{1}' and checking again, and nothing in it ever gives up: if the other thread fails, stops or never signals, this one waits forever. Polling also adds up to one sleep interval of latency to every change and wakes the thread over and over for nothing. Signal the change instead (ManualResetEventSlim, SemaphoreSlim, TaskCompletionSource, or Monitor.Wait/Pulse), and wait with a timeout and a CancellationToken.</value>
+  </data>
+  <data name="DSA048MessageWithTimeout" xml:space="preserve">
+    <value>This loop waits for '{0}' to change by calling '{1}' and checking again. It gives up after a while, which is good, but it still polls. Polling also adds up to one sleep interval of latency to every change and wakes the thread over and over for nothing. Signal the change instead (ManualResetEventSlim, SemaphoreSlim, TaskCompletionSource, or Monitor.Wait/Pulse), and wait with a timeout and a CancellationToken.</value>
+  </data>
+  <data name="DSA049AnalyzerTitle" xml:space="preserve">
+    <value>A field guarded by a lock must be accessed under that lock everywhere</value>
+  </data>
+  <data name="DSA049AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA049AnalyzerDescription" xml:space="preserve">
+    <value>A lock excludes only the code that takes it. If a field is written under a lock in some members, every other write of the field must take the same lock, or an unlocked write runs at the same time as the locked ones and corrupts or loses their updates; and every read must take it too (or the field must be volatile, or the value an immutable snapshot), or the reader can see a stale or half-updated value in the middle of a locked sequence. Two different locks do not exclude each other. The message explains the specific scenario: unlocked write, unlocked read, write under a different lock.</value>
+  </data>
+  <data name="DSA049ReviewComment" xml:space="preserve">
+    <value>/* [DSA049 / QA + Code Smell]: Field accessed with and without its lock (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA049.md)
+ * CWE-366: Race Condition within a Thread - https://cwe.mitre.org/data/definitions/366.html
+ * CWE-567: Unsynchronized Access to Shared Data in a Multithreaded Context - https://cwe.mitre.org/data/definitions/567.html
+ * CWE-820: Missing Synchronization - https://cwe.mitre.org/data/definitions/820.html
+ */</value>
+  </data>
+  <data name="DSA049MessageUnlockedWrite" xml:space="preserve">
+    <value>The field '{0}' is written here without holding '{1}', but it is written under that lock in '{2}': a lock excludes only the code that takes it, so this write can run at the same time as the locked ones and lose or corrupt their updates. Take the same lock here, or stop sharing the field between threads.</value>
+  </data>
+  <data name="DSA049MessageUnlockedRead" xml:space="preserve">
+    <value>The field '{0}' is read here without holding '{1}', but it is written under that lock in '{2}': this read can run in the middle of a locked sequence and see a stale or half-updated value. Take the same lock here, or, for a single value, make the field volatile, or read an immutable snapshot that is swapped under the lock.</value>
+  </data>
+  <data name="DSA049MessageDifferentLocks" xml:space="preserve">
+    <value>The field '{0}' is written here under '{3}', but it is written under '{1}' in '{2}': two different locks do not exclude each other, so the two writes can run at the same time. Guard the field with a single lock.</value>
+  </data>
+  <data name="DSA050AnalyzerTitle" xml:space="preserve">
+    <value>Testing a flag and then changing it is not atomic</value>
+  </data>
+  <data name="DSA050AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA050AnalyzerDescription" xml:space="preserve">
+    <value>if (!started) { started = true; ... } reads the flag and writes it in two separate steps, and another thread can run in between: both threads see the old value and both go on, so the 'only once' code runs twice, a signal is consumed twice, or a state machine makes the same transition twice. volatile makes each single read and write visible, it does not make the pair atomic. Make the test and the change one atomic step with Interlocked.CompareExchange / Exchange on an int flag, take a lock around both, or use a primitive made for it (Lazy&lt;T&gt;, SemaphoreSlim, ManualResetEventSlim, Channel&lt;T&gt;). The message explains the specific scenario: set once, consume, state transition. Nulls (lazy initialization) are covered by DSA007.</value>
+  </data>
+  <data name="DSA050ReviewComment" xml:space="preserve">
+    <value>/* [DSA050 / QA + Code Smell]: Check-then-act on a flag or a state (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA050.md)
+ * CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition - https://cwe.mitre.org/data/definitions/367.html
+ * CWE-362: Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition') - https://cwe.mitre.org/data/definitions/362.html
+ * CWE-820: Missing Synchronization - https://cwe.mitre.org/data/definitions/820.html
+ */</value>
+  </data>
+  <data name="DSA050MessageSetOnce" xml:space="preserve">
+    <value>The flag '{0}' is tested and then set to {1} in two separate steps, so two threads can both see {2} and both go on: the 'only once' code below runs twice. The test and the change must be one atomic step: Interlocked.CompareExchange on an int flag (0 to 1, going on only if it returned 0), a lock around both steps, or Lazy&lt;T&gt; / LazyInitializer / a static constructor for one-time initialization.</value>
+  </data>
+  <data name="DSA050MessageConsume" xml:space="preserve">
+    <value>The flag '{0}' is tested and then cleared ({1}) in two separate steps, so two threads can both see it set and both consume it: the work, or the signal, is handled twice, and a set made between the test and the clear is lost. The test and the clear must be one atomic step: Interlocked.Exchange on an int flag, a lock around both steps, or a primitive that consumes the signal for you (SemaphoreSlim, ManualResetEventSlim, Channel&lt;T&gt;).</value>
+  </data>
+  <data name="DSA050MessageTransition" xml:space="preserve">
+    <value>The state '{0}' is tested ({2}) and then changed to {1} in two separate steps, so two threads can both see {2} and both make the transition. The test and the change must be one atomic step: Interlocked.CompareExchange on an int state (going on only if it returned the expected value), or a lock around both steps.</value>
+  </data>
+  <data name="DSA050VolatileNote" xml:space="preserve">
+    <value> Note that volatile does not help here: it makes each single read and write visible, not the pair of them atomic.</value>
+  </data>
 </root>

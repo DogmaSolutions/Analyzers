@@ -560,7 +560,6 @@ namespace TestApp
             var extra = ""E1"";
 
             var steps = container.Groups[0].Steps;
-
             Check.One(steps);
             Check.AreEqual(code, steps[0].Code);
             Check.AreEqual(name, steps[0].Name);

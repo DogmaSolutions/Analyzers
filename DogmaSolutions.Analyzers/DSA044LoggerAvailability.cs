@@ -63,6 +63,43 @@ namespace DogmaSolutions.Analyzers
                    ?? FindStaticLoggerCall(type, compilation, settings, cancellationToken);
         }
 
+        /// <summary>
+        /// The symbol is one of the loggers that <see cref="Find"/> can offer at that point of the code: a logger parameter of the enclosing method,
+        /// lambda or local function, a field or a property of the class (own or inherited), or a parameter of its primary constructor.
+        /// </summary>
+        internal static bool IsAvailableLogger(ISymbol candidate, ISymbol enclosing, DSA044Settings settings)
+        {
+            var member = GetEnclosingMember(enclosing);
+            var isStaticContext = settings.RequireAccessibleLogger && member.IsStatic;
+
+            switch (candidate)
+            {
+                case IParameterSymbol parameter:
+                    return IsParameterOfEnclosing(parameter, enclosing, settings) || (!isStaticContext && GetTypeLoggers(member.ContainingType, settings).HasPrimaryConstructorParameter(parameter));
+                case IFieldSymbol or IPropertySymbol:
+                    return GetTypeLoggers(member.ContainingType, settings).HasMember(candidate, isStaticContext);
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsParameterOfEnclosing(IParameterSymbol parameter, ISymbol enclosing, DSA044Settings settings)
+        {
+            if (!settings.AcceptLoggerParameters || !LoggerDetector.IsLoggingType(parameter.Type, settings))
+                return false;
+
+            for (var current = enclosing; current is IMethodSymbol method; current = method.ContainingSymbol)
+            {
+                if (method.Parameters.Contains(parameter, SymbolEqualityComparer.Default))
+                    return true;
+
+                if (method.MethodKind is not (MethodKind.AnonymousFunction or MethodKind.LocalFunction))
+                    break;
+            }
+
+            return false;
+        }
+
         /// <summary>The method (or field, property...) that holds the code, looking through lambdas and local functions.</summary>
         internal static ISymbol GetEnclosingMember(ISymbol enclosing)
         {
@@ -98,13 +135,16 @@ namespace DogmaSolutions.Analyzers
         /// <summary>A field or property that is a logger: what it is called, and whether the code of a static member can reach it.</summary>
         private readonly struct MemberLogger
         {
-            internal MemberLogger(AvailableLogger logger, bool isStatic)
+            internal MemberLogger(AvailableLogger logger, bool isStatic, ISymbol symbol)
             {
                 Logger = logger;
                 IsStatic = isStatic;
+                Symbol = symbol;
             }
 
             internal AvailableLogger Logger { get; }
+
+            internal ISymbol Symbol { get; }
 
             internal bool IsStatic { get; }
         }
@@ -117,11 +157,14 @@ namespace DogmaSolutions.Analyzers
         {
             private readonly ImmutableArray<MemberLogger> _members;
 
-            internal TypeLoggers(DSA044Settings settings, ImmutableArray<MemberLogger> members, AvailableLogger primaryConstructor)
+            private readonly ImmutableArray<IParameterSymbol> _primaryParameters;
+
+            internal TypeLoggers(DSA044Settings settings, ImmutableArray<MemberLogger> members, ImmutableArray<IParameterSymbol> primaryParameters)
             {
                 Settings = settings;
                 _members = members;
-                PrimaryConstructor = primaryConstructor;
+                _primaryParameters = primaryParameters;
+                PrimaryConstructor = primaryParameters.IsEmpty ? null : Describe(primaryParameters[0].Name, primaryParameters[0].Type);
             }
 
             /// <summary>The settings the loggers were looked for with.</summary>
@@ -129,6 +172,12 @@ namespace DogmaSolutions.Analyzers
 
             /// <summary>A logger that the parameters of the primary constructor offer to the instance members.</summary>
             internal AvailableLogger PrimaryConstructor { get; }
+
+            /// <summary>The field or property is one of the loggers of the type, and the code can reach it.</summary>
+            internal bool HasMember(ISymbol member, bool isStaticContext) =>
+                _members.Any(candidate => (!isStaticContext || candidate.IsStatic) && SymbolEqualityComparer.Default.Equals(candidate.Symbol, member));
+
+            internal bool HasPrimaryConstructorParameter(IParameterSymbol parameter) => _primaryParameters.Contains(parameter, SymbolEqualityComparer.Default);
 
             internal AvailableLogger FindMember(bool isStaticContext)
             {
@@ -157,7 +206,7 @@ namespace DogmaSolutions.Analyzers
             var members = type.GetMembers().Concat(GetInheritedMembers(type, settings))
                 .Select(member => (Member: member, LoggerType: GetLoggerType(member, settings)))
                 .Where(candidate => candidate.LoggerType != null)
-                .Select(candidate => new MemberLogger(Describe(candidate.Member.Name, candidate.LoggerType), candidate.Member.IsStatic))
+                .Select(candidate => new MemberLogger(Describe(candidate.Member.Name, candidate.LoggerType), candidate.Member.IsStatic, candidate.Member))
                 .ToImmutableArray();
 
             return new TypeLoggers(settings, members, FindInPrimaryConstructor(type, settings));
@@ -196,15 +245,12 @@ namespace DogmaSolutions.Analyzers
         }
 
         /// <summary>The parameters of a primary constructor are captured by the instance members of the class.</summary>
-        private static AvailableLogger FindInPrimaryConstructor(INamedTypeSymbol type, DSA044Settings settings)
-        {
-            var found = type.InstanceConstructors
+        private static ImmutableArray<IParameterSymbol> FindInPrimaryConstructor(INamedTypeSymbol type, DSA044Settings settings) =>
+            type.InstanceConstructors
                 .Where(constructor => constructor.DeclaringSyntaxReferences.Any(reference => reference.GetSyntax() is TypeDeclarationSyntax))
                 .SelectMany(constructor => constructor.Parameters)
-                .FirstOrDefault(parameter => LoggerDetector.IsLoggingType(parameter.Type, settings));
-
-            return found == null ? null : Describe(found.Name, found.Type);
-        }
+                .Where(parameter => LoggerDetector.IsLoggingType(parameter.Type, settings))
+                .ToImmutableArray();
 
         // ---- static logger ----------------------------------------------------------------------------------------
 

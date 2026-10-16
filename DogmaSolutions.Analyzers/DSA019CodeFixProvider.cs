@@ -45,60 +45,65 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         if (displayFragment.Length > 60)
             displayFragment = displayFragment.Substring(0, 57) + "...";
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title: $"Extract '{displayFragment}' to short variable",
-                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Short),
-                equivalenceKey: DSA019Analyzer.DiagnosticId),
-            diagnostic);
-
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title: $"Extract '{displayFragment}' to long variable",
-                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Long),
-                equivalenceKey: DSA019Analyzer.DiagnosticId + "_Long"),
-            diagnostic);
-
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title: $"Extract '{displayFragment}' to compact variable",
-                createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Compact),
-                equivalenceKey: DSA019Analyzer.DiagnosticId + "_Compact"),
-            diagnostic);
-
-        if (targetExpression is MemberAccessExpressionSyntax targetMa &&
-            targetMa.Expression is MemberAccessExpressionSyntax prefixMa)
+        // the extraction is offered only where the declaration can go without evaluating the expression earlier than the code does
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel != null && CanExtract(semanticModel, targetExpression))
         {
-            var scope = SyntaxUtils.GetContainingScope(targetExpression);
-            if (scope != null)
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: $"Extract '{displayFragment}' to short variable",
+                    createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Short),
+                    equivalenceKey: DSA019Analyzer.DiagnosticId),
+                diagnostic);
+
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: $"Extract '{displayFragment}' to long variable",
+                    createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Long),
+                    equivalenceKey: DSA019Analyzer.DiagnosticId + "_Long"),
+                diagnostic);
+
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: $"Extract '{displayFragment}' to compact variable",
+                    createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Compact),
+                    equivalenceKey: DSA019Analyzer.DiagnosticId + "_Compact"),
+                diagnostic);
+
+            if (targetExpression is MemberAccessExpressionSyntax targetMa &&
+                targetMa.Expression is MemberAccessExpressionSyntax prefixMa)
             {
-                var prefixKey = SyntaxUtils.NormalizeWhitespace(prefixMa.ToString());
-                var targetKey = SyntaxUtils.NormalizeWhitespace(targetExpression.ToString());
-
-                var prefixCount = 0;
-                var targetCount = 0;
-                foreach (var ma in GetMemberAccessesInScope(scope))
+                var scope = SyntaxUtils.GetContainingScope(targetExpression);
+                if (scope != null)
                 {
-                    var text = SyntaxUtils.NormalizeWhitespace(ma.ToString());
-                    if (text == prefixKey) prefixCount++;
-                    if (text == targetKey) targetCount++;
-                }
+                    var prefixKey = SyntaxUtils.NormalizeWhitespace(prefixMa.ToString());
+                    var targetKey = SyntaxUtils.NormalizeWhitespace(targetExpression.ToString());
 
-                if (prefixCount > targetCount)
-                {
-                    var rootVarName = GenerateVariableName(prefixMa);
-                    rootVarName = ResolveNameConflicts(rootVarName, scope);
+                    var prefixCount = 0;
+                    var targetCount = 0;
+                    foreach (var ma in GetMemberAccessesInScope(scope))
+                    {
+                        var text = SyntaxUtils.NormalizeWhitespace(ma.ToString());
+                        if (text == prefixKey) prefixCount++;
+                        if (text == targetKey) targetCount++;
+                    }
 
-                    var displayChain = prefixMa.ToString();
-                    if (displayChain.Length > 60)
-                        displayChain = displayChain.Substring(0, 57) + "...";
+                    if (prefixCount > targetCount && CanExtract(semanticModel, prefixMa, 1))
+                    {
+                        var rootVarName = GenerateVariableName(prefixMa);
+                        rootVarName = ResolveNameConflicts(rootVarName, scope);
 
-                    context.RegisterCodeFix(
-                        CodeAction.Create(
-                            title: $"Extract {prefixCount} occurrences of '{displayChain}' into local variable '{rootVarName}'",
-                            createChangedDocument: ct => ExtractToVariableAsync(context.Document, prefixMa, ct, 1),
-                            equivalenceKey: DSA019Analyzer.DiagnosticId + "_root"),
-                        diagnostic);
+                        var displayChain = prefixMa.ToString();
+                        if (displayChain.Length > 60)
+                            displayChain = displayChain.Substring(0, 57) + "...";
+
+                        context.RegisterCodeFix(
+                            CodeAction.Create(
+                                title: $"Extract {prefixCount} occurrences of '{displayChain}' into local variable '{rootVarName}'",
+                                createChangedDocument: ct => ExtractToVariableAsync(context.Document, prefixMa, ct, 1),
+                                equivalenceKey: DSA019Analyzer.DiagnosticId + "_root"),
+                            diagnostic);
+                    }
                 }
             }
         }
@@ -155,13 +160,10 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         if (lambdaParent != null)
             return ExtractInExpressionBodyLambda(document, root, lambdaParent, nodesToReplace, expressionToExtract, variableName);
 
-        // Block body: find the insertion point (earliest statement containing an occurrence)
-        var insertionStatement = FindEarliestContainingStatement(allOccurrences, scope);
+        // Block body: find the insertion point
+        var insertionStatement = FindInsertionStatement(allOccurrences, expressionToExtract, scope, semanticModel);
         if (insertionStatement == null)
             return document;
-
-        insertionStatement = ConstrainInsertionToLoopScope(insertionStatement, expressionToExtract, allOccurrences, semanticModel)
-                             ?? insertionStatement;
 
         // Resolve conflicts with existing variable names
         variableName = ResolveNameConflicts(variableName, scope);
@@ -169,6 +171,11 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
         // Build the variable declaration
         var eolTrivia = SyntaxUtils.GetEndOfLineTrivia(insertionStatement);
         var variableDeclaration = CreateVariableDeclaration(variableName, expressionToExtract, insertionStatement, eolTrivia);
+
+        // the blank lines above the statement stay above the declaration, which is the first line of the new code
+        var (blankLines, remainingTrivia) = SplitLeadingBlankLines(insertionStatement.GetLeadingTrivia());
+        var indentation = SyntaxUtils.GetIndentationTrivia(insertionStatement.WithLeadingTrivia(remainingTrivia));
+        variableDeclaration = variableDeclaration.WithLeadingTrivia(blankLines.Concat(indentation));
 
         var identifierName = SyntaxFactory.IdentifierName(variableName);
 
@@ -188,19 +195,64 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                     .WithTrailingTrivia(rewritten.GetTrailingTrivia());
             }
 
-            return rewritten.WithAdditionalAnnotations(insertionAnnotation);
+            return rewritten.WithLeadingTrivia(remainingTrivia).WithAdditionalAnnotations(insertionAnnotation);
         });
 
-        var finalInsertion = newRoot.GetAnnotatedNodes(insertionAnnotation).First() as StatementSyntax;
-        var containingBlock = finalInsertion.Parent as BlockSyntax;
-        if (containingBlock == null)
-            return document.WithSyntaxRoot(newRoot);
-
-        var idx = containingBlock.Statements.IndexOf(finalInsertion);
-        var newStatements = containingBlock.Statements.Insert(idx, variableDeclaration);
-        newRoot = newRoot.ReplaceNode(containingBlock, containingBlock.WithStatements(newStatements));
+        var finalInsertion = (StatementSyntax)newRoot.GetAnnotatedNodes(insertionAnnotation).First();
+        newRoot = finalInsertion.Parent switch
+        {
+            BlockSyntax block => newRoot.ReplaceNode(block, block.WithStatements(block.Statements.Insert(block.Statements.IndexOf(finalInsertion), variableDeclaration))),
+            SwitchSectionSyntax section => newRoot.ReplaceNode(section, section.WithStatements(section.Statements.Insert(section.Statements.IndexOf(finalInsertion), variableDeclaration))),
+            _ => newRoot,
+        };
 
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    /// <summary>
+    /// Whether the extraction can be offered: the declaration has a place where the first occurrence is evaluated unconditionally.
+    /// </summary>
+    internal static bool CanExtract(SemanticModel semanticModel, ExpressionSyntax targetExpression, int? thresholdOverride = null)
+    {
+        var scope = SyntaxUtils.GetContainingScope(targetExpression);
+        if (scope == null)
+            return false;
+
+        var targetKey = SyntaxUtils.NormalizeWhitespace(targetExpression.ToString());
+        var allOccurrences = FindMatchingExpressionsInScope(scope, targetExpression, targetKey, thresholdOverride ?? DSA019Analyzer.DefaultMaxDepth, semanticModel);
+        if (allOccurrences.Count < 2)
+            return false;
+
+        // an expression-bodied lambda is converted to a block: its only expression is evaluated unconditionally
+        if (FindExpressionBodyLambda(targetExpression) != null)
+            return true;
+
+        var (_, expressionToExtract) = DetermineExtractionTarget(allOccurrences, targetExpression);
+        return FindInsertionStatement(allOccurrences, expressionToExtract, scope, semanticModel) != null;
+    }
+
+    /// <summary>
+    /// The statement the declaration goes before: in the narrowest block (or switch section) that contains all the occurrences, the first statement
+    /// that contains one. A declaration hoisted past a guard would evaluate the expression where the code did not (for example an index that the
+    /// guard checks), so null is returned when the first occurrence is not evaluated unconditionally from that statement.
+    /// </summary>
+    private static StatementSyntax FindInsertionStatement(
+        List<ExpressionSyntax> occurrences,
+        ExpressionSyntax expressionToExtract,
+        SyntaxNode scope,
+        SemanticModel semanticModel)
+    {
+        var insertionStatement = FindEarliestContainingStatement(occurrences, ExtractionPlacement.FindNarrowestContainer(occurrences, scope));
+        if (insertionStatement == null)
+            return null;
+
+        insertionStatement = ConstrainInsertionToLoopScope(insertionStatement, expressionToExtract, occurrences, semanticModel) ?? insertionStatement;
+
+        // the declaration goes in a list of statements, and the first occurrence that follows it must not depend on a condition
+        if (insertionStatement.Parent is not (BlockSyntax or SwitchSectionSyntax))
+            return null;
+
+        return ExtractionPlacement.EvaluatesOnEveryPath(insertionStatement, occurrences) ? insertionStatement : null;
     }
 
     private static Document ExtractInExpressionBodyLambda(
@@ -628,6 +680,19 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
 
         // Default: extract the expression as-is
         return (allOccurrences.Cast<SyntaxNode>().ToList(), targetExpression);
+    }
+
+    /// <summary>The leading trivia of a statement, split in the blank lines it starts with (the whitespace and line ends up to the last line end) and the rest.</summary>
+    private static (SyntaxTriviaList BlankLines, SyntaxTriviaList Remaining) SplitLeadingBlankLines(SyntaxTriviaList trivia)
+    {
+        var end = 0;
+        for (var i = 0; i < trivia.Count && (trivia[i].IsKind(SyntaxKind.WhitespaceTrivia) || trivia[i].IsKind(SyntaxKind.EndOfLineTrivia)); i++)
+        {
+            if (trivia[i].IsKind(SyntaxKind.EndOfLineTrivia))
+                end = i + 1;
+        }
+
+        return (SyntaxFactory.TriviaList(trivia.Take(end)), SyntaxFactory.TriviaList(trivia.Skip(end)));
     }
 
     private static LocalDeclarationStatementSyntax CreateVariableDeclaration(

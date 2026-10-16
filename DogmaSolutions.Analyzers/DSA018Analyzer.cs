@@ -77,7 +77,7 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
             return;
 
         // Skip if already protected by a lock statement — this is exactly the fix DSA018 recommends
-        if (IsInsideLockStatement(ifStatement))
+        if (CheckThenActUtils.IsInsideLockStatement(ifStatement))
             return;
 
         // Skip if the receiver is a local variable — local scope eliminates the cross-thread TOCTOU risk
@@ -118,33 +118,5 @@ public sealed class DSA018Analyzer : DiagnosticAnalyzer
     {
         var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
         return _excludedMembersCache.Get(config);
-    }
-
-    /// <summary>
-    /// Checks whether the if statement is already inside a lock block, which provides
-    /// the thread-safety that DSA018 recommends. In that case, the diagnostic is suppressed.
-    /// </summary>
-    private static bool IsInsideLockStatement(IfStatementSyntax ifStatement)
-    {
-        var current = ifStatement.Parent;
-        while (current != null)
-        {
-            if (current is LockStatementSyntax)
-                return true;
-
-            // Stop at method/function boundaries
-            if (current is MethodDeclarationSyntax ||
-                current is LocalFunctionStatementSyntax ||
-                current is SimpleLambdaExpressionSyntax ||
-                current is ParenthesizedLambdaExpressionSyntax ||
-                current is AnonymousMethodExpressionSyntax ||
-                current is ConstructorDeclarationSyntax ||
-                current is AccessorDeclarationSyntax)
-                break;
-
-            current = current.Parent;
-        }
-
-        return false;
     }
 }

@@ -531,10 +531,10 @@ namespace TestApp
     {
         public void Process(IEnumerable<Item> items, int id, Mode mode)
         {
-            var firstOrDefault = items.FirstOrDefault(i => i.Id == id);
             switch (mode)
             {
                 case Mode.A:
+                    var firstOrDefault = items.FirstOrDefault(i => i.Id == id);
                     var x = firstOrDefault?.Name;
                     var y = firstOrDefault?.Id;
                     break;

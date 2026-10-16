@@ -20,6 +20,7 @@ namespace DogmaSolutions.Analyzers
         internal const string RequireAccessibleLoggerKey = "dotnet_diagnostic.DSA044.require_accessible_logger";
         internal const string AcceptStaticLoggerCallsKey = "dotnet_diagnostic.DSA044.accept_static_logger_calls";
         internal const string StaticLoggerTypesKey = "dotnet_diagnostic.DSA044.static_logger_types";
+        internal const string SkipExplicitLoggerChecksKey = "dotnet_diagnostic.DSA044.skip_explicit_logger_checks";
         internal const string SkipInteractiveMembersKey = "dotnet_diagnostic.DSA044.skip_interactive_members";
         internal const string ExcludedTypeNamePatternsKey = "dotnet_diagnostic.DSA044.excluded_type_name_patterns";
         internal const string ExcludedMemberNamePatternsKey = "dotnet_diagnostic.DSA044.excluded_member_name_patterns";
@@ -58,6 +59,7 @@ namespace DogmaSolutions.Analyzers
             AcceptStaticLoggerCalls = AnalyzerOptionsReader.ReadBool(options, AcceptStaticLoggerCallsKey, true);
             StaticLoggerTypes = AnalyzerOptionsReader.ReadList(options, StaticLoggerTypesKey, DefaultStaticLoggerTypes);
 
+            SkipExplicitLoggerChecks = AnalyzerOptionsReader.ReadBool(options, SkipExplicitLoggerChecksKey, true);
             SkipInteractiveMembers = AnalyzerOptionsReader.ReadBool(options, SkipInteractiveMembersKey, true);
             ExcludedTypeNamePatterns = AnalyzerOptionsReader.ReadList(options, ExcludedTypeNamePatternsKey, DefaultExcludedTypeNamePatterns);
             ExcludedMemberNamePatterns = AnalyzerOptionsReader.ReadList(options, ExcludedMemberNamePatternsKey, DefaultExcludedMemberNamePatterns);
@@ -89,6 +91,9 @@ namespace DogmaSolutions.Analyzers
         internal bool AcceptStaticLoggerCalls { get; }
 
         internal IReadOnlyList<string> StaticLoggerTypes { get; }
+
+        /// <summary>A write that the code chose on purpose because the logger is null (<c>if (logger != null) ... else Console.WriteLine(...)</c>) is not reported.</summary>
+        internal bool SkipExplicitLoggerChecks { get; }
 
         /// <summary>A member that also reads the console (a prompt, a menu) talks to a user: its writes are not logs.</summary>
         internal bool SkipInteractiveMembers { get; }

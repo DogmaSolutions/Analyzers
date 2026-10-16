@@ -627,18 +627,87 @@ public partial class DSA036Tests
             "new Regex(pattern)"
         ],
 
-        // ── new Regex in static non-readonly field ────────────────────
+        // ── Code that runs more than once is still flagged ────────────
 
         [
-            "new Regex in static non-readonly field initializer",
+            "new Regex in an instance field initializer (one per instance)",
             @"
             using System.Text.RegularExpressions;
             namespace TestApp
             {
                 public class Validator
                 {
-                    private static Regex _regex = {|#0:new Regex(@""\d+"")|};
+                    private Regex _regex = {|#0:new Regex(@""\d+"")|};
                     public bool Check(string input) => _regex.IsMatch(input);
+                }
+            }",
+            @"new Regex(@""\d+"")"
+        ],
+        [
+            "new Regex in an instance property initializer (one per instance)",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    public Regex Pattern { get; } = {|#0:new Regex(@""\d+"")|};
+                }
+            }",
+            @"new Regex(@""\d+"")"
+        ],
+        [
+            "new Regex in a lambda of a static field initializer (one per call)",
+            @"
+            using System;
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    private static readonly Func<string, bool> _check = input => {|#0:new Regex(@""\d+"")|}.IsMatch(input);
+                }
+            }",
+            @"new Regex(@""\d+"")"
+        ],
+        [
+            "new Regex in a static method of a class with a static constructor",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    static Validator() { }
+                    public static bool Check(string input) => {|#0:new Regex(@""\d+"")|}.IsMatch(input);
+                }
+            }",
+            @"new Regex(@""\d+"")"
+        ],
+        [
+            "new Regex in a lambda of a static constructor (one per call)",
+            @"
+            using System;
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    private static Func<string, bool> _check;
+                    static Validator() { _check = input => {|#0:new Regex(@""\d+"")|}.IsMatch(input); }
+                }
+            }",
+            @"new Regex(@""\d+"")"
+        ],
+        [
+            "new Regex in the getter of a static property (one per call)",
+            @"
+            using System.Text.RegularExpressions;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    public static Regex Pattern { get { return {|#0:new Regex(@""\d+"")|}; } }
                 }
             }",
             @"new Regex(@""\d+"")"

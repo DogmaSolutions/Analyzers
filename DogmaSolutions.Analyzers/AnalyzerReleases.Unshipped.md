@@ -6,6 +6,11 @@ DSA010  | Code Smell    | Warning  | DSA010Analyzer
 DSA043  | Best Practice | Info     | DSA043Analyzer
 DSA044  | Best Practice | Info     | DSA044Analyzer
 DSA045  | Best Practice | Warning  | DSA045Analyzer
+DSA046  | Code Smell    | Warning  | DSA046Analyzer
+DSA047  | Code Smell    | Warning  | DSA047Analyzer
+DSA048  | Code Smell    | Warning  | DSA048Analyzer
+DSA049  | Code Smell    | Warning  | DSA049Analyzer
+DSA050  | Code Smell    | Warning  | DSA050Analyzer
 
 ### Changed Rules
 
