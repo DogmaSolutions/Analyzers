@@ -124,6 +124,7 @@ A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[S
 | [DSA048](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA048.md) | Code Smell | Do not wait for a change of state by sleeping in a loop: signal it, and wait with a timeout | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA049](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA049.md) | Code Smell | A field written under a lock must be accessed under that same lock everywhere: a lock excludes only the code that takes it | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA050](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA050.md) | Code Smell | Testing a flag (or a state) and then changing it is not atomic: two threads can both pass the test | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA051](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA051.md) | Best Practice | A class without a `ToString()` override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties | ⚠ Warning | ✅ | ✅ | ✅ |
 
 # Refactorings list
 
@@ -465,6 +466,26 @@ dotnet_diagnostic.DSA050.excluded_base_types =
 dotnet_diagnostic.DSA050.excluded_field_name_patterns =
 dotnet_diagnostic.DSA050.excluded_member_name_patterns =
 dotnet_diagnostic.DSA050.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA051: A class without a ToString() override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties
+dotnet_diagnostic.DSA051.severity = warning
+dotnet_diagnostic.DSA051.included_type_kinds = class
+dotnet_diagnostic.DSA051.include_abstract_classes = true
+dotnet_diagnostic.DSA051.include_nested_types = true
+dotnet_diagnostic.DSA051.min_data_members = 0
+dotnet_diagnostic.DSA051.consider_inherited_overrides = true
+dotnet_diagnostic.DSA051.well_known_names = Id, Key, Pk, Name, Value, FriendlyName, Description, FirstName, LastName, Surname, Email, Address, Url, Range
+dotnet_diagnostic.DSA051.well_known_include_key = false
+dotnet_diagnostic.DSA051.sensitive_name_patterns = password, passwd, pwd, passphrase, secret, token, apikey, accesskey, privatekey, credential, connectionstring, cardnumber, cvv
+dotnet_diagnostic.DSA051.max_members = 0
+dotnet_diagnostic.DSA051.use_expression_body = true
+dotnet_diagnostic.DSA051.ignored_attributes = System.CodeDom.Compiler.GeneratedCodeAttribute, System.Runtime.CompilerServices.CompilerGeneratedAttribute, System.Diagnostics.DebuggerDisplayAttribute
+dotnet_diagnostic.DSA051.skip_test_assemblies = true
+dotnet_diagnostic.DSA051.test_assembly_names = xunit.core, xunit.v3.core, nunit.framework, Microsoft.VisualStudio.TestPlatform.TestFramework, MSTest.TestFramework, TUnit.Core
+dotnet_diagnostic.DSA051.excluded_type_name_patterns =
+dotnet_diagnostic.DSA051.excluded_namespace_patterns =
+dotnet_diagnostic.DSA051.excluded_base_types = System.Attribute
+dotnet_diagnostic.DSA051.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## Good / Professional
@@ -772,6 +793,26 @@ dotnet_diagnostic.DSA050.excluded_base_types =
 dotnet_diagnostic.DSA050.excluded_field_name_patterns =
 dotnet_diagnostic.DSA050.excluded_member_name_patterns =
 dotnet_diagnostic.DSA050.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA051: A class without a ToString() override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties
+dotnet_diagnostic.DSA051.severity = warning
+dotnet_diagnostic.DSA051.included_type_kinds = class
+dotnet_diagnostic.DSA051.include_abstract_classes = true
+dotnet_diagnostic.DSA051.include_nested_types = true
+dotnet_diagnostic.DSA051.min_data_members = 0
+dotnet_diagnostic.DSA051.consider_inherited_overrides = true
+dotnet_diagnostic.DSA051.well_known_names = Id, Key, Pk, Name, Value, FriendlyName, Description, FirstName, LastName, Surname, Email, Address, Url, Range
+dotnet_diagnostic.DSA051.well_known_include_key = false
+dotnet_diagnostic.DSA051.sensitive_name_patterns = password, passwd, pwd, passphrase, secret, token, apikey, accesskey, privatekey, credential, connectionstring, cardnumber, cvv
+dotnet_diagnostic.DSA051.max_members = 0
+dotnet_diagnostic.DSA051.use_expression_body = true
+dotnet_diagnostic.DSA051.ignored_attributes = System.CodeDom.Compiler.GeneratedCodeAttribute, System.Runtime.CompilerServices.CompilerGeneratedAttribute, System.Diagnostics.DebuggerDisplayAttribute
+dotnet_diagnostic.DSA051.skip_test_assemblies = true
+dotnet_diagnostic.DSA051.test_assembly_names = xunit.core, xunit.v3.core, nunit.framework, Microsoft.VisualStudio.TestPlatform.TestFramework, MSTest.TestFramework, TUnit.Core
+dotnet_diagnostic.DSA051.excluded_type_name_patterns =
+dotnet_diagnostic.DSA051.excluded_namespace_patterns =
+dotnet_diagnostic.DSA051.excluded_base_types = System.Attribute
+dotnet_diagnostic.DSA051.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## SSDLC (Secure Software Development Lifecycle) and/or AI-Driven development
@@ -1079,6 +1120,26 @@ dotnet_diagnostic.DSA050.excluded_base_types =
 dotnet_diagnostic.DSA050.excluded_field_name_patterns =
 dotnet_diagnostic.DSA050.excluded_member_name_patterns =
 dotnet_diagnostic.DSA050.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA051: A class without a ToString() override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties
+dotnet_diagnostic.DSA051.severity = error
+dotnet_diagnostic.DSA051.included_type_kinds = class
+dotnet_diagnostic.DSA051.include_abstract_classes = true
+dotnet_diagnostic.DSA051.include_nested_types = true
+dotnet_diagnostic.DSA051.min_data_members = 0
+dotnet_diagnostic.DSA051.consider_inherited_overrides = true
+dotnet_diagnostic.DSA051.well_known_names = Id, Key, Pk, Name, Value, FriendlyName, Description, FirstName, LastName, Surname, Email, Address, Url, Range
+dotnet_diagnostic.DSA051.well_known_include_key = false
+dotnet_diagnostic.DSA051.sensitive_name_patterns = password, passwd, pwd, passphrase, secret, token, apikey, accesskey, privatekey, credential, connectionstring, cardnumber, cvv
+dotnet_diagnostic.DSA051.max_members = 0
+dotnet_diagnostic.DSA051.use_expression_body = true
+dotnet_diagnostic.DSA051.ignored_attributes = System.CodeDom.Compiler.GeneratedCodeAttribute, System.Runtime.CompilerServices.CompilerGeneratedAttribute, System.Diagnostics.DebuggerDisplayAttribute
+dotnet_diagnostic.DSA051.skip_test_assemblies = true
+dotnet_diagnostic.DSA051.test_assembly_names = xunit.core, xunit.v3.core, nunit.framework, Microsoft.VisualStudio.TestPlatform.TestFramework, MSTest.TestFramework, TUnit.Core
+dotnet_diagnostic.DSA051.excluded_type_name_patterns =
+dotnet_diagnostic.DSA051.excluded_namespace_patterns =
+dotnet_diagnostic.DSA051.excluded_base_types = System.Attribute
+dotnet_diagnostic.DSA051.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ---

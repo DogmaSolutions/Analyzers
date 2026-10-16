@@ -1126,4 +1126,37 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA050VolatileNote" xml:space="preserve">
     <value> Note that volatile does not help here: it makes each single read and write visible, not the pair of them atomic.</value>
   </data>
+  <data name="DSA051AnalyzerTitle" xml:space="preserve">
+    <value>A class without a ToString() override shows up as its type name</value>
+  </data>
+  <data name="DSA051AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA051AnalyzerDescription" xml:space="preserve">
+    <value>Object.ToString() returns the full name of the type, so an instance that does not override it appears as 'MyApp.Customer' in the debugger, in logs, in exception messages and in the text of a failed assertion: there is no way to tell which instance it is. A ToString() that shows the member that identifies the instance (Id, Name, Email...) or, failing that, its main properties turns each of those places into something readable, at the price of one line. The code fix generates it: the first member of a configurable list of well known names that the type has; else all the public properties (Name=`x`, Age=`1`); else all the protected properties; else all the fields. Members whose name suggests a secret (password, token, apikey...) are never written, because ToString ends up in logs. Nothing is generated for a type without properties and fields. The message explains the specific scenario.</value>
+  </data>
+  <data name="DSA051ReviewComment" xml:space="preserve">
+    <value>/* [DSA051 / QA + Best Practice]: Class without a ToString() override (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA051.md)
+ * Object.ToString - https://learn.microsoft.com/dotnet/api/system.object.tostring
+ * CWE-778: Insufficient Logging - https://cwe.mitre.org/data/definitions/778.html
+ */</value>
+  </data>
+  <data name="DSA051MessageWellKnown" xml:space="preserve">
+    <value>The class '{0}' does not override ToString(), so in the debugger, in logs and in the text of a failed assertion an instance shows up as its type name only. The member '{1}' identifies an instance: the code fix generates a ToString() that returns it, which is enough to tell instances apart at a glance.</value>
+  </data>
+  <data name="DSA051MessagePublicProperties" xml:space="preserve">
+    <value>The class '{0}' does not override ToString(), so in the debugger, in logs and in the text of a failed assertion an instance shows up as its type name only. It has no member that identifies it by itself (Id, Name...), so the code fix generates a ToString() that lists its public properties ({1}) as Name=`value`, which makes an instance readable wherever it is printed.</value>
+  </data>
+  <data name="DSA051MessageProtectedProperties" xml:space="preserve">
+    <value>The class '{0}' does not override ToString(), so in the debugger, in logs and in the text of a failed assertion an instance shows up as its type name only. It has no public properties, so the code fix generates a ToString() that lists its protected properties ({1}): what a derived class sees is what describes the instance.</value>
+  </data>
+  <data name="DSA051MessageFields" xml:space="preserve">
+    <value>The class '{0}' does not override ToString(), so in the debugger, in logs and in the text of a failed assertion an instance shows up as its type name only. It has no public nor protected properties, so the code fix generates a ToString() that lists its fields ({1}): they are the only state that describes the instance.</value>
+  </data>
+  <data name="DSA051MessageOtherProperties" xml:space="preserve">
+    <value>The class '{0}' does not override ToString(), so in the debugger, in logs and in the text of a failed assertion an instance shows up as its type name only. Its only properties are internal or private ({1}), so the code fix generates a ToString() that lists them.</value>
+  </data>
+  <data name="DSA051MessageNoMembers" xml:space="preserve">
+    <value>The class '{0}' does not override ToString(), so in the debugger, in logs and in the text of a failed assertion an instance shows up as its type name only. It has no properties and no fields to show (or only ones whose name suggests a secret), so no ToString() is generated: if instances are ever printed, override it by hand with a meaningful description.</value>
+  </data>
 </root>

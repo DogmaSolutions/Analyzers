@@ -1971,5 +1971,95 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA050VolatileNote", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051AnalyzerTitle.
+        /// </summary>
+        internal static string DSA051AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA051AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA051AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA051AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051AnalyzerDescription.
+        /// </summary>
+        internal static string DSA051AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA051AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051ReviewComment.
+        /// </summary>
+        internal static string DSA051ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA051ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051MessageWellKnown.
+        /// </summary>
+        internal static string DSA051MessageWellKnown {
+            get {
+                return ResourceManager.GetString("DSA051MessageWellKnown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051MessagePublicProperties.
+        /// </summary>
+        internal static string DSA051MessagePublicProperties {
+            get {
+                return ResourceManager.GetString("DSA051MessagePublicProperties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051MessageProtectedProperties.
+        /// </summary>
+        internal static string DSA051MessageProtectedProperties {
+            get {
+                return ResourceManager.GetString("DSA051MessageProtectedProperties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051MessageFields.
+        /// </summary>
+        internal static string DSA051MessageFields {
+            get {
+                return ResourceManager.GetString("DSA051MessageFields", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051MessageOtherProperties.
+        /// </summary>
+        internal static string DSA051MessageOtherProperties {
+            get {
+                return ResourceManager.GetString("DSA051MessageOtherProperties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA051MessageNoMembers.
+        /// </summary>
+        internal static string DSA051MessageNoMembers {
+            get {
+                return ResourceManager.GetString("DSA051MessageNoMembers", resourceCulture);
+            }
+        }
     }
 }
