@@ -341,4 +341,70 @@ namespace TestApp
 
         Assert.IsFalse(DSA019CodeFixProvider.CanExtract(compilation.GetSemanticModel(tree), target), title);
     }
+
+    [TestMethod]
+    public async Task ThePrefixIsExtractedWhenTheWholeChainIsFirstUsedBehindACheckOnThePrefix()
+    {
+        var source = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class Album { public List<string> Pictures; }
+    public class Frame { public Album Album; }
+    public class Slideshow
+    {
+        private Frame frame;
+        private bool enabled;
+
+        public int Measure(int position)
+        {
+            if (this.enabled)
+            {
+                if (this.frame.Album == null || position < 0 || position >= {|#0:this.frame.Album.Pictures|}.Count)
+                    return 0;
+
+                return {|#1:this.frame.Album.Pictures|}[position].Length + 4;
+            }
+
+            return 1;
+        }
+    }
+}";
+
+        // the chain cannot go above the null check, but its prefix is the first thing the check reads
+        var fixedSource = @"
+using System.Collections.Generic;
+namespace TestApp
+{
+    public class Album { public List<string> Pictures; }
+    public class Frame { public Album Album; }
+    public class Slideshow
+    {
+        private Frame frame;
+        private bool enabled;
+
+        public int Measure(int position)
+        {
+            if (this.enabled)
+            {
+                var album = this.frame.Album;
+                if (album == null || position < 0 || position >= album.Pictures.Count)
+                    return 0;
+
+                return album.Pictures[position].Length + 4;
+            }
+
+            return 1;
+        }
+    }
+}";
+
+        var test = new CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Test();
+        test.TestCode = source;
+        test.FixedCode = fixedSource;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ExpectedDiagnostics.Add(CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId).WithLocation(0).WithArguments("this.frame.Album.Pictures", 2));
+        test.ExpectedDiagnostics.Add(CSharpCodeFixVerifier<DSA019Analyzer, DSA019CodeFixProvider>.Diagnostic(DSA019Analyzer.DiagnosticId).WithLocation(1).WithArguments("this.frame.Album.Pictures", 2));
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }

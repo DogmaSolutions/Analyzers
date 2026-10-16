@@ -69,46 +69,52 @@ public sealed class DSA019CodeFixProvider : CodeFixProvider
                     createChangedDocument: ct => ExtractToVariableAsync(context.Document, targetExpression, ct, nameStyle: VariableNameStyle.Compact),
                     equivalenceKey: DSA019Analyzer.DiagnosticId + "_Compact"),
                 diagnostic);
-
-            if (targetExpression is MemberAccessExpressionSyntax targetMa &&
-                targetMa.Expression is MemberAccessExpressionSyntax prefixMa)
-            {
-                var scope = SyntaxUtils.GetContainingScope(targetExpression);
-                if (scope != null)
-                {
-                    var prefixKey = SyntaxUtils.NormalizeWhitespace(prefixMa.ToString());
-                    var targetKey = SyntaxUtils.NormalizeWhitespace(targetExpression.ToString());
-
-                    var prefixCount = 0;
-                    var targetCount = 0;
-                    foreach (var ma in GetMemberAccessesInScope(scope))
-                    {
-                        var text = SyntaxUtils.NormalizeWhitespace(ma.ToString());
-                        if (text == prefixKey) prefixCount++;
-                        if (text == targetKey) targetCount++;
-                    }
-
-                    if (prefixCount > targetCount && CanExtract(semanticModel, prefixMa, 1))
-                    {
-                        var rootVarName = GenerateVariableName(prefixMa);
-                        rootVarName = ResolveNameConflicts(rootVarName, scope);
-
-                        var displayChain = prefixMa.ToString();
-                        if (displayChain.Length > 60)
-                            displayChain = displayChain.Substring(0, 57) + "...";
-
-                        context.RegisterCodeFix(
-                            CodeAction.Create(
-                                title: $"Extract {prefixCount} occurrences of '{displayChain}' into local variable '{rootVarName}'",
-                                createChangedDocument: ct => ExtractToVariableAsync(context.Document, prefixMa, ct, 1),
-                                equivalenceKey: DSA019Analyzer.DiagnosticId + "_root"),
-                            diagnostic);
-                    }
-                }
-            }
         }
 
+        // the shared prefix has its own placement: it can be evaluated unconditionally (a null check on it) where the whole chain cannot
+        if (semanticModel != null)
+            RegisterRootExtraction(context, diagnostic, targetExpression, semanticModel);
+
         ReviewCommentCodeFix.Register(context, diagnostic, targetExpression, DSA019Analyzer.DiagnosticId, nameof(Resources.DSA019ReviewComment));
+    }
+
+    /// <summary>Offers to extract the prefix of the chain when it is repeated more often than the chain itself.</summary>
+    private static void RegisterRootExtraction(CodeFixContext context, Diagnostic diagnostic, ExpressionSyntax targetExpression, SemanticModel semanticModel)
+    {
+        if (targetExpression is not MemberAccessExpressionSyntax { Expression: MemberAccessExpressionSyntax prefixMa })
+            return;
+
+        var scope = SyntaxUtils.GetContainingScope(targetExpression);
+        if (scope == null)
+            return;
+
+        var prefixKey = SyntaxUtils.NormalizeWhitespace(prefixMa.ToString());
+        var targetKey = SyntaxUtils.NormalizeWhitespace(targetExpression.ToString());
+
+        var prefixCount = 0;
+        var targetCount = 0;
+        foreach (var ma in GetMemberAccessesInScope(scope))
+        {
+            var text = SyntaxUtils.NormalizeWhitespace(ma.ToString());
+            if (text == prefixKey) prefixCount++;
+            if (text == targetKey) targetCount++;
+        }
+
+        if (prefixCount <= targetCount || !CanExtract(semanticModel, prefixMa, 1))
+            return;
+
+        var rootVarName = ResolveNameConflicts(GenerateVariableName(prefixMa), scope);
+
+        var displayChain = prefixMa.ToString();
+        if (displayChain.Length > 60)
+            displayChain = displayChain.Substring(0, 57) + "...";
+
+        context.RegisterCodeFix(
+            CodeAction.Create(
+                title: $"Extract {prefixCount} occurrences of '{displayChain}' into local variable '{rootVarName}'",
+                createChangedDocument: ct => ExtractToVariableAsync(context.Document, prefixMa, ct, 1),
+                equivalenceKey: DSA019Analyzer.DiagnosticId + "_root"),
+            diagnostic);
     }
 
     /// <summary>
