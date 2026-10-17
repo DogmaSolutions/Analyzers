@@ -53,6 +53,47 @@ public partial class DSA010Tests
         return "root = true\n[*.cs]\n" + string.Join("\n", lines) + "\n";
     }
 
+    /// <summary>The declared type of the field, as it is spelled in the source.</summary>
+    internal static string GetFieldType(string source, string field)
+    {
+        var match = Regex.Match(source, @"([\w.]+(?:<[\w, ]+>)?(?:\[\])?\??|\([\w, ]+\))\s+(?:\w+\s*,\s*)*" + Regex.Escape(field) + @"\b\s*[;=,]");
+        Assert.IsTrue(match.Success, "Field " + field + " not found");
+        return match.Groups[1].Value;
+    }
+
+    private static string F(string format, params object[] arguments) => string.Format(Resources.Culture, format, arguments);
+
+    /// <summary>
+    /// What the message must say about a type, written here independently of the analyzer: how the CLR reads and writes it, and on which platforms.
+    /// </summary>
+    internal static (string Sentence, string Remedy) ExpectedTypeText(string type, string source)
+    {
+        var other = F(Resources.DSA010RemedyOther, type);
+        switch (type)
+        {
+            case "bool": case "byte": case "sbyte": return (F(Resources.DSA010TypeSmall, type, 8), string.Empty);
+            case "short": case "ushort": case "char": return (F(Resources.DSA010TypeSmall, type, 16), string.Empty);
+            case "int": case "uint": case "float": return (F(Resources.DSA010TypeSmall, type, 32), string.Empty);
+            case "System.IntPtr": return (F(Resources.DSA010TypeNativeWord, "nint"), string.Empty);
+            case "System.UIntPtr": return (F(Resources.DSA010TypeNativeWord, "nuint"), string.Empty);
+            case "string": case "object": case "int[]": case "Worker": return (F(Resources.DSA010TypeReference, type), string.Empty);
+            case "Action": return (F(Resources.DSA010TypeReference, "Action"), string.Empty);
+            case "Mode": return (F(Resources.DSA010TypeSmallEnum, "Mode", "int", 32), string.Empty);
+            case "EventHandler": return (F(Resources.DSA010TypeReference, "EventHandler"), string.Empty);
+            case "Kind": return (F(Resources.DSA010TypeSmallEnum, "Kind", "int", 32), string.Empty);
+            case "LongKind": return (F(Resources.DSA010TypeWide64Enum, "LongKind", "long"), F(Resources.DSA010RemedyOther, "LongKind"));
+            case "long": return (F(Resources.DSA010TypeWide64, type), F(Resources.DSA010RemedyLong, type));
+            case "ulong": return (F(Resources.DSA010TypeWide64, type), F(Resources.DSA010RemedyULong, type));
+            case "double": return (F(Resources.DSA010TypeWide64, type), F(Resources.DSA010RemedyDouble, type));
+            case "decimal": return (F(Resources.DSA010TypeDecimal, type), other);
+            case "int?": return (F(Resources.DSA010TypeStruct, "int?"), other);
+            case "(int, int)": return (F(Resources.DSA010TypeStruct, "(int, int)"), other);
+            case "DateTime": case "TimeSpan": case "Guid": case "Pair": return (F(Resources.DSA010TypeStruct, type), other);
+            case "T": return source.Contains("where T : class") ? (F(Resources.DSA010TypeReference, "T"), string.Empty) : (F(Resources.DSA010TypeParameter, "T"), other);
+            default: throw new AssertFailedException("No expectation for the type " + type);
+        }
+    }
+
     internal static CSharpAnalyzerVerifier<DSA010Analyzer>.Test CreateTest(string source, string settings, string expected)
     {
         var test = new CSharpAnalyzerVerifier<DSA010Analyzer>.Test();
@@ -64,7 +105,8 @@ public partial class DSA010Tests
         for (var i = 0; i < entries.Length; i++)
         {
             var parts = entries[i].Split('|');
-            var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(parts[0], Resources.Culture), parts[1], parts[2]);
+            var (sentence, remedy) = ExpectedTypeText(GetFieldType(source, parts[1]), source);
+            var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(parts[0], Resources.Culture), parts[1], parts[2], sentence, remedy);
             test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA010Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithLocation(i).WithMessage(message));
         }
 
@@ -85,5 +127,19 @@ public partial class DSA010Tests
         test.TestState.Sources.Add(("Other.cs", "namespace TestApp\n{\n    public partial class Worker\n    {\n        private int _a, _b;\n        public void Work() { lock (_gate) { _a++; _b++; } }\n    }\n}"));
 
         await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public void The_messages_state_the_type_and_the_platforms_they_are_true_for()
+    {
+        // a claim about atomicity is never made without saying for which type, and on which platforms
+        StringAssert.Contains(F(Resources.DSA010TypeSmall, "int", 32), "'int' is 32 bits wide");
+        StringAssert.Contains(F(Resources.DSA010TypeSmall, "int", 32), "every platform it runs on (32-bit and 64-bit processes alike)");
+        StringAssert.Contains(F(Resources.DSA010TypeWide64, "long"), "in a 64-bit process the CLR reads and writes it as one operation, but in a 32-bit process");
+        StringAssert.Contains(F(Resources.DSA010TypeDecimal, "decimal"), "on any platform, 32-bit or 64-bit");
+        StringAssert.Contains(F(Resources.DSA010TypeStruct, "Pair"), "on any platform, 32-bit or 64-bit");
+        StringAssert.Contains(F(Resources.DSA010TypeReference, "string"), "on every platform");
+        Assert.IsFalse(Resources.DSA010MessageReadDedicated.Contains("a single read is already atomic"));
+        Assert.IsTrue(Resources.DSA010MessageReadDedicated.Contains("{2}"));
     }
 }

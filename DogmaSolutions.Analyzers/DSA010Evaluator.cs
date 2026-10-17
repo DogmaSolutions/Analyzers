@@ -9,11 +9,13 @@ namespace DogmaSolutions.Analyzers
     /// <summary>What DSA010 found: the scenario (which selects the message) and the names the message talks about.</summary>
     internal sealed class DSA010Finding
     {
-        internal DSA010Finding(string messageResourceName, string fieldName, string lockName)
+        internal DSA010Finding(string messageResourceName, string fieldName, string lockName, string typeSentence, string remedy)
         {
             MessageResourceName = messageResourceName;
             FieldName = fieldName;
             LockName = lockName;
+            TypeSentence = typeSentence;
+            Remedy = remedy;
         }
 
         internal string MessageResourceName { get; }
@@ -21,6 +23,12 @@ namespace DogmaSolutions.Analyzers
         internal string FieldName { get; }
 
         internal string LockName { get; }
+
+        /// <summary>What is true of the type of the field, and on which platforms (32-bit and 64-bit processes), about reading and writing it atomically.</summary>
+        internal string TypeSentence { get; }
+
+        /// <summary>What can be used instead of the lock, for the types the CLR may read or write torn.</summary>
+        internal string Remedy { get; }
     }
 
     /// <summary>
@@ -47,7 +55,11 @@ namespace DogmaSolutions.Analyzers
                 return null;
 
             var lockKind = GetLockKind(lockStatement, field, model, settings, cancellationToken, out var lockName);
-            return lockKind == null ? null : new DSA010Finding(DSA010Scenario.GetMessageResourceName(access, lockKind.Value, fieldKind.Value), field.Name, lockName);
+            if (lockKind == null)
+                return null;
+
+            var (typeSentence, remedy) = DSA010Types.Describe(field.Type);
+            return new DSA010Finding(DSA010Scenario.GetMessageResourceName(access, lockKind.Value, fieldKind.Value), field.Name, lockName, typeSentence, remedy);
         }
 
         // ---- exclusions ---------------------------------------------------------------------------------------------
@@ -137,6 +149,18 @@ namespace DogmaSolutions.Analyzers
             SpecialType.System_IntPtr,
             SpecialType.System_UIntPtr);
 
+        /// <summary>The width in bits of the types that are 32 bits wide or less.</summary>
+        private static readonly ImmutableDictionary<SpecialType, int> _bits = ImmutableDictionary<SpecialType, int>.Empty
+            .Add(SpecialType.System_Boolean, 8)
+            .Add(SpecialType.System_SByte, 8)
+            .Add(SpecialType.System_Byte, 8)
+            .Add(SpecialType.System_Char, 16)
+            .Add(SpecialType.System_Int16, 16)
+            .Add(SpecialType.System_UInt16, 16)
+            .Add(SpecialType.System_Int32, 32)
+            .Add(SpecialType.System_UInt32, 32)
+            .Add(SpecialType.System_Single, 32);
+
         /// <summary>
         /// A type that is wider than the native word of the CPU, or made of several fields: reading or writing it is not guaranteed to be
         /// atomic, so a lock may be what keeps a reader from seeing half of an old and half of a new value.
@@ -149,5 +173,53 @@ namespace DogmaSolutions.Analyzers
             var effective = type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying } ? underlying : type;
             return !_atomicTypes.Contains(effective.SpecialType);
         }
+
+        /// <summary>
+        /// What the message says about the type of the field: whether the CLR reads and writes it as one indivisible operation, and on which
+        /// platforms; and, for the types it may read or write torn, what can be used instead of a lock.
+        /// </summary>
+        internal static (string TypeSentence, string Remedy) Describe(ITypeSymbol type)
+        {
+            var name = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+            if (type is IPointerTypeSymbol or IFunctionPointerTypeSymbol)
+                return (Format(Resources.DSA010TypeNativeWord, name), string.Empty);
+
+            if (type.IsReferenceType)
+                return (Format(Resources.DSA010TypeReference, name), string.Empty);
+
+            var underlying = type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } enumType } ? enumType : null;
+            var special = (underlying ?? type).SpecialType;
+            var underlyingName = underlying?.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) ?? string.Empty;
+
+            if (special is SpecialType.System_IntPtr or SpecialType.System_UIntPtr)
+                return (Format(Resources.DSA010TypeNativeWord, name), string.Empty);
+
+            if (_bits.TryGetValue(special, out var bits))
+            {
+                return (underlying == null ? Format(Resources.DSA010TypeSmall, name, bits) : Format(Resources.DSA010TypeSmallEnum, name, underlyingName, bits), string.Empty);
+            }
+
+            var other = Format(Resources.DSA010RemedyOther, name);
+            switch (special)
+            {
+                case SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double:
+                    var sentence = underlying == null ? Format(Resources.DSA010TypeWide64, name) : Format(Resources.DSA010TypeWide64Enum, name, underlyingName);
+                    return (sentence, underlying != null ? other : GetRemedy(special, name));
+                case SpecialType.System_Decimal:
+                    return (Format(Resources.DSA010TypeDecimal, name), other);
+                default:
+                    return (Format(type.TypeKind == TypeKind.TypeParameter ? Resources.DSA010TypeParameter : Resources.DSA010TypeStruct, name), other);
+            }
+        }
+
+        private static string GetRemedy(SpecialType special, string name) =>
+            special switch
+            {
+                SpecialType.System_Int64 => Format(Resources.DSA010RemedyLong, name),
+                SpecialType.System_UInt64 => Format(Resources.DSA010RemedyULong, name),
+                _ => Format(Resources.DSA010RemedyDouble, name),
+            };
+
+        private static string Format(string format, params object[] arguments) => string.Format(Resources.Culture, format, arguments);
     }
 }

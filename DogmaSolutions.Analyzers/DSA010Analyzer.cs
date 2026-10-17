@@ -65,7 +65,7 @@ namespace DogmaSolutions.Analyzers
             if (finding == null)
                 return;
 
-            var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(finding.MessageResourceName, Resources.Culture), finding.FieldName, finding.LockName);
+            var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(finding.MessageResourceName, Resources.Culture), finding.FieldName, finding.LockName, finding.TypeSentence, finding.Remedy);
             context.ReportDiagnostic(Diagnostic.Create(_rule, GetHeaderLocation(lockStatement), message));
         }
 

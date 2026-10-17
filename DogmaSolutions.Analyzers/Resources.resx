@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
     <!-- 
       Microsoft ResX Schema 
@@ -221,7 +221,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>{0}</value>
   </data>
   <data name="DSA010AnalyzerDescription" xml:space="preserve">
-    <value>A lock whose critical section is a single plain read or assignment of a field cannot protect any logic of the class: a single access of a field is already atomic, and the races that corrupt state live between operations (check-then-act, read-modify-write), not inside one access. Wrapping each access of a field in a lock gives a false sense of thread safety. Lock the whole operation instead, or express what you really need with volatile, Interlocked or an immutable snapshot. The message explains the specific scenario: dedicated or shared lock, lock on this, plain, wide (tearable), volatile or readonly field.</value>
+    <value>A lock whose critical section is a single plain read or assignment of a field cannot protect any logic of the class: the races that corrupt state live between operations (check-then-act, read-modify-write), not inside one access. Reading or writing a field of a type that is 32 bits wide or less (bool, char, byte, short, int, float...), or a reference, is one indivisible operation on every platform .NET runs on; a 64-bit value (long, ulong, double) is one indivisible operation only in a 64-bit process, and a decimal or a struct on no platform, which is the only thing a lock around the single access can prevent. Wrapping each access of a field in a lock gives a false sense of thread safety. Lock the whole operation instead, or express what you really need with volatile, Interlocked or an immutable snapshot. The message names the type of the field and explains the specific scenario: dedicated or shared lock, lock on this, plain, wide (tearable), volatile or readonly field.</value>
   </data>
   <data name="DSA010ReviewComment" xml:space="preserve">
     <value>/* [DSA010 / QA + Code Smell]: Lock around a single field access (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA010.md)
@@ -231,49 +231,49 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  */</value>
   </data>
   <data name="DSA010MessageReadDedicated" xml:space="preserve">
-    <value>Locking '{1}' just to read '{0}' protects nothing: a single read is already atomic, and no other code ever takes this lock, so no sequence of operations is made consistent. Callers that read and then act (if (x) ...) still race. Lock the whole operation, or use 'volatile' if visibility is all you need.</value>
+    <value>Locking '{1}' just to read '{0}' protects nothing: {2}, and no other code ever takes this lock, so no sequence of operations is made consistent. Callers that read and then act (if (x) ...) still race. Lock the whole operation, or use 'volatile' if visibility is all you need.</value>
   </data>
   <data name="DSA010MessageReadDedicatedTearable" xml:space="preserve">
-    <value>Locking '{1}' just to read '{0}' does not protect your logic: no other code takes this lock, so no sequence of operations is made consistent (callers that read and then act still race). At most it keeps a wide value from being read half-updated (torn); if that is the intent, say it explicitly (Interlocked.Read, or an immutable snapshot) and document it.</value>
+    <value>Locking '{1}' just to read '{0}' does not protect your logic: no other code takes this lock, so no sequence of operations is made consistent (callers that read and then act still race). The only thing it can do is keep the value from being read torn: {2}. If that is the intent, say it explicitly and document it: {3}.</value>
   </data>
   <data name="DSA010MessageReadShared" xml:space="preserve">
-    <value>The lock '{1}' around the read of '{0}' guards a single atomic access, so it cannot protect your logic: its only effects are memory ordering and making this reader wait while another thread holds '{1}' elsewhere. If waiting is intended, say so explicitly; otherwise remove it. A multi-step invariant needs one critical section around the whole sequence.</value>
+    <value>The lock '{1}' around the read of '{0}' guards a single access, and {2}, so it cannot protect your logic: its only effects are memory ordering and making this reader wait while another thread holds '{1}' elsewhere. If waiting is intended, say so explicitly; otherwise remove it. A multi-step invariant needs one critical section around the whole sequence.</value>
   </data>
   <data name="DSA010MessageReadSharedTearable" xml:space="preserve">
-    <value>The lock '{1}' around the read of '{0}' guards a single access, so it cannot protect your logic: it only orders memory, makes this reader wait while another thread holds '{1}' elsewhere, and may keep a wide value from being read torn. If one of these is the intent, express it explicitly (Interlocked.Read, an immutable snapshot, a documented wait); otherwise remove the lock.</value>
+    <value>The lock '{1}' around the read of '{0}' guards a single access, so it cannot protect your logic: it only orders memory, makes this reader wait while another thread holds '{1}' elsewhere, and may keep the value from being read torn ({2}). If one of these is the intent, express it explicitly ({3}) or document the wait; otherwise remove the lock.</value>
   </data>
   <data name="DSA010MessageReadThis" xml:space="preserve">
-    <value>lock (this) around the read of '{0}' protects nothing: one atomic read needs no lock, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. Use a private lock object around the whole operation, or 'volatile' if visibility is all you need.</value>
+    <value>lock (this) around the read of '{0}' protects nothing: {2}, so one read needs no lock, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. Use a private lock object around the whole operation, or 'volatile' if visibility is all you need.</value>
   </data>
   <data name="DSA010MessageReadThisTearable" xml:space="preserve">
-    <value>lock (this) around the read of '{0}' does not protect your logic, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. At most it keeps a wide value from being read torn; if that is the intent, say it explicitly (Interlocked.Read, an immutable snapshot) with a private lock object, and document it.</value>
+    <value>lock (this) around the read of '{0}' does not protect your logic, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. At most it keeps the value from being read torn ({2}); if that is the intent, say it explicitly with a private lock object and document it: {3}.</value>
   </data>
   <data name="DSA010MessageReadonlyField" xml:space="preserve">
     <value>'{0}' is readonly: it never changes after construction, so reading it under '{1}' protects nothing at all, and the lock only makes readers wait. Remove it. (If '{0}' points to a mutable object, protect the operations on that object, not the read of the reference.)</value>
   </data>
   <data name="DSA010MessageVolatileRead" xml:space="preserve">
-    <value>'{0}' is volatile: every read already sees the latest value, so the lock '{1}' adds nothing around a single read. Locking each access does not make sequences of operations safe; lock the whole operation, or use Interlocked.CompareExchange for atomic updates.</value>
+    <value>'{0}' is volatile: every read already sees the latest value, and {2}, so the lock '{1}' adds nothing around a single read. Locking each access does not make sequences of operations safe; lock the whole operation, or use Interlocked.CompareExchange for atomic updates.</value>
   </data>
   <data name="DSA010MessageVolatileWrite" xml:space="preserve">
-    <value>'{0}' is volatile: every write is already published to the other threads, so the lock '{1}' adds nothing around a single assignment. Locking each access does not make sequences of operations safe; lock the whole operation, or use Interlocked.CompareExchange for atomic updates.</value>
+    <value>'{0}' is volatile: every write is already published to the other threads, and {2}, so the lock '{1}' adds nothing around a single assignment. Locking each access does not make sequences of operations safe; lock the whole operation, or use Interlocked.CompareExchange for atomic updates.</value>
   </data>
   <data name="DSA010MessageWriteDedicated" xml:space="preserve">
-    <value>Locking '{1}' just to assign '{0}' protects nothing: a single assignment is already atomic, and no other code takes this lock. Races live between operations (check-then-act, read-modify-write), not inside one assignment. Lock the whole operation, or use 'volatile' / 'Interlocked' for visibility or atomic updates.</value>
+    <value>Locking '{1}' just to assign '{0}' protects nothing: {2}, and no other code takes this lock. Races live between operations (check-then-act, read-modify-write), not inside one assignment. Lock the whole operation, or use 'volatile' / 'Interlocked' for visibility or atomic updates.</value>
   </data>
   <data name="DSA010MessageWriteDedicatedTearable" xml:space="preserve">
-    <value>Locking '{1}' just to assign '{0}' does not protect your logic: no other code takes this lock, and races live between operations (check-then-act, read-modify-write), not inside one assignment. At most it keeps a wide value from being written half-way (torn); if that is the intent, say it explicitly (Interlocked.Exchange, or swap an immutable snapshot) and document it.</value>
+    <value>Locking '{1}' just to assign '{0}' does not protect your logic: no other code takes this lock, and races live between operations (check-then-act, read-modify-write), not inside one assignment. The only thing it can do is keep the value from being written torn: {2}. If that is the intent, say it explicitly and document it: {3}.</value>
   </data>
   <data name="DSA010MessageWriteShared" xml:space="preserve">
-    <value>The lock '{1}' around the assignment of '{0}' guards a single atomic access, so it cannot protect your logic: it only orders memory and makes this writer wait while another thread holds '{1}' elsewhere. Multi-step invariants need one critical section around the whole sequence, not one around each field access.</value>
+    <value>The lock '{1}' around the assignment of '{0}' guards a single access, and {2}, so it cannot protect your logic: it only orders memory and makes this writer wait while another thread holds '{1}' elsewhere. Multi-step invariants need one critical section around the whole sequence, not one around each field access.</value>
   </data>
   <data name="DSA010MessageWriteSharedTearable" xml:space="preserve">
-    <value>The lock '{1}' around the assignment of '{0}' guards a single access, so it cannot protect your logic: it only orders memory, makes this writer wait while another thread holds '{1}' elsewhere, and may keep a wide value from being written torn. If one of these is the intent, express it explicitly (Interlocked.Exchange, an immutable snapshot); multi-step invariants need one critical section around the whole sequence.</value>
+    <value>The lock '{1}' around the assignment of '{0}' guards a single access, so it cannot protect your logic: it only orders memory, makes this writer wait while another thread holds '{1}' elsewhere, and may keep the value from being written torn ({2}). If one of these is the intent, express it explicitly ({3}); multi-step invariants need one critical section around the whole sequence.</value>
   </data>
   <data name="DSA010MessageWriteThis" xml:space="preserve">
-    <value>lock (this) around the assignment of '{0}' protects nothing: one atomic assignment needs no lock, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. Use a private lock object around the whole operation, or 'volatile' / 'Interlocked' if that is all you need.</value>
+    <value>lock (this) around the assignment of '{0}' protects nothing: {2}, so one assignment needs no lock, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. Use a private lock object around the whole operation, or 'volatile' / 'Interlocked' if that is all you need.</value>
   </data>
   <data name="DSA010MessageWriteThisTearable" xml:space="preserve">
-    <value>lock (this) around the assignment of '{0}' does not protect your logic, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. At most it keeps a wide value from being written torn; if that is the intent, say it explicitly (Interlocked.Exchange, an immutable snapshot) with a private lock object, and document it.</value>
+    <value>lock (this) around the assignment of '{0}' does not protect your logic, and locking 'this' exposes the lock to every caller, who can block the instance or deadlock it. At most it keeps the value from being written torn ({2}); if that is the intent, say it explicitly with a private lock object and document it: {3}.</value>
   </data>
   <data name="DSA011AnalyzerTitle" xml:space="preserve">
     <value>Avoid lazily initialized, self-contained, static singleton properties</value>
@@ -800,25 +800,25 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>A field marked with [ThreadStatic] and given a field initializer is a latent, hard-to-diagnose bug. A thread-static field initializer executes only for the single thread that first triggers the declaring type's static construction; on every other thread the field keeps its default value (null for a reference type such as System.Random), so the first use on those threads throws a NullReferenceException. The correct pattern is to leave the [ThreadStatic] field uninitialized and lazily assign a per-thread instance on first use (e.g. `_rnd ??= new Random();`), or to drop [ThreadStatic] entirely in favour of Random.Shared on .NET 6+. Because System.Random is not thread-safe, developers frequently reach for [ThreadStatic] to obtain a per-thread instance, which makes this a common footgun precisely in the code that was trying to be correct about threading (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md).</value>
   </data>
   <data name="DSA037AnalyzerMessageFormat" xml:space="preserve">
-    <value>The [ThreadStatic] field '{0}' has a field initializer, which runs only on the thread that first triggers static construction; every other thread will observe null. Remove the initializer and assign the Random per-thread on first use, or use Random.Shared.</value>
+    <value>The [ThreadStatic] field '{0}' has a field initializer, which runs only on the thread that first triggers static construction; every other thread will observe null. Remove the initializer and assign the Random per-thread on first use, or, on .NET 6 and later, use Random.Shared.</value>
   </data>
   <data name="DSA037AnalyzerTitle" xml:space="preserve">
     <value>A [ThreadStatic] Random field must not have a field initializer</value>
   </data>
   <data name="DSA038AnalyzerDescription" xml:space="preserve">
-    <value>Constructing System.Random with an explicit seed is almost always a mistake. When the seed is a time-based value such as Environment.TickCount or DateTime.UtcNow.Ticks, it merely reproduces what the parameterless `new Random()` constructor already does — but worse: the clock has low resolution, so two Random instances created within the same tick (for example inside a loop) are given the same seed and therefore produce the identical sequence of numbers. When the seed is a compile-time constant (for example `new Random(42)`), the sequence is fully deterministic and predictable, which is occasionally desirable for reproducible simulations or tests but is a defect in production code. Prefer the parameterless `new Random()` (or `Random.Shared` on .NET 6+), and reserve seeded construction for code that genuinely needs a reproducible sequence — where the rule can be downgraded per-path via .editorconfig. Never derive a seed from the current time by hand (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md).</value>
+    <value>Constructing System.Random with an explicit seed is almost always a mistake. When the seed is a time-based value such as Environment.TickCount or DateTime.UtcNow.Ticks, it merely reproduces what the parameterless `new Random()` constructor does on .NET Framework (where the default seed is the clock too), and it is worse than the parameterless constructor on .NET Core 2.0 and later (including .NET 5+), whose default seed does not depend on the clock. In both cases the clock has low resolution, so two Random instances created within the same tick (for example inside a loop) are given the same seed and therefore produce the identical sequence of numbers. When the seed is a compile-time constant (for example `new Random(42)`), the sequence is fully deterministic and predictable, which is occasionally desirable for reproducible simulations or tests but is a defect in production code. Prefer one reused parameterless `new Random()` instance (on .NET Framework, never several created in quick succession) or `Random.Shared` on .NET 6+, and reserve seeded construction for code that genuinely needs a reproducible sequence — where the rule can be downgraded per-path via .editorconfig. Never derive a seed from the current time by hand (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md).</value>
   </data>
   <data name="DSA038AnalyzerMessageFormat" xml:space="preserve">
-    <value>This Random is seeded with {0}. Prefer the parameterless 'new Random()' (or Random.Shared) unless a reproducible sequence is explicitly required.</value>
+    <value>This Random is seeded with {0}. Prefer a single, reused 'new Random()' (parameterless; on .NET Framework it is seeded from the clock too, so do not create several in quick succession) or, on .NET 6 and later, Random.Shared, unless a reproducible sequence is explicitly required.</value>
   </data>
   <data name="DSA038AnalyzerTitle" xml:space="preserve">
     <value>Avoid seeding Random with a time-based or constant value</value>
   </data>
   <data name="DSA039AnalyzerDescription" xml:space="preserve">
-    <value>Bytes produced by System.Security.Cryptography.RandomNumberGenerator are uniformly distributed, but reducing them into a smaller range with the remainder operator (%) reintroduces bias unless the range size exactly divides the operand's value domain (e.g. 2^32 for an int). When it does not, the lower residues occur slightly more often than the higher ones, so the resulting value is no longer uniform — which silently weakens tokens, keys, PINs and other security-sensitive values and defeats the entire reason for choosing a cryptographic generator over System.Random. The correct API is RandomNumberGenerator.GetInt32(fromInclusive, toExclusive), which performs rejection sampling to produce an unbiased value in the requested range. This rule flags a % whose left operand is derived from RandomNumberGenerator output (via BitConverter conversion of, or indexing into, RNG-filled bytes, including a one-hop local buffer). It deliberately favours precision over recall and does not follow cross-method flow (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md).</value>
+    <value>Bytes produced by System.Security.Cryptography.RandomNumberGenerator are uniformly distributed, but reducing them into a smaller range with the remainder operator (%) reintroduces bias unless the range size exactly divides the operand's value domain (e.g. 2^32 for an int). When it does not, the lower residues occur slightly more often than the higher ones, so the resulting value is no longer uniform — which silently weakens tokens, keys, PINs and other security-sensitive values and defeats the entire reason for choosing a cryptographic generator over System.Random. The correct API is RandomNumberGenerator.GetInt32(fromInclusive, toExclusive), which performs rejection sampling to produce an unbiased value in the requested range; it exists in .NET Core 3.0 and later (and .NET Standard 2.1), not in .NET Framework nor in .NET Standard 2.0, where the same rejection sampling must be written by hand. This rule flags a % whose left operand is derived from RandomNumberGenerator output (via BitConverter conversion of, or indexing into, RNG-filled bytes, including a one-hop local buffer). It deliberately favours precision over recall and does not follow cross-method flow (https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md).</value>
   </data>
   <data name="DSA039AnalyzerMessageFormat" xml:space="preserve">
-    <value>Reducing cryptographic random bytes with % introduces modulo bias; use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive)</value>
+    <value>Reducing cryptographic random bytes with % introduces modulo bias; use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive) (.NET Core 3.0 and later, .NET Standard 2.1; on .NET Framework and .NET Standard 2.0 it does not exist: reject the values above the largest multiple of the range and draw again)</value>
   </data>
   <data name="DSA039AnalyzerTitle" xml:space="preserve">
     <value>Avoid modulo bias when reducing cryptographic random bytes into a range</value>
@@ -834,21 +834,21 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   </data>
   <data name="DSA037ReviewComment" xml:space="preserve">
     <value>/* [DSA037 / QA + Bug]: A [ThreadStatic] Random field must not have a field initializer (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md)
- * A [ThreadStatic] field initializer runs only on the thread that first triggers static construction; every other thread observes the default (null). Assign the Random per-thread on first use, or use Random.Shared.
+ * A [ThreadStatic] field initializer runs only on the thread that first triggers static construction; every other thread observes the default (null). Assign the Random per-thread on first use, or, on .NET 6 and later, use Random.Shared.
  * MITRE, CWE-457: Use of Uninitialized Variable - https://cwe.mitre.org/data/definitions/457.html
  * ThreadStaticAttribute - https://learn.microsoft.com/en-us/dotnet/api/system.threadstaticattribute
  */</value>
   </data>
   <data name="DSA038ReviewComment" xml:space="preserve">
     <value>/* [DSA038 / CySec + QA + Bug]: Avoid seeding Random with a time-based or constant value (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md)
- * A time-based seed collides within a clock tick (identical sequences); a constant seed is fully predictable. Prefer the parameterless 'new Random()' or Random.Shared.
+ * A time-based seed collides within a clock tick (identical sequences); a constant seed is fully predictable. Prefer one reused parameterless 'new Random()' (on .NET Framework it is clock-seeded too) or, on .NET 6 and later, Random.Shared.
  * MITRE, CWE-337: Predictable Seed in Pseudo-Random Number Generator - https://cwe.mitre.org/data/definitions/337.html
  * System.Random - https://learn.microsoft.com/en-us/dotnet/api/system.random
  */</value>
   </data>
   <data name="DSA039ReviewComment" xml:space="preserve">
     <value>/* [DSA039 / CySec + QA + Security]: Avoid modulo bias when reducing cryptographic random bytes into a range (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md)
- * A naive % reduction skews the distribution and undermines the cryptographic guarantee. Use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive), which rejection-samples an unbiased value.
+ * A naive % reduction skews the distribution and undermines the cryptographic guarantee. Use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive) (.NET Core 3.0 and later), which rejection-samples an unbiased value; on .NET Framework write the rejection sampling by hand.
  * MITRE, CWE-1241: Use of Predictable Algorithm in Random Number Generator - https://cwe.mitre.org/data/definitions/1241.html
  * MITRE, CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG) - https://cwe.mitre.org/data/definitions/338.html
  * RandomNumberGenerator.GetInt32 - https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator.getint32
@@ -972,7 +972,7 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>{0}</value>
   </data>
   <data name="DSA046AnalyzerDescription" xml:space="preserve">
-    <value>'volatile' makes each single read and each single write of a field visible to the other threads, but a read-modify-write (x++, x += v, x = f(x)) is a read followed by a write, and another thread can run in between: two threads read the same value and one update is lost. The keyword gives a false sense of thread safety. Use Interlocked (Increment, Add, Exchange, CompareExchange) or take a lock around every access of the field. The message explains the specific scenario: the operation, and the kind of field (int or uint, another value type, a reference).</value>
+    <value>'volatile' makes each single read and each single write of a field visible to the other threads, but a read-modify-write (x++, x += v, x = f(x)) is a read followed by a write, and another thread can run in between: two threads read the same value and one update is lost. The keyword gives a false sense of thread safety. Use Interlocked or take a lock around every access of the field; which Interlocked methods exist depends on the type of the field (and, for some, on the .NET version), and the message names the ones that exist for the type of this field. The message explains the specific scenario: the operation, and the kind of field (int or uint, another value type, a reference).</value>
   </data>
   <data name="DSA046ReviewComment" xml:space="preserve">
     <value>/* [DSA046 / QA + Code Smell]: Read-modify-write of a volatile field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA046.md)
@@ -982,28 +982,28 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  */</value>
   </data>
   <data name="DSA046MessageIncrementInterlocked" xml:space="preserve">
-    <value>The '{1}' on the volatile field '{0}' is not atomic: it reads the field, computes the new value and writes it back, and another thread can run in between, so two threads can read the same value and one update is lost. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Use Interlocked (Increment, Decrement, Add, Exchange, or a CompareExchange loop for any other computation), or take a lock around every access of the field.</value>
+    <value>The '{1}' on the volatile field '{0}' is not atomic: it reads the field, computes the new value and writes it back, and another thread can run in between, so two threads can read the same value and one update is lost. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. {2}</value>
   </data>
   <data name="DSA046MessageIncrementValue" xml:space="preserve">
-    <value>The '{1}' on the volatile field '{0}' is not atomic: it reads the field, computes the new value and writes it back, and another thread can run in between, so two threads can read the same value and one update is lost. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Interlocked does not work on this type: widen the field to int and use Interlocked (or a CompareExchange loop), or take a lock around every access of the field.</value>
+    <value>The '{1}' on the volatile field '{0}' is not atomic: it reads the field, computes the new value and writes it back, and another thread can run in between, so two threads can read the same value and one update is lost. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. {2}</value>
   </data>
   <data name="DSA046MessageIncrementReference" xml:space="preserve">
     <value>The '{1}' on the volatile field '{0}' is not atomic: it reads the field, computes the new value and writes it back, and another thread can run in between, so two threads can read the same value and one update is lost. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. For a reference or a delegate, retry with Interlocked.CompareExchange until the value you computed from is still the current one, or take a lock around every access of the field.</value>
   </data>
   <data name="DSA046MessageCompoundInterlocked" xml:space="preserve">
-    <value>The '{1}' on the volatile field '{0}' is a read followed by a write, not one atomic operation: another thread can change the field between the two, and its update is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Use Interlocked (Increment, Decrement, Add, Exchange, or a CompareExchange loop for any other computation), or take a lock around every access of the field.</value>
+    <value>The '{1}' on the volatile field '{0}' is a read followed by a write, not one atomic operation: another thread can change the field between the two, and its update is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. {2}</value>
   </data>
   <data name="DSA046MessageCompoundValue" xml:space="preserve">
-    <value>The '{1}' on the volatile field '{0}' is a read followed by a write, not one atomic operation: another thread can change the field between the two, and its update is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Interlocked does not work on this type: widen the field to int and use Interlocked (or a CompareExchange loop), or take a lock around every access of the field.</value>
+    <value>The '{1}' on the volatile field '{0}' is a read followed by a write, not one atomic operation: another thread can change the field between the two, and its update is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. {2}</value>
   </data>
   <data name="DSA046MessageCompoundReference" xml:space="preserve">
     <value>The '{1}' on the volatile field '{0}' is a read followed by a write, not one atomic operation: another thread can change the field between the two, and its update is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. For a reference or a delegate, retry with Interlocked.CompareExchange until the value you computed from is still the current one, or take a lock around every access of the field.</value>
   </data>
   <data name="DSA046MessageAssignmentInterlocked" xml:space="preserve">
-    <value>The assignment to the volatile field '{0}' computes the new value from the current value of '{0}': that is a read followed by a write, not one atomic operation, and an update made by another thread in between is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Use Interlocked (Increment, Decrement, Add, Exchange, or a CompareExchange loop for any other computation), or take a lock around every access of the field.</value>
+    <value>The assignment to the volatile field '{0}' computes the new value from the current value of '{0}': that is a read followed by a write, not one atomic operation, and an update made by another thread in between is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. {2}</value>
   </data>
   <data name="DSA046MessageAssignmentValue" xml:space="preserve">
-    <value>The assignment to the volatile field '{0}' computes the new value from the current value of '{0}': that is a read followed by a write, not one atomic operation, and an update made by another thread in between is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. Interlocked does not work on this type: widen the field to int and use Interlocked (or a CompareExchange loop), or take a lock around every access of the field.</value>
+    <value>The assignment to the volatile field '{0}' computes the new value from the current value of '{0}': that is a read followed by a write, not one atomic operation, and an update made by another thread in between is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. {2}</value>
   </data>
   <data name="DSA046MessageAssignmentReference" xml:space="preserve">
     <value>The assignment to the volatile field '{0}' computes the new value from the current value of '{0}': that is a read followed by a write, not one atomic operation, and an update made by another thread in between is silently overwritten. 'volatile' makes each single read and write visible to the other threads, it does not make the sequence of them indivisible. For a reference or a delegate, retry with Interlocked.CompareExchange until the value you computed from is still the current one, or take a lock around every access of the field.</value>
@@ -1158,5 +1158,65 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   </data>
   <data name="DSA051MessageNoMembers" xml:space="preserve">
     <value>The class '{0}' does not override ToString(), so in the debugger, in logs and in the text of a failed assertion an instance shows up as its type name only. It has no properties and no fields to show (or only ones whose name suggests a secret), so no ToString() is generated: if instances are ever printed, override it by hand with a meaningful description.</value>
+  </data>
+  <data name="DSA010TypeSmall" xml:space="preserve">
+    <value>'{0}' is {1} bits wide, and the CLR reads and writes any value of 32 bits or less as one indivisible operation on every platform it runs on (32-bit and 64-bit processes alike)</value>
+  </data>
+  <data name="DSA010TypeSmallEnum" xml:space="preserve">
+    <value>'{0}' is an enum backed by '{1}' ({2} bits), and the CLR reads and writes any value of 32 bits or less as one indivisible operation on every platform it runs on (32-bit and 64-bit processes alike)</value>
+  </data>
+  <data name="DSA010TypeNativeWord" xml:space="preserve">
+    <value>'{0}' has the size of the native word of the process (32 bits in a 32-bit process, 64 bits in a 64-bit one), and the CLR reads and writes it as one indivisible operation on every platform</value>
+  </data>
+  <data name="DSA010TypeReference" xml:space="preserve">
+    <value>'{0}' is a reference type: a reference has the size of the native word of the process, and the CLR reads and writes it as one indivisible operation on every platform (the state of the object it points to is another matter)</value>
+  </data>
+  <data name="DSA010TypeWide64" xml:space="preserve">
+    <value>'{0}' is 64 bits wide: in a 64-bit process the CLR reads and writes it as one operation, but in a 32-bit process it can be done as two 32-bit halves, so a concurrent reader may see half of the old value and half of the new one</value>
+  </data>
+  <data name="DSA010TypeWide64Enum" xml:space="preserve">
+    <value>'{0}' is an enum backed by '{1}' (64 bits): in a 64-bit process the CLR reads and writes it as one operation, but in a 32-bit process it can be done as two 32-bit halves, so a concurrent reader may see half of the old value and half of the new one</value>
+  </data>
+  <data name="DSA010TypeDecimal" xml:space="preserve">
+    <value>'decimal' is 128 bits wide: the CLR does not read or write it as one indivisible operation on any platform, 32-bit or 64-bit, so a concurrent reader may see a mix of the old and the new value</value>
+  </data>
+  <data name="DSA010TypeStruct" xml:space="preserve">
+    <value>'{0}' is a struct: the CLR does not guarantee that a struct is read or written as one indivisible operation on any platform, 32-bit or 64-bit, so a concurrent reader may see a mix of the old and the new fields</value>
+  </data>
+  <data name="DSA010TypeParameter" xml:space="preserve">
+    <value>'{0}' is a generic type parameter that is not constrained to be a reference type: it can be a struct of any size, and the CLR does not guarantee that a struct is read or written as one indivisible operation on any platform, so a concurrent reader may see a mix of the old and the new fields</value>
+  </data>
+  <data name="DSA010RemedyLong" xml:space="preserve">
+    <value>Interlocked.Read and Interlocked.Exchange support 'long' on every platform, or an immutable snapshot swapped by reference</value>
+  </data>
+  <data name="DSA010RemedyULong" xml:space="preserve">
+    <value>Interlocked.Read and Interlocked.Exchange support 'ulong' in .NET Core 2.0 and later (not in .NET Framework), or an immutable snapshot swapped by reference</value>
+  </data>
+  <data name="DSA010RemedyDouble" xml:space="preserve">
+    <value>Interlocked.Exchange and Interlocked.CompareExchange support 'double' (there is no Interlocked.Read for it), or an immutable snapshot swapped by reference</value>
+  </data>
+  <data name="DSA010RemedyOther" xml:space="preserve">
+    <value>Interlocked has no overload for '{0}', so keep the value in an immutable object and swap the reference, which is atomic on every platform</value>
+  </data>
+  <data name="DSA046RemedyInt" xml:space="preserve">
+    <value>Use Interlocked on this 'int' field (Increment, Decrement, Add, Exchange, or a CompareExchange loop for any other computation), on every .NET version and platform, or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046RemedyUInt" xml:space="preserve">
+    <value>Use Interlocked on this 'uint' field (Increment, Decrement, Add, Exchange, or a CompareExchange loop for any other computation): these overloads exist in .NET Core 2.0 and later and in .NET 5 and later, not in .NET Framework nor in .NET Standard 2.0, where the field must be an 'int'. Or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046RemedyFloat" xml:space="preserve">
+    <value>Interlocked has no Increment or Add for 'float', but Interlocked.CompareExchange(ref float, float, float) exists on every .NET version: read the field, compute the new value and publish it only if the field still holds the value you read, retrying otherwise. Or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046RemedyNativeInt" xml:space="preserve">
+    <value>Interlocked has no Increment or Add for '{0}', but Interlocked.CompareExchange(ref IntPtr, IntPtr, IntPtr) exists on every .NET version: read the field, compute the new value and publish it only if the field still holds the value you read, retrying otherwise. Or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046RemedySmall" xml:space="preserve">
+    <value>Interlocked has no Increment or Add for '{0}', and Exchange and CompareExchange exist for it only in .NET 9 and later (not in .NET Framework nor in older .NET): widen the field to 'int' and use Interlocked, or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046RemedyNoOverload" xml:space="preserve">
+    <value>Interlocked has no overload for '{0}' in any .NET version: keep the value in an 'int' field and use Interlocked on it, or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA046RemedyEnum" xml:space="preserve">
+    <value>Interlocked has no overload for the enum '{0}' in any .NET version: keep the value in an 'int' field (cast it when you read it) and use Interlocked on it, or take a lock around every access of the field.</value>
   </data>
 </root>

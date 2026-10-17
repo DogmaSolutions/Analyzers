@@ -2061,5 +2061,185 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA051MessageNoMembers", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010TypeSmall.
+        /// </summary>
+        internal static string DSA010TypeSmall {
+            get {
+                return ResourceManager.GetString("DSA010TypeSmall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010TypeSmallEnum.
+        /// </summary>
+        internal static string DSA010TypeSmallEnum {
+            get {
+                return ResourceManager.GetString("DSA010TypeSmallEnum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010TypeNativeWord.
+        /// </summary>
+        internal static string DSA010TypeNativeWord {
+            get {
+                return ResourceManager.GetString("DSA010TypeNativeWord", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010TypeReference.
+        /// </summary>
+        internal static string DSA010TypeReference {
+            get {
+                return ResourceManager.GetString("DSA010TypeReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010TypeWide64.
+        /// </summary>
+        internal static string DSA010TypeWide64 {
+            get {
+                return ResourceManager.GetString("DSA010TypeWide64", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010TypeWide64Enum.
+        /// </summary>
+        internal static string DSA010TypeWide64Enum {
+            get {
+                return ResourceManager.GetString("DSA010TypeWide64Enum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010TypeDecimal.
+        /// </summary>
+        internal static string DSA010TypeDecimal {
+            get {
+                return ResourceManager.GetString("DSA010TypeDecimal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010TypeStruct.
+        /// </summary>
+        internal static string DSA010TypeStruct {
+            get {
+                return ResourceManager.GetString("DSA010TypeStruct", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010TypeParameter.
+        /// </summary>
+        internal static string DSA010TypeParameter {
+            get {
+                return ResourceManager.GetString("DSA010TypeParameter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010RemedyLong.
+        /// </summary>
+        internal static string DSA010RemedyLong {
+            get {
+                return ResourceManager.GetString("DSA010RemedyLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010RemedyULong.
+        /// </summary>
+        internal static string DSA010RemedyULong {
+            get {
+                return ResourceManager.GetString("DSA010RemedyULong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010RemedyDouble.
+        /// </summary>
+        internal static string DSA010RemedyDouble {
+            get {
+                return ResourceManager.GetString("DSA010RemedyDouble", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA010RemedyOther.
+        /// </summary>
+        internal static string DSA010RemedyOther {
+            get {
+                return ResourceManager.GetString("DSA010RemedyOther", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046RemedyInt.
+        /// </summary>
+        internal static string DSA046RemedyInt {
+            get {
+                return ResourceManager.GetString("DSA046RemedyInt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046RemedyUInt.
+        /// </summary>
+        internal static string DSA046RemedyUInt {
+            get {
+                return ResourceManager.GetString("DSA046RemedyUInt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046RemedyFloat.
+        /// </summary>
+        internal static string DSA046RemedyFloat {
+            get {
+                return ResourceManager.GetString("DSA046RemedyFloat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046RemedyNativeInt.
+        /// </summary>
+        internal static string DSA046RemedyNativeInt {
+            get {
+                return ResourceManager.GetString("DSA046RemedyNativeInt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046RemedySmall.
+        /// </summary>
+        internal static string DSA046RemedySmall {
+            get {
+                return ResourceManager.GetString("DSA046RemedySmall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046RemedyNoOverload.
+        /// </summary>
+        internal static string DSA046RemedyNoOverload {
+            get {
+                return ResourceManager.GetString("DSA046RemedyNoOverload", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA046RemedyEnum.
+        /// </summary>
+        internal static string DSA046RemedyEnum {
+            get {
+                return ResourceManager.GetString("DSA046RemedyEnum", resourceCulture);
+            }
+        }
     }
 }

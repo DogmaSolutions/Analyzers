@@ -34,7 +34,7 @@ namespace TestApp
     public class MyType
     {
         /* [DSA037 / QA + Bug]: A [ThreadStatic] Random field must not have a field initializer (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA037.md)
-         * A [ThreadStatic] field initializer runs only on the thread that first triggers static construction; every other thread observes the default (null). Assign the Random per-thread on first use, or use Random.Shared.
+         * A [ThreadStatic] field initializer runs only on the thread that first triggers static construction; every other thread observes the default (null). Assign the Random per-thread on first use, or, on .NET 6 and later, use Random.Shared.
          * MITRE, CWE-457: Use of Uninitialized Variable - https://cwe.mitre.org/data/definitions/457.html
          * ThreadStaticAttribute - https://learn.microsoft.com/en-us/dotnet/api/system.threadstaticattribute
          */
@@ -81,7 +81,7 @@ namespace TestApp
     public class MyType
     {
         /* [DSA038 / CySec + QA + Bug]: Avoid seeding Random with a time-based or constant value (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md)
-         * A time-based seed collides within a clock tick (identical sequences); a constant seed is fully predictable. Prefer the parameterless 'new Random()' or Random.Shared.
+         * A time-based seed collides within a clock tick (identical sequences); a constant seed is fully predictable. Prefer one reused parameterless 'new Random()' (on .NET Framework it is clock-seeded too) or, on .NET 6 and later, Random.Shared.
          * MITRE, CWE-337: Predictable Seed in Pseudo-Random Number Generator - https://cwe.mitre.org/data/definitions/337.html
          * System.Random - https://learn.microsoft.com/en-us/dotnet/api/system.random
          */
@@ -131,7 +131,7 @@ namespace TestApp
     public class MyType
     {
         /* [DSA039 / CySec + QA + Security]: Avoid modulo bias when reducing cryptographic random bytes into a range (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md)
-         * A naive % reduction skews the distribution and undermines the cryptographic guarantee. Use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive), which rejection-samples an unbiased value.
+         * A naive % reduction skews the distribution and undermines the cryptographic guarantee. Use RandomNumberGenerator.GetInt32(fromInclusive, toExclusive) (.NET Core 3.0 and later), which rejection-samples an unbiased value; on .NET Framework write the rejection sampling by hand.
          * MITRE, CWE-1241: Use of Predictable Algorithm in Random Number Generator - https://cwe.mitre.org/data/definitions/1241.html
          * MITRE, CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG) - https://cwe.mitre.org/data/definitions/338.html
          * RandomNumberGenerator.GetInt32 - https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator.getint32

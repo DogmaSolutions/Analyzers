@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Composition;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -97,7 +98,12 @@ public sealed class DSA046CodeFixProvider : CodeFixProvider
     }
 
     private static bool IsInterlockedField(ExpressionSyntax target, SemanticModel model, CancellationToken cancellationToken) =>
-        model.GetSymbolInfo(target, cancellationToken).Symbol is IFieldSymbol field && DSA046Analyzer.GetKind(field.Type) == DSA046FieldKind.Interlocked;
+        model.GetSymbolInfo(target, cancellationToken).Symbol is IFieldSymbol field && DSA046Analyzer.GetKind(field.Type) == DSA046FieldKind.Interlocked && HasInterlockedOverload(model.Compilation, field.Type);
+
+    /// <summary>The unsigned overloads of Interlocked.Add, Increment and Decrement are not in every framework (they are not in .NET Framework nor in .NET Standard 2.0): the fix would not compile.</summary>
+    private static bool HasInterlockedOverload(Compilation compilation, ITypeSymbol type) =>
+        compilation.GetTypeByMetadataName("System.Threading.Interlocked")?.GetMembers("Add").OfType<IMethodSymbol>()
+            .Any(method => method.Parameters.Length == 2 && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, type)) == true;
 
     private static ExpressionSyntax Call(string method, ExpressionSyntax target, ExpressionSyntax amount = null)
     {

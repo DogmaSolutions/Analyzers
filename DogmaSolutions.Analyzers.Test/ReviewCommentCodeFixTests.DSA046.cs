@@ -41,7 +41,7 @@ public partial class ReviewCommentCodeFixTests
     }
 }";
 
-      var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString("DSA046MessageAssignmentValue", Resources.Culture), "_on", "=");
+      var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString("DSA046MessageAssignmentValue", Resources.Culture), "_on", "=", string.Format(Resources.Culture, Resources.DSA046RemedyNoOverload, "bool"));
       var test = new CSharpCodeFixVerifier<DSA046Analyzer, DSA046CodeFixProvider>.Test();
       test.TestCode = source;
       test.FixedCode = fixedSource;

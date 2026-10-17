@@ -52,6 +52,32 @@ public partial class DSA046Tests
         return "root = true\n[*.cs]\n" + string.Join("\n", lines) + "\n";
     }
 
+    /// <summary>The declared type of the field, as it is spelled in the source.</summary>
+    internal static string GetFieldType(string source, string field)
+    {
+        var match = Regex.Match(source, @"volatile\s+([\w.]+)\s+" + Regex.Escape(field) + @"\b");
+        Assert.IsTrue(match.Success, "Field " + field + " not found");
+        return match.Groups[1].Value;
+    }
+
+    /// <summary>What the message must say about Interlocked for the type, written here independently of the analyzer.</summary>
+    internal static string ExpectedRemedy(string type)
+    {
+        string F(string format, string name) => string.Format(Resources.Culture, format, name);
+        switch (type)
+        {
+            case "int": return Resources.DSA046RemedyInt;
+            case "uint": return Resources.DSA046RemedyUInt;
+            case "float": return Resources.DSA046RemedyFloat;
+            case "System.IntPtr": return F(Resources.DSA046RemedyNativeInt, "nint");
+            case "System.UIntPtr": return F(Resources.DSA046RemedySmall, "nuint");
+            case "byte": case "sbyte": case "short": case "ushort": return F(Resources.DSA046RemedySmall, type);
+            case "bool": case "char": return F(Resources.DSA046RemedyNoOverload, type);
+            case "Mode": return F(Resources.DSA046RemedyEnum, "Mode");
+            default: return string.Empty;
+        }
+    }
+
     internal static CSharpAnalyzerVerifier<DSA046Analyzer>.Test CreateTest(string source, string settings, string expected)
     {
         var test = new CSharpAnalyzerVerifier<DSA046Analyzer>.Test();
@@ -63,7 +89,7 @@ public partial class DSA046Tests
         for (var i = 0; i < entries.Length; i++)
         {
             var parts = entries[i].Split('~');
-            var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(parts[0], Resources.Culture), parts[1], parts[2]);
+            var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(parts[0], Resources.Culture), parts[1], parts[2], ExpectedRemedy(GetFieldType(source, parts[1])));
             test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA046Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithLocation(i).WithMessage(message));
         }
 

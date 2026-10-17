@@ -127,7 +127,7 @@ namespace DogmaSolutions.Analyzers
             if (operation == DSA046Operation.Assignment && !ReadsTheSameField(((AssignmentExpressionSyntax)context.Node).Right, Unparenthesize(target), field, context))
                 return;
 
-            var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(DSA046Scenario.GetMessageResourceName(operation, kind), Resources.Culture), field.Name, operatorText);
+            var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(DSA046Scenario.GetMessageResourceName(operation, kind), Resources.Culture), field.Name, operatorText, GetRemedy(field.Type));
             context.ReportDiagnostic(Diagnostic.Create(_rule, context.Node.GetLocation(), message));
         }
 
@@ -184,6 +184,30 @@ namespace DogmaSolutions.Analyzers
             DSA046FieldKind.Value => settings.ReportOtherValueTypes,
             _ => settings.ReportReferenceTypes,
         };
+
+        /// <summary>What <c>Interlocked</c> offers for the type of the field, which depends on the type and on the .NET version.</summary>
+        internal static string GetRemedy(ITypeSymbol type)
+        {
+            var name = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+            if (type.TypeKind == TypeKind.Enum)
+                return string.Format(Resources.Culture, Resources.DSA046RemedyEnum, name);
+
+            switch (type.SpecialType)
+            {
+                case SpecialType.System_Int32:
+                    return Resources.DSA046RemedyInt;
+                case SpecialType.System_UInt32:
+                    return Resources.DSA046RemedyUInt;
+                case SpecialType.System_Single:
+                    return Resources.DSA046RemedyFloat;
+                case SpecialType.System_IntPtr:
+                    return string.Format(Resources.Culture, Resources.DSA046RemedyNativeInt, name);
+                case SpecialType.System_Byte or SpecialType.System_SByte or SpecialType.System_Int16 or SpecialType.System_UInt16 or SpecialType.System_UIntPtr:
+                    return string.Format(Resources.Culture, Resources.DSA046RemedySmall, name);
+                default:
+                    return string.Format(Resources.Culture, Resources.DSA046RemedyNoOverload, name);
+            }
+        }
 
         /// <summary>The types <c>Interlocked</c> works on directly, among the ones a field can be volatile for: <c>int</c> and <c>uint</c>.</summary>
         internal static DSA046FieldKind GetKind(ITypeSymbol type)

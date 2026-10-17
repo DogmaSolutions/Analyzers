@@ -73,4 +73,24 @@ public class DSA046CodeFixTests
 
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    // title, members: the framework (.NET Standard 2.0, as .NET Framework) has no Interlocked overload for uint, and has the ones for int
+    [TestMethod]
+    [DataRow("Unsigned increment", "        public void Hit() { {|#0:_u++|}; }", false)]
+    [DataRow("Unsigned add", "        public void Hit(uint v) { {|#0:_u += v|}; }", false)]
+    [DataRow("Signed increment", "        public void Hit() { {|#0:_n++|}; }", true)]
+    public async Task The_unsigned_overloads_are_used_only_where_the_framework_has_them(string title, string members, bool offered)
+    {
+        var test = new CSharpCodeFixVerifier<DSA046Analyzer, DSA046CodeFixProvider>.Test();
+        test.TestCode = Wrap(members);
+        test.FixedCode = offered ? Wrap(members.Replace("{|#0:_n++|}", "System.Threading.Interlocked.Increment(ref _n)")) : Wrap(members);
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.CodeActionEquivalenceKey = DSA046CodeFixProvider.UseInterlockedEquivalenceKey;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", DSA046Tests.ToEditorConfig(string.Empty)));
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA046Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithLocation(0));
+        if (!offered)
+            test.FixedState.ExpectedDiagnostics.AddRange(test.ExpectedDiagnostics);
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }

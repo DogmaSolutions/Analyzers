@@ -52,7 +52,7 @@ public class Invoice
  * Object.ToString - https://learn.microsoft.com/dotnet/api/system.object.tostring
  * CWE-778: Insufficient Logging - https://cwe.mitre.org/data/definitions/778.html
  */
-";
+".Replace("\r\n", "\n");
       var source = "public class {|#0:First|}\n{\n    public int Id { get; set; }\n}\n\npublic class {|#1:Second|}\n{\n    public int Id { get; set; }\n}";
       var fixedSource = comment + "public class First\n{\n    public int Id { get; set; }\n}\n\n" + comment + "public class Second\n{\n    public int Id { get; set; }\n}";
 

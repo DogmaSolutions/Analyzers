@@ -71,7 +71,7 @@ public partial class ReviewCommentCodeFixTests
    }
 
    private static string ExpectedMessage() =>
-      string.Format(Resources.Culture, Resources.ResourceManager.GetString("DSA010MessageReadDedicated", Resources.Culture), "_flag", "_gate");
+      string.Format(Resources.Culture, Resources.ResourceManager.GetString("DSA010MessageReadDedicated", Resources.Culture), "_flag", "_gate", string.Format(Resources.Culture, Resources.DSA010TypeSmall, "bool", 8), string.Empty);
 
    #endregion
 }
