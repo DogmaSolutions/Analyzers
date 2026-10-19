@@ -61,7 +61,7 @@ public partial class DSA051Tests
         test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", ToEditorConfig(settings)));
 
         if (!string.IsNullOrEmpty(expected))
-            test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithLocation(0).WithMessage(Message(expected)));
+            test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Info).WithLocation(0).WithMessage(Message(expected)));
 
         return test;
     }

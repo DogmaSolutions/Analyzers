@@ -35,7 +35,7 @@ namespace DogmaSolutions.Analyzers
             _title,
             _messageFormat,
             Category,
-            DiagnosticSeverity.Warning,
+            DiagnosticSeverity.Info,
             isEnabledByDefault: true,
             description: _description,
             helpLinkUri: "https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA051.md");

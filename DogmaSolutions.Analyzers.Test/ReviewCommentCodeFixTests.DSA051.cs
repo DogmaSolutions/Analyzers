@@ -36,8 +36,8 @@ public class Invoice
       test.CodeActionEquivalenceKey = Dsa051Key;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
-      test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithLocation(0));
-      test.FixedState.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithSpan(5, 14, 5, 21));
+      test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Info).WithLocation(0));
+      test.FixedState.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Info).WithSpan(5, 14, 5, 21));
       test.NumberOfIncrementalIterations = 1;
       test.NumberOfFixAllIterations = 1;
       test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipFixAllCheck | CodeFixTestBehaviors.FixOne;
@@ -62,10 +62,10 @@ public class Invoice
       test.CodeActionEquivalenceKey = Dsa051Key;
       test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
       test.TestBehaviors = TestBehaviors.SkipSuppressionCheck;
-      test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithLocation(0));
-      test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithLocation(1));
-      test.FixedState.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithSpan(5, 14, 5, 19));
-      test.FixedState.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithSpan(14, 14, 14, 20));
+      test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Info).WithLocation(0));
+      test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Info).WithLocation(1));
+      test.FixedState.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Info).WithSpan(5, 14, 5, 19));
+      test.FixedState.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Info).WithSpan(14, 14, 14, 20));
       test.NumberOfIncrementalIterations = 3;
       test.NumberOfFixAllIterations = 1;
       test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipFixAllInProjectCheck | CodeFixTestBehaviors.SkipFixAllInSolutionCheck;

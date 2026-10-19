@@ -124,7 +124,7 @@ A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[S
 | [DSA048](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA048.md) | Code Smell | Do not wait for a change of state by sleeping in a loop: signal it, and wait with a timeout | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA049](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA049.md) | Code Smell | A field written under a lock must be accessed under that same lock everywhere: a lock excludes only the code that takes it | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA050](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA050.md) | Code Smell | Testing a flag (or a state) and then changing it is not atomic: two threads can both pass the test | ⚠ Warning | ✅ | ❌ | ✅ |
-| [DSA051](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA051.md) | Best Practice | A class without a `ToString()` override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties | ⚠ Warning | ✅ | ✅ | ✅ |
+| [DSA051](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA051.md) | Best Practice | A class without a `ToString()` override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties | 💡 Suggestion | ✅ | ✅ | ✅ |
 
 # Refactorings list
 
@@ -158,7 +158,7 @@ A profile is a starting point, not a certification: a rule can always be silence
 |:--------|:-----------|:----|
 | [Lenient / Entry-level](#lenient--entry-level) | the defaults of the rules, with `error` downgraded to `warning` | very old projects, entry-level quality assurance |
 | [Good / Professional](#good--professional) | the defaults of the rules | modern projects, good quality assurance |
-| [SSDLC and/or AI-Driven development](#ssdlc-secure-software-development-lifecycle-andor-ai-driven-development) | `error` everywhere, except `DSA030`, `DSA033` and `DSA034` (`warning`) | top level quality assurance, secure and AI-driven development |
+| [SSDLC and/or AI-Driven development](#ssdlc-secure-software-development-lifecycle-andor-ai-driven-development) | `error` everywhere, except `DSA030`, `DSA033` and `DSA034` (`warning`) and `DSA051` (`suggestion`) | top level quality assurance, secure and AI-driven development |
 
 
 ## Lenient / Entry-level
@@ -468,7 +468,7 @@ dotnet_diagnostic.DSA050.excluded_member_name_patterns =
 dotnet_diagnostic.DSA050.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 
 # DSA051: A class without a ToString() override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties
-dotnet_diagnostic.DSA051.severity = warning
+dotnet_diagnostic.DSA051.severity = suggestion
 dotnet_diagnostic.DSA051.included_type_kinds = class
 dotnet_diagnostic.DSA051.include_abstract_classes = true
 dotnet_diagnostic.DSA051.include_nested_types = true
@@ -795,7 +795,7 @@ dotnet_diagnostic.DSA050.excluded_member_name_patterns =
 dotnet_diagnostic.DSA050.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 
 # DSA051: A class without a ToString() override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties
-dotnet_diagnostic.DSA051.severity = warning
+dotnet_diagnostic.DSA051.severity = suggestion
 dotnet_diagnostic.DSA051.included_type_kinds = class
 dotnet_diagnostic.DSA051.include_abstract_classes = true
 dotnet_diagnostic.DSA051.include_nested_types = true
@@ -819,7 +819,7 @@ dotnet_diagnostic.DSA051.excluded_file_patterns = *.Designer.cs, *.generated.cs,
 
 For modern projects with top level quality assurance, the best cybersecurity constraints and the highest possible robustness guarantees. Particularly recommended for AI/agentic-driven development, where the quality, correctness and robustness of the code **must** be highly deterministic and guaranteed by strict constraints.
 
-Every rule is an `error`: a violation fails the build, so that neither a person in a hurry nor an AI agent can merge code that breaks a rule, and the feedback loop is immediate, objective and machine-readable. The only exceptions are `DSA030`, `DSA033` and `DSA034`, which stay at `warning`: they are advisory by nature (a recommendation that depends on the context, or a size threshold that each project tunes), so they are reported but do not fail the build.
+Every rule is an `error`: a violation fails the build, so that neither a person in a hurry nor an AI agent can merge code that breaks a rule, and the feedback loop is immediate, objective and machine-readable. The only exceptions are `DSA030`, `DSA033` and `DSA034`, which stay at `warning`: they are advisory by nature (a recommendation that depends on the context, or a size threshold that each project tunes), so they are reported but do not fail the build. `DSA051` (a class without a `ToString()`) stays at `suggestion` as well: it is a matter of observability that fires on every class, so it is shown in the IDE but never fails the build.
 
 ```ini
 # DSA001: WebApi controller methods should not contain data-manipulation business logics through a **LINQ query expression**.
@@ -1122,7 +1122,7 @@ dotnet_diagnostic.DSA050.excluded_member_name_patterns =
 dotnet_diagnostic.DSA050.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 
 # DSA051: A class without a ToString() override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties
-dotnet_diagnostic.DSA051.severity = error
+dotnet_diagnostic.DSA051.severity = suggestion
 dotnet_diagnostic.DSA051.included_type_kinds = class
 dotnet_diagnostic.DSA051.include_abstract_classes = true
 dotnet_diagnostic.DSA051.include_nested_types = true

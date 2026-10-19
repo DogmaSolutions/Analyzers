@@ -23,7 +23,7 @@ public class DSA051CodeFixTests
         test.CodeActionEquivalenceKey = DSA051CodeFixProvider.GenerateEquivalenceKey;
         test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", DSA051Tests.ToEditorConfig(settings)));
         for (var i = 0; i < diagnostics; i++)
-            test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithLocation(i));
+            test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA051Analyzer.DiagnosticId, DiagnosticSeverity.Info).WithLocation(i));
 
         return test;
     }
