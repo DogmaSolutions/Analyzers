@@ -31,6 +31,14 @@ namespace DogmaSolutions.Analyzers
             ReportTypesWithCheapCount = AnalyzerOptionsReader.ReadBool(options, ReportTypesWithCheapCountKey, false);
         }
 
+        internal override bool IsCallReported(ExistenceShape shape, ExistenceCall call) =>
+            (shape == ExistenceShape.Local || IsDirectComparisonReported(call)) && (ReportTypesWithCheapCount || !ExistenceAnalyzerCore.HasCheapCount(call.ReceiverType));
+
+        // CA1827 reports the comparisons of Count() and LongCount(), CA1828 the ones of CountAsync() and LongCountAsync() without a predicate
+        private bool IsDirectComparisonReported(ExistenceCall call) => ReportDirectComparisons || (call.IsAsync && call.HasPredicate && ReportAsyncPredicateComparisons);
+
+        internal override bool IsShapeReported(ExistenceShape shape) => shape == ExistenceShape.Local ? ReportLocals : ReportDirectComparisons || ReportAsyncPredicateComparisons;
+
         /// <summary>
         /// Report every <c>q.Count() &gt; 0</c> compared right away, including the ones that CA1827 and CA1828 report already (default: only the ones
         /// they miss: <c>CountAsync(predicate)</c>, see <see cref="ReportAsyncPredicateComparisons"/>).

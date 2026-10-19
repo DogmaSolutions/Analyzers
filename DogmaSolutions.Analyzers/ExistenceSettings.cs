@@ -52,15 +52,20 @@ namespace DogmaSolutions.Analyzers
         /// <summary>The kind of source is one of the reported ones.</summary>
         internal bool IsSourceReported(ExistenceCall call) => call.IsQueryable ? ReportQueryableSources : ReportEnumerableSources;
 
-        /// <summary>The node is in a file, a type or a member that the options exclude.</summary>
-        internal bool IsExcluded(SyntaxNode node, SemanticModel model)
+        /// <summary>The options say whether this call, used in this way, is reported (the call is known by now: its source, its element type...).</summary>
+        internal abstract bool IsCallReported(ExistenceShape shape, ExistenceCall call);
+
+        /// <summary>The options say whether a use of this shape is reported at all, before anything about the call is known.</summary>
+        internal abstract bool IsShapeReported(ExistenceShape shape);
+
+        /// <summary>The node is in a file or a member that the options exclude: nothing but the syntax tells.</summary>
+        internal bool IsExcludedBySyntax(SyntaxNode node) =>
+            AnalyzersUtils.IsFileExcluded(node.SyntaxTree.FilePath, ExcludedFilePatterns) ||
+            (ExcludedMemberNamePatterns.Length > 0 && Matches(GetMemberName(node), ExcludedMemberNamePatterns));
+
+        /// <summary>The node is in a type that the options exclude: the semantic model is asked only if there is a pattern to match.</summary>
+        internal bool IsExcludedBySymbol(SyntaxNode node, SemanticModel model)
         {
-            if (AnalyzersUtils.IsFileExcluded(node.SyntaxTree.FilePath, ExcludedFilePatterns))
-                return true;
-
-            if (ExcludedMemberNamePatterns.Length > 0 && Matches(GetMemberName(node), ExcludedMemberNamePatterns))
-                return true;
-
             if (ExcludedTypeNamePatterns.Length == 0 && ExcludedNamespacePatterns.Length == 0 && ExcludedBaseTypes.Length == 0)
                 return false;
 

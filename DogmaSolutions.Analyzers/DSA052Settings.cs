@@ -1,4 +1,5 @@
 #nullable disable
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace DogmaSolutions.Analyzers
@@ -29,6 +30,10 @@ namespace DogmaSolutions.Analyzers
             SkipPossiblyNullElements = AnalyzerOptionsReader.ReadBool(options, SkipPossiblyNullElementsKey, true);
         }
 
+        internal override bool IsShapeReported(ExistenceShape shape) => shape == ExistenceShape.Local ? ReportLocals : ReportDirectComparisons;
+
+        internal override bool IsCallReported(ExistenceShape shape, ExistenceCall call) => !IsExcludedElement(call.ElementType);
+
         /// <summary>Report <c>q.FirstOrDefault(p) != null</c>, compared right away.</summary>
         internal bool ReportDirectComparisons { get; }
 
@@ -37,5 +42,13 @@ namespace DogmaSolutions.Analyzers
         /// <c>Any()</c> are not the same question.
         /// </summary>
         internal bool SkipPossiblyNullElements { get; }
+
+        /// <summary>
+        /// Where a null element is possible, <c>FirstOrDefault() != null</c> and <c>Any()</c> are not the same question (the first element can be a null); a
+        /// value type has no null at all, its default is an element like the others.
+        /// </summary>
+        private bool IsExcludedElement(ITypeSymbol element) =>
+            element == null || !element.IsReferenceType ||
+            (SkipPossiblyNullElements && (element.SpecialType is SpecialType.System_String or SpecialType.System_Object || element.NullableAnnotation == NullableAnnotation.Annotated));
     }
 }

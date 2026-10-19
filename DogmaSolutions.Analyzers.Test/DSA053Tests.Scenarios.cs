@@ -110,6 +110,15 @@ public partial class DSA053Tests
         ["A name that is the member of something else", "public bool Has(IEnumerable<Item> items) { var Id = [[items.Count()]]; return Id > 0 && items.First().Id > 0; }", "", E("Enumerable", "Local", "Count", "Any", "Id")],
         ["A local in a switch section", "public bool Has(IEnumerable<Item> items, int id) { switch (id) { case 1: var n = [[items.Count()]]; return n > 0; default: return false; } }", "", E("Enumerable", "Local", "Count", "Any", "n")],
 
+        ["A name that is a member of a conditional access", "public bool Has(IEnumerable<Item> items) { var Id = [[items.Count()]]; return Id > 0 && items.First()?.Id > 0; }", "", E("Enumerable", "Local", "Count", "Any", "Id")],
+        ["A name that is the right side of a qualified name", "public class Id { } public bool Has(IEnumerable<Item> items) { var Id = [[items.Count()]]; Repository.Id other = null; return Id > 0 && other == null; }", "", E("Enumerable", "Local", "Count", "Any", "Id")],
+        ["A name that is the name of an argument", "public static bool Use(int Id) => true; public bool Has(IEnumerable<Item> items) { var Id = [[items.Count()]]; return Id > 0 && Use(Id: 1); }", "", E("Enumerable", "Local", "Count", "Any", "Id")],
+        ["A name that is a property of an anonymous type", "public bool Has(IEnumerable<Item> items) { var Id = [[items.Count()]]; var anonymous = new { Id = 1 }; return Id > 0 && anonymous.Id > 0; }", "", E("Enumerable", "Local", "Count", "Any", "Id")],
+        ["A name that is a member of an initializer", "public bool Has(IEnumerable<Item> items) { var Id = [[items.Count()]]; var item = new Item { Id = 1 }; return Id > 0 && item != null; }", "", E("Enumerable", "Local", "Count", "Any", "Id")],
+        ["A constant in parentheses", "public bool Has(IEnumerable<Item> items) { var n = [[items.Count()]]; return n > (0); }", "", E("Enumerable", "Local", "Count", "Any", "n")],
+        ["A negative constant is not an existence test", "public bool Has(IEnumerable<Item> items) { var n = items.Count(); return n > -(1); }", "", ""],
+        ["A call is not a constant", "public int Zero() => 0; public bool Has(IEnumerable<Item> items) { var n = items.Count(); return n > Zero(); }", "", ""],
+
         // ---- the options ---------------------------------------------------------------------------------------------------------------
         ["Variables refused", Sync + "var n = items.Count(x => x.Id == id); return n > 0; }", "report_locals=false", ""],
         ["Variables refused, direct comparisons still reported", Async + "return await [[q.CountAsync(x => x.Id == id, ct)]] > 0; }", "report_locals=false", E("Queryable", "Direct", "CountAsync", "AnyAsync")],

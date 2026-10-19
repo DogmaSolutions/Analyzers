@@ -54,15 +54,10 @@ namespace DogmaSolutions.Analyzers
         {
             var settings = DSA053Settings.Cache.Get(context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree));
             var use = ExistenceAnalyzerCore.Find(context, settings, ExistenceKind.Count);
-            if (use == null || (use.Shape == ExistenceShape.Direct && !IsDirectComparisonReported(use.Call, settings)) ||
-                (!settings.ReportTypesWithCheapCount && ExistenceAnalyzerCore.HasCheapCount(use.Call.ReceiverType)))
+            if (use == null)
                 return;
 
             context.ReportDiagnostic(Diagnostic.Create(_rule, context.Node.GetLocation(), ExistenceAnalyzerCore.Describe("053", use)));
         }
-
-        // CA1827 reports the comparisons of Count() and LongCount(), CA1828 the ones of CountAsync() and LongCountAsync() without a predicate
-        private static bool IsDirectComparisonReported(ExistenceCall call, DSA053Settings settings) =>
-            settings.ReportDirectComparisons || (call.IsAsync && call.HasPredicate && settings.ReportAsyncPredicateComparisons);
     }
 }

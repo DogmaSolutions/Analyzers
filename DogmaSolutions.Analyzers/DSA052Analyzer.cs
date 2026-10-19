@@ -53,18 +53,10 @@ namespace DogmaSolutions.Analyzers
         {
             var settings = DSA052Settings.Cache.Get(context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree));
             var use = ExistenceAnalyzerCore.Find(context, settings, ExistenceKind.Item);
-            if (use == null || (use.Shape == ExistenceShape.Direct && !settings.ReportDirectComparisons) || IsExcludedElement(use.Call.ElementType, settings))
+            if (use == null)
                 return;
 
             context.ReportDiagnostic(Diagnostic.Create(_rule, context.Node.GetLocation(), ExistenceAnalyzerCore.Describe("052", use, Resources.DSA052SingleNote)));
         }
-
-        /// <summary>
-        /// Where a null element is possible, <c>FirstOrDefault() != null</c> and <c>Any()</c> are not the same question (the first element can be a null); a
-        /// value type has no null at all, its default is an element like the others.
-        /// </summary>
-        private static bool IsExcludedElement(ITypeSymbol element, DSA052Settings settings) =>
-            element == null || !element.IsReferenceType ||
-            (settings.SkipPossiblyNullElements && (element.SpecialType is SpecialType.System_String or SpecialType.System_Object || element.NullableAnnotation == NullableAnnotation.Annotated));
     }
 }

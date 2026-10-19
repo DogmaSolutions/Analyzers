@@ -1,4 +1,5 @@
 #nullable disable
+using System;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -9,7 +10,10 @@ namespace DogmaSolutions.Analyzers
     /// <summary>What DSA052 and DSA053 do in the same way: find the call, and check that its result is only tested for existence.</summary>
     internal static class ExistenceAnalyzerCore
     {
-        /// <summary>The existence test the invocation is part of, if the options say it is to be reported.</summary>
+        /// <summary>
+        /// The existence test the invocation is part of, if the options say it is to be reported. The questions are asked from the cheapest to the most
+        /// expensive: nearly all the invocations stop at the name, most of the others at the shape of their use, before the semantic model is asked anything.
+        /// </summary>
         internal static ExistenceUse Find(SyntaxNodeAnalysisContext context, ExistenceSettings settings, ExistenceKind kind)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
@@ -17,12 +21,16 @@ namespace DogmaSolutions.Analyzers
             if (name == null || !settings.IncludedMethods.Contains(name))
                 return null;
 
-            var call = ExistenceAnalysis.ResolveCall(invocation, context.SemanticModel, context.CancellationToken);
-            if (call == null || !settings.IsSourceReported(call))
+            var shape = ExistenceAnalysis.GetShape(invocation, kind);
+            if (shape == null || !settings.IsShapeReported(shape.Shape) || settings.IsExcludedBySyntax(invocation))
                 return null;
 
-            var use = ExistenceAnalysis.Analyze(invocation, call, kind, context.SemanticModel, context.CancellationToken);
-            return use == null || (use.Shape == ExistenceShape.Local && !settings.ReportLocals) || settings.IsExcluded(invocation, context.SemanticModel) ? null : use;
+            var call = ExistenceAnalysis.ResolveCall(invocation, context.SemanticModel, context.CancellationToken);
+            if (call == null || !settings.IsSourceReported(call) || !settings.IsCallReported(shape.Shape, call))
+                return null;
+
+            var use = ExistenceAnalysis.Complete(shape, call, kind, context.SemanticModel, context.CancellationToken);
+            return use == null || settings.IsExcludedBySymbol(invocation, context.SemanticModel) ? null : use;
         }
 
         /// <summary>The name of the method as it is written, before anything is asked to the semantic model.</summary>

@@ -29,15 +29,20 @@ namespace DogmaSolutions.Analyzers
     /// <summary>The call that produces the value (FirstOrDefault, Count...), and the call that answers the existence question instead (Any).</summary>
     internal sealed class ExistenceCall
     {
-        internal ExistenceCall(IMethodSymbol method, IMethodSymbol alternative, bool isAsync, bool isQueryable, bool hasPredicate, ITypeSymbol receiverType, ITypeSymbol elementType)
+        private readonly ExpressionSyntax _receiver;
+        private readonly SemanticModel _model;
+        private ITypeSymbol _receiverType;
+        private bool _receiverTypeKnown;
+
+        internal ExistenceCall(IMethodSymbol method, IMethodSymbol alternative, bool isAsync, bool isQueryable, bool hasPredicate, ExpressionSyntax receiver, SemanticModel model)
         {
             Method = method;
             Alternative = alternative;
             IsAsync = isAsync;
             IsQueryable = isQueryable;
             HasPredicate = hasPredicate;
-            ReceiverType = receiverType;
-            ElementType = elementType;
+            _receiver = receiver;
+            _model = model;
         }
 
         internal IMethodSymbol Method { get; }
@@ -52,11 +57,23 @@ namespace DogmaSolutions.Analyzers
 
         internal bool HasPredicate { get; }
 
-        /// <summary>The static type of the expression the method is called on.</summary>
-        internal ITypeSymbol ReceiverType { get; }
+        /// <summary>The static type of the expression the method is called on (asked to the semantic model when it is needed: not every rule needs it).</summary>
+        internal ITypeSymbol ReceiverType
+        {
+            get
+            {
+                if (!_receiverTypeKnown)
+                {
+                    _receiverType = _receiver == null ? null : _model.GetTypeInfo(_receiver).Type;
+                    _receiverTypeKnown = true;
+                }
+
+                return _receiverType;
+            }
+        }
 
         /// <summary>The type of the elements of the sequence.</summary>
-        internal ITypeSymbol ElementType { get; }
+        internal ITypeSymbol ElementType => Method.TypeArguments.FirstOrDefault();
     }
 
     /// <summary>One comparison of the value that is an existence test: the node to rewrite, and whether it is true when the element (or a count above zero) exists.</summary>
@@ -71,6 +88,37 @@ namespace DogmaSolutions.Analyzers
         internal SyntaxNode Node { get; }
 
         internal bool Present { get; }
+    }
+
+    /// <summary>The use of the result of a call, as far as the syntax tells: compared right away, or kept in a variable that is only compared.</summary>
+    internal sealed class ExistenceShapeInfo
+    {
+        internal ExistenceShapeInfo(InvocationExpressionSyntax invocation, ExpressionSyntax value, bool awaited, ExistenceShape shape, LocalDeclarationStatementSyntax declaration, VariableDeclaratorSyntax declarator, IReadOnlyList<IdentifierNameSyntax> uses)
+        {
+            Invocation = invocation;
+            Value = value;
+            Awaited = awaited;
+            Shape = shape;
+            Declaration = declaration;
+            Declarator = declarator;
+            Uses = uses;
+        }
+
+        internal InvocationExpressionSyntax Invocation { get; }
+
+        internal ExpressionSyntax Value { get; }
+
+        /// <summary>The call is awaited (with <c>ConfigureAwait</c> or not).</summary>
+        internal bool Awaited { get; }
+
+        internal ExistenceShape Shape { get; }
+
+        internal LocalDeclarationStatementSyntax Declaration { get; }
+
+        internal VariableDeclaratorSyntax Declarator { get; }
+
+        /// <summary>The places the variable is used at, all of them comparisons in shape.</summary>
+        internal IReadOnlyList<IdentifierNameSyntax> Uses { get; }
     }
 
     /// <summary>A value that is produced by a call and is used for nothing else than an existence test.</summary>
@@ -111,7 +159,51 @@ namespace DogmaSolutions.Analyzers
     internal static class ExistenceAnalysis
     {
         // the values of a count that tell the existence tests from the other comparisons (> 1, == 1...)
-        private static readonly long[] CountSamples = { 0, 1, 2, 5, 100, 1000000, int.MaxValue, long.MaxValue };
+        private static readonly long[] CountSamples = { 1, 2, 5, 100, 1000000, int.MaxValue, long.MaxValue };
+
+        // the states the tests are evaluated for, made once
+        private static readonly Sample[] ItemExisting = { new(ExistenceKind.Item, false, 0) };
+        private static readonly Sample ItemMissing = new(ExistenceKind.Item, true, 0);
+        private static readonly Sample[] CountExisting = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(CountSamples, number => new Sample(ExistenceKind.Count, false, number)));
+        private static readonly Sample CountMissing = new(ExistenceKind.Count, false, 0);
+
+        /// <summary>The method that answers the existence question instead of the method (null: there is none), remembered: the same few methods are called thousands of times.</summary>
+        private sealed class Alternative
+        {
+            internal Alternative(IMethodSymbol definition)
+            {
+                var isAsync = definition.Name.EndsWith("Async", StringComparison.Ordinal) && IsTask(definition.ReturnType);
+                IsAsync = isAsync;
+                IsValid = isAsync || !IsTask(definition.ReturnType);
+                Method = FindAlternative(definition, isAsync ? "AnyAsync" : "Any");
+                IsQueryable = definition.Parameters[0].Type is INamedTypeSymbol { Name: "IQueryable" };
+                HasPredicate = HasPredicateParameter(definition);
+            }
+
+            internal IMethodSymbol Method { get; }
+
+            internal bool IsAsync { get; }
+
+            /// <summary>A method that returns a task is called by its async name only.</summary>
+            internal bool IsValid { get; }
+
+            internal bool IsQueryable { get; }
+
+            internal bool HasPredicate { get; }
+        }
+
+        private static bool HasPredicateParameter(IMethodSymbol definition)
+        {
+            for (var index = 1; index < definition.Parameters.Length; index++)
+            {
+                if (definition.Parameters[index].Type is INamedTypeSymbol { Name: "Func" or "Expression" })
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IMethodSymbol, Alternative> _alternatives = new();
 
         // ---- the call -------------------------------------------------------------------------------------------------
 
@@ -125,20 +217,11 @@ namespace DogmaSolutions.Analyzers
             if (!definition.IsStatic || !definition.IsExtensionMethod || definition.Parameters.IsEmpty)
                 return null;
 
-            var isAsync = definition.Name.EndsWith("Async", StringComparison.Ordinal) && IsTask(definition.ReturnType);
-            var alternative = FindAlternative(definition, isAsync ? "AnyAsync" : "Any");
-            if (alternative == null || (!isAsync && IsTask(definition.ReturnType)))
+            var alternative = _alternatives.GetValue(definition.OriginalDefinition, key => new Alternative(key));
+            if (alternative.Method == null || !alternative.IsValid)
                 return null;
 
-            var receiver = GetReceiver(invocation, method);
-            return new ExistenceCall(
-                method,
-                alternative,
-                isAsync,
-                definition.Parameters[0].Type is INamedTypeSymbol { Name: "IQueryable" },
-                definition.Parameters.Skip(1).Any(parameter => parameter.Type is INamedTypeSymbol { Name: "Func" or "Expression" }),
-                receiver == null ? null : model.GetTypeInfo(receiver, cancellationToken).Type,
-                method.TypeArguments.FirstOrDefault());
+            return new ExistenceCall(method, alternative.Method, alternative.IsAsync, alternative.IsQueryable, alternative.HasPredicate, GetReceiver(invocation, method), model);
         }
 
         private static ExpressionSyntax GetReceiver(InvocationExpressionSyntax invocation, IMethodSymbol method) =>
@@ -163,22 +246,44 @@ namespace DogmaSolutions.Analyzers
 
         // ---- the use of the result --------------------------------------------------------------------------------------
 
-        /// <summary>The existence test the result of the call is used for, or null when it is used for anything else.</summary>
-        internal static ExistenceUse Analyze(InvocationExpressionSyntax invocation, ExistenceCall call, ExistenceKind kind, SemanticModel model, CancellationToken cancellationToken)
+        /// <summary>
+        /// What can be told about the use of the result of the call without asking the semantic model: it is compared right away, or kept in a local variable
+        /// whose every use is a comparison. Most results are returned, passed or used, and are rejected here.
+        /// </summary>
+        internal static ExistenceShapeInfo GetShape(InvocationExpressionSyntax invocation, ExistenceKind kind)
         {
             var value = PeelUp(invocation, out var awaited);
-            if (call.IsAsync != awaited)
-                return null;
-
             if (value.Parent is EqualsValueClauseSyntax clause && clause.Value == value &&
                 clause.Parent is VariableDeclaratorSyntax declarator && declarator.Parent is VariableDeclarationSyntax { Variables.Count: 1, Parent: LocalDeclarationStatementSyntax { Modifiers.Count: 0, UsingKeyword.RawKind: 0 } declaration })
             {
-                var comparisons = FindLocalComparisons(declarator, declaration, kind, model, cancellationToken);
-                return comparisons == null ? null : new ExistenceUse(invocation, value, call, ExistenceShape.Local, comparisons, declaration);
+                var uses = FindLocalUses(declarator, declaration, kind);
+                return uses == null ? null : new ExistenceShapeInfo(invocation, value, awaited, ExistenceShape.Local, declaration, declarator, uses);
             }
 
-            var comparison = Classify(value, kind, model);
-            return comparison == null ? null : new ExistenceUse(invocation, value, call, ExistenceShape.Direct, new[] { comparison.Value }, null);
+            return IsComparisonShaped(value, kind) ? new ExistenceShapeInfo(invocation, value, awaited, ExistenceShape.Direct, null, null, null) : null;
+        }
+
+        /// <summary>The existence test the result of the call is used for, or null when it is used for anything else.</summary>
+        internal static ExistenceUse Analyze(InvocationExpressionSyntax invocation, ExistenceCall call, ExistenceKind kind, SemanticModel model, CancellationToken cancellationToken)
+        {
+            var shape = GetShape(invocation, kind);
+            return shape == null ? null : Complete(shape, call, kind, model, cancellationToken);
+        }
+
+        /// <summary>The shape checked against the semantic model: the variable is the one that is compared, and the numbers compared with are zero and one.</summary>
+        internal static ExistenceUse Complete(ExistenceShapeInfo shape, ExistenceCall call, ExistenceKind kind, SemanticModel model, CancellationToken cancellationToken)
+        {
+            if (call.IsAsync != shape.Awaited)
+                return null;
+
+            if (shape.Shape == ExistenceShape.Direct)
+            {
+                var comparison = Classify(shape.Value, kind, model);
+                return comparison == null ? null : new ExistenceUse(shape.Invocation, shape.Value, call, ExistenceShape.Direct, new[] { comparison.Value }, null);
+            }
+
+            var comparisons = ClassifyLocalUses(shape, kind, model, cancellationToken);
+            return comparisons == null ? null : new ExistenceUse(shape.Invocation, shape.Value, call, ExistenceShape.Local, comparisons, shape.Declaration);
         }
 
         /// <summary>The expression the call is part of as a value: through parentheses, <c>await</c> and <c>ConfigureAwait</c>.</summary>
@@ -205,20 +310,75 @@ namespace DogmaSolutions.Analyzers
             }
         }
 
-        private static List<ExistenceComparison> FindLocalComparisons(VariableDeclaratorSyntax declarator, LocalDeclarationStatementSyntax declaration, ExistenceKind kind, SemanticModel model, CancellationToken cancellationToken)
+        // ---- the variable ------------------------------------------------------------------------------------------------
+
+        /// <summary>The names used in a block, with the places they are used at: built once and used by all the variables of the block.</summary>
+        private sealed class IdentifierIndex
         {
-            if (declaration.Parent is not (BlockSyntax or SwitchSectionSyntax) || model.GetDeclaredSymbol(declarator, cancellationToken) is not ILocalSymbol local)
+            internal IdentifierIndex(SyntaxNode scope)
+            {
+                foreach (var identifier in scope.DescendantNodes().OfType<IdentifierNameSyntax>())
+                {
+                    var name = identifier.Identifier.ValueText;
+                    if (!ByName.TryGetValue(name, out var list))
+                        ByName[name] = list = new List<IdentifierNameSyntax>();
+
+                    list.Add(identifier);
+                }
+            }
+
+            internal Dictionary<string, List<IdentifierNameSyntax>> ByName { get; } = new(StringComparer.Ordinal);
+        }
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<SyntaxNode, IdentifierIndex> _indexes = new();
+
+        /// <summary>
+        /// The places the variable is used at, when every one of them is a comparison (null when one is not, or there is none). A name that is only the member
+        /// of something else (<c>x.Id</c>) is not a use.
+        /// </summary>
+        private static List<IdentifierNameSyntax> FindLocalUses(VariableDeclaratorSyntax declarator, LocalDeclarationStatementSyntax declaration, ExistenceKind kind)
+        {
+            var scope = declaration.Parent;
+            if (scope is not (BlockSyntax or SwitchSectionSyntax) || !_indexes.GetValue(scope, key => new IdentifierIndex(key)).ByName.TryGetValue(declarator.Identifier.ValueText, out var candidates))
                 return null;
 
-            var comparisons = new List<ExistenceComparison>();
-            var name = declarator.Identifier.ValueText;
-            foreach (var identifier in declaration.Parent.DescendantNodes().OfType<IdentifierNameSyntax>().Where(identifier => identifier.Identifier.ValueText == name))
+            var uses = new List<IdentifierNameSyntax>();
+            foreach (var identifier in candidates)
             {
-                if (!SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(identifier, cancellationToken).Symbol, local))
+                if (identifier.SpanStart < declarator.Span.End || IsMemberName(identifier))
                     continue;
 
                 // a use in a lambda or a local function runs when, and as many times as, the caller decides
-                var comparison = IsInNestedFunction(identifier, declaration.Parent) ? null : Classify(PeelParentheses(identifier), kind, model);
+                if (IsInNestedFunction(identifier, scope) || !IsComparisonShaped(PeelParentheses(identifier), kind))
+                    return null;
+
+                uses.Add(identifier);
+            }
+
+            return uses.Count == 0 ? null : uses;
+        }
+
+        /// <summary>The name is not a reference to a variable: it follows a dot, names an argument, a member of an initializer or a property of an anonymous type.</summary>
+        private static bool IsMemberName(IdentifierNameSyntax identifier) =>
+            identifier.Parent switch
+            {
+                MemberAccessExpressionSyntax memberAccess => memberAccess.Name == identifier,
+                MemberBindingExpressionSyntax => true,
+                QualifiedNameSyntax qualified => qualified.Right == identifier,
+                NameColonSyntax or NameEqualsSyntax => true,
+                AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax } assignment => assignment.Left == identifier,
+                _ => false,
+            };
+
+        private static List<ExistenceComparison> ClassifyLocalUses(ExistenceShapeInfo shape, ExistenceKind kind, SemanticModel model, CancellationToken cancellationToken)
+        {
+            var local = model.GetDeclaredSymbol(shape.Declarator, cancellationToken);
+            var comparisons = new List<ExistenceComparison>();
+
+            // the name can stand for something else than the variable
+            foreach (var identifier in shape.Uses.Where(identifier => SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(identifier, cancellationToken).Symbol, local)))
+            {
+                var comparison = Classify(PeelParentheses(identifier), kind, model);
                 if (comparison == null)
                     return null;
 
@@ -227,6 +387,50 @@ namespace DogmaSolutions.Analyzers
 
             return comparisons.Count == 0 ? null : comparisons;
         }
+
+        // ---- the shape of the comparison, without the semantic model -----------------------------------------------------------
+
+        /// <summary>The value is compared with null (or with something that can be a number) right where it is: the question that decides is asked to the model later.</summary>
+        private static bool IsComparisonShaped(ExpressionSyntax value, ExistenceKind kind)
+        {
+            switch (value.Parent)
+            {
+                case BinaryExpressionSyntax binary:
+                    var other = binary.Left == value ? binary.Right : binary.Left;
+                    return kind == ExistenceKind.Item
+                        ? (binary.IsKind(SyntaxKind.EqualsExpression) || binary.IsKind(SyntaxKind.NotEqualsExpression)) && other.IsKind(SyntaxKind.NullLiteralExpression)
+                        : IsComparisonOperator(binary) && MayBeNumber(other);
+                case IsPatternExpressionSyntax isPattern:
+                    return isPattern.Expression == value && IsPatternShaped(isPattern.Pattern, kind);
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsComparisonOperator(BinaryExpressionSyntax binary) =>
+            binary.Kind() is SyntaxKind.EqualsExpression or SyntaxKind.NotEqualsExpression or SyntaxKind.GreaterThanExpression or SyntaxKind.GreaterThanOrEqualExpression or SyntaxKind.LessThanExpression or SyntaxKind.LessThanOrEqualExpression;
+
+        private static bool MayBeNumber(ExpressionSyntax expression) =>
+            expression switch
+            {
+                LiteralExpressionSyntax literal => literal.IsKind(SyntaxKind.NumericLiteralExpression),
+                IdentifierNameSyntax or MemberAccessExpressionSyntax => true,
+                ParenthesizedExpressionSyntax parenthesized => MayBeNumber(parenthesized.Expression),
+                PrefixUnaryExpressionSyntax prefix => prefix.IsKind(SyntaxKind.UnaryMinusExpression) && MayBeNumber(prefix.Operand),
+                _ => false,
+            };
+
+        private static bool IsPatternShaped(PatternSyntax pattern, ExistenceKind kind) =>
+            pattern switch
+            {
+                ParenthesizedPatternSyntax parenthesized => IsPatternShaped(parenthesized.Pattern, kind),
+                UnaryPatternSyntax unary => unary.IsKind(SyntaxKind.NotPattern) && IsPatternShaped(unary.Pattern, kind),
+                BinaryPatternSyntax binary => IsPatternShaped(binary.Left, kind) && IsPatternShaped(binary.Right, kind),
+                ConstantPatternSyntax constant => kind == ExistenceKind.Item ? constant.Expression.IsKind(SyntaxKind.NullLiteralExpression) : MayBeNumber(constant.Expression),
+                RelationalPatternSyntax relational => kind == ExistenceKind.Count && MayBeNumber(relational.Expression),
+                RecursivePatternSyntax recursive => kind == ExistenceKind.Item && recursive.Type == null && recursive.PositionalPatternClause == null && recursive.Designation == null && recursive.PropertyPatternClause?.Subpatterns.Count == 0,
+                _ => false,
+            };
 
         private static bool IsInNestedFunction(SyntaxNode node, SyntaxNode scope) =>
             node.Ancestors().TakeWhile(ancestor => ancestor != scope).Any(ancestor => ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax);
@@ -244,18 +448,12 @@ namespace DogmaSolutions.Analyzers
         /// <summary>The comparison of the value with null (or zero) that tells whether it exists, or null when the parent of the value is something else.</summary>
         private static ExistenceComparison? Classify(ExpressionSyntax value, ExistenceKind kind, SemanticModel model)
         {
-            bool? present;
-            switch (value.Parent)
+            var present = value.Parent switch
             {
-                case BinaryExpressionSyntax binary:
-                    present = EvaluateBinary(binary, value, kind, model);
-                    break;
-                case IsPatternExpressionSyntax isPattern when isPattern.Expression == value:
-                    present = Polarity(kind, sample => EvaluatePattern(isPattern.Pattern, sample, model));
-                    break;
-                default:
-                    return null;
-            }
+                BinaryExpressionSyntax binary => EvaluateBinary(binary, value, kind, model),
+                IsPatternExpressionSyntax isPattern when isPattern.Expression == value => Polarity(kind, sample => EvaluatePattern(isPattern.Pattern, sample, model)),
+                _ => null,
+            };
 
             return present == null ? null : new ExistenceComparison(value.Parent, present.Value);
         }
@@ -272,10 +470,7 @@ namespace DogmaSolutions.Analyzers
             if (sample.Kind == ExistenceKind.Item)
             {
                 // only a comparison with the null literal is understood
-                if (!other.IsKind(SyntaxKind.NullLiteralExpression) || (operatorKind != SyntaxKind.EqualsExpression && operatorKind != SyntaxKind.NotEqualsExpression))
-                    return null;
-
-                return sample.IsNull == (operatorKind == SyntaxKind.EqualsExpression);
+                return other.IsKind(SyntaxKind.NullLiteralExpression) && (operatorKind == SyntaxKind.EqualsExpression || operatorKind == SyntaxKind.NotEqualsExpression) ? sample.IsNull == (operatorKind == SyntaxKind.EqualsExpression) : null;
             }
 
             var constant = GetNumber(other, model);
@@ -285,26 +480,17 @@ namespace DogmaSolutions.Analyzers
             return valueIsLeft ? Compare(operatorKind, sample.Number, constant.Value) : Compare(operatorKind, constant.Value, sample.Number);
         }
 
-        private static bool? Compare(SyntaxKind operatorKind, long left, long right)
-        {
-            switch (operatorKind)
+        private static bool? Compare(SyntaxKind operatorKind, long left, long right) =>
+            operatorKind switch
             {
-                case SyntaxKind.EqualsExpression:
-                    return left == right;
-                case SyntaxKind.NotEqualsExpression:
-                    return left != right;
-                case SyntaxKind.GreaterThanExpression:
-                    return left > right;
-                case SyntaxKind.GreaterThanOrEqualExpression:
-                    return left >= right;
-                case SyntaxKind.LessThanExpression:
-                    return left < right;
-                case SyntaxKind.LessThanOrEqualExpression:
-                    return left <= right;
-                default:
-                    return null;
-            }
-        }
+                SyntaxKind.EqualsExpression => left == right,
+                SyntaxKind.NotEqualsExpression => left != right,
+                SyntaxKind.GreaterThanExpression => left > right,
+                SyntaxKind.GreaterThanOrEqualExpression => left >= right,
+                SyntaxKind.LessThanExpression => left < right,
+                SyntaxKind.LessThanOrEqualExpression => left <= right,
+                _ => null,
+            };
 
         private static long? GetNumber(ExpressionSyntax expression, SemanticModel model)
         {
@@ -335,42 +521,33 @@ namespace DogmaSolutions.Analyzers
         /// </summary>
         private static bool? Polarity(ExistenceKind kind, Func<Sample, bool?> test)
         {
-            var existing = kind == ExistenceKind.Item ? new[] { new Sample(kind, false, 0) } : CountSamples.Skip(1).Select(number => new Sample(kind, false, number)).ToArray();
-            var missing = kind == ExistenceKind.Item ? new[] { new Sample(kind, true, 0) } : new[] { new Sample(kind, false, CountSamples[0]) };
-
-            var whenExisting = existing.Select(test).ToArray();
-            var whenMissing = missing.Select(test).ToArray();
-            if (whenExisting.Concat(whenMissing).Any(result => result == null))
-                return null;
-
-            if (whenExisting.All(result => result == true) && whenMissing.All(result => result == false))
-                return true;
-
-            return whenExisting.All(result => result == false) && whenMissing.All(result => result == true) ? false : null;
-        }
-
-        private static bool? EvaluatePattern(PatternSyntax pattern, Sample sample, SemanticModel model)
-        {
-            switch (pattern)
+            // every state with an element (or a count above zero) must give the same answer, and the state without one the opposite
+            bool? existing = null;
+            foreach (var sample in kind == ExistenceKind.Item ? ItemExisting : CountExisting)
             {
-                case ParenthesizedPatternSyntax parenthesized:
-                    return EvaluatePattern(parenthesized.Pattern, sample, model);
-                case UnaryPatternSyntax unary when unary.IsKind(SyntaxKind.NotPattern):
-                    return !EvaluatePattern(unary.Pattern, sample, model);
-                case BinaryPatternSyntax binary:
-                    return EvaluateBinaryPattern(binary, sample, model);
-                case ConstantPatternSyntax constant when sample.Kind == ExistenceKind.Item:
-                    return constant.Expression.IsKind(SyntaxKind.NullLiteralExpression) ? sample.IsNull : null;
-                case ConstantPatternSyntax constant:
-                    return EvaluateNumber(SyntaxKind.EqualsExpression, constant.Expression, sample, model);
-                case RelationalPatternSyntax relational when sample.Kind == ExistenceKind.Count:
-                    return EvaluateNumber(RelationalKind(relational.OperatorToken.Kind()), relational.Expression, sample, model);
-                case RecursivePatternSyntax { Type: null, PositionalPatternClause: null, Designation: null, PropertyPatternClause.Subpatterns.Count: 0 } when sample.Kind == ExistenceKind.Item:
-                    return !sample.IsNull;
-                default:
+                var result = test(sample);
+                if (result == null || (existing != null && existing != result))
                     return null;
+
+                existing = result;
             }
+
+            var missing = test(kind == ExistenceKind.Item ? ItemMissing : CountMissing);
+            return missing == null || missing == existing ? null : existing;
         }
+
+        private static bool? EvaluatePattern(PatternSyntax pattern, Sample sample, SemanticModel model) =>
+            pattern switch
+            {
+                ParenthesizedPatternSyntax parenthesized => EvaluatePattern(parenthesized.Pattern, sample, model),
+                UnaryPatternSyntax unary when unary.IsKind(SyntaxKind.NotPattern) => !EvaluatePattern(unary.Pattern, sample, model),
+                BinaryPatternSyntax binary => EvaluateBinaryPattern(binary, sample, model),
+                ConstantPatternSyntax constant when sample.Kind == ExistenceKind.Item => constant.Expression.IsKind(SyntaxKind.NullLiteralExpression) ? sample.IsNull : null,
+                ConstantPatternSyntax constant => EvaluateNumber(SyntaxKind.EqualsExpression, constant.Expression, sample, model),
+                RelationalPatternSyntax relational when sample.Kind == ExistenceKind.Count => EvaluateNumber(RelationalKind(relational.OperatorToken.Kind()), relational.Expression, sample, model),
+                RecursivePatternSyntax { Type: null, PositionalPatternClause: null, Designation: null, PropertyPatternClause.Subpatterns.Count: 0 } when sample.Kind == ExistenceKind.Item => !sample.IsNull,
+                _ => null,
+            };
 
         private static bool? EvaluateBinaryPattern(BinaryPatternSyntax binary, Sample sample, SemanticModel model)
         {
