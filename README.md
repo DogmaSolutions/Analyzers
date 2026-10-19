@@ -125,6 +125,8 @@ A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[S
 | [DSA049](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA049.md) | Code Smell | A field written under a lock must be accessed under that same lock everywhere: a lock excludes only the code that takes it | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA050](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA050.md) | Code Smell | Testing a flag (or a state) and then changing it is not atomic: two threads can both pass the test | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA051](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA051.md) | Best Practice | A class without a `ToString()` override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties | 💡 Suggestion | ✅ | ✅ | ✅ |
+| [DSA052](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA052.md) | Performance | `FirstOrDefault` / `SingleOrDefault` (and their async versions) whose element is only tested for existence: ask the real question with `Any` | ⚠ Warning | ✅ | ✅ | ✅ |
+| [DSA053](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA053.md) | Performance | `Count` / `CountAsync` whose number is only compared with zero: ask the real question with `Any` (arrays and collections, where `Length` and `Count` are cheap, are left alone) | ⚠ Warning | ✅ | ✅ | ✅ |
 
 # Refactorings list
 
@@ -487,6 +489,35 @@ dotnet_diagnostic.DSA051.excluded_type_name_patterns =
 dotnet_diagnostic.DSA051.excluded_namespace_patterns =
 dotnet_diagnostic.DSA051.excluded_base_types = System.Attribute
 dotnet_diagnostic.DSA051.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA052: FirstOrDefault / SingleOrDefault (and their async versions) whose element is only tested for existence: ask the real question with Any
+dotnet_diagnostic.DSA052.severity = warning
+dotnet_diagnostic.DSA052.included_methods = FirstOrDefault, FirstOrDefaultAsync, SingleOrDefault, SingleOrDefaultAsync
+dotnet_diagnostic.DSA052.report_direct_comparisons = true
+dotnet_diagnostic.DSA052.report_locals = true
+dotnet_diagnostic.DSA052.report_queryable_sources = true
+dotnet_diagnostic.DSA052.report_enumerable_sources = true
+dotnet_diagnostic.DSA052.skip_possibly_null_elements = true
+dotnet_diagnostic.DSA052.excluded_type_name_patterns =
+dotnet_diagnostic.DSA052.excluded_namespace_patterns =
+dotnet_diagnostic.DSA052.excluded_base_types =
+dotnet_diagnostic.DSA052.excluded_member_name_patterns =
+dotnet_diagnostic.DSA052.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA053: Count / CountAsync whose number is only compared with zero: ask the real question with Any (arrays and collections, where Length and Count are cheap, are left alone)
+dotnet_diagnostic.DSA053.severity = warning
+dotnet_diagnostic.DSA053.included_methods = Count, LongCount, CountAsync, LongCountAsync
+dotnet_diagnostic.DSA053.report_direct_comparisons = false
+dotnet_diagnostic.DSA053.report_async_predicate_comparisons = true
+dotnet_diagnostic.DSA053.report_locals = true
+dotnet_diagnostic.DSA053.report_queryable_sources = true
+dotnet_diagnostic.DSA053.report_enumerable_sources = true
+dotnet_diagnostic.DSA053.report_types_with_cheap_count = false
+dotnet_diagnostic.DSA053.excluded_type_name_patterns =
+dotnet_diagnostic.DSA053.excluded_namespace_patterns =
+dotnet_diagnostic.DSA053.excluded_base_types =
+dotnet_diagnostic.DSA053.excluded_member_name_patterns =
+dotnet_diagnostic.DSA053.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## Good / Professional
@@ -815,6 +846,35 @@ dotnet_diagnostic.DSA051.excluded_type_name_patterns =
 dotnet_diagnostic.DSA051.excluded_namespace_patterns =
 dotnet_diagnostic.DSA051.excluded_base_types = System.Attribute
 dotnet_diagnostic.DSA051.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA052: FirstOrDefault / SingleOrDefault (and their async versions) whose element is only tested for existence: ask the real question with Any
+dotnet_diagnostic.DSA052.severity = warning
+dotnet_diagnostic.DSA052.included_methods = FirstOrDefault, FirstOrDefaultAsync, SingleOrDefault, SingleOrDefaultAsync
+dotnet_diagnostic.DSA052.report_direct_comparisons = true
+dotnet_diagnostic.DSA052.report_locals = true
+dotnet_diagnostic.DSA052.report_queryable_sources = true
+dotnet_diagnostic.DSA052.report_enumerable_sources = true
+dotnet_diagnostic.DSA052.skip_possibly_null_elements = true
+dotnet_diagnostic.DSA052.excluded_type_name_patterns =
+dotnet_diagnostic.DSA052.excluded_namespace_patterns =
+dotnet_diagnostic.DSA052.excluded_base_types =
+dotnet_diagnostic.DSA052.excluded_member_name_patterns =
+dotnet_diagnostic.DSA052.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA053: Count / CountAsync whose number is only compared with zero: ask the real question with Any (arrays and collections, where Length and Count are cheap, are left alone)
+dotnet_diagnostic.DSA053.severity = warning
+dotnet_diagnostic.DSA053.included_methods = Count, LongCount, CountAsync, LongCountAsync
+dotnet_diagnostic.DSA053.report_direct_comparisons = false
+dotnet_diagnostic.DSA053.report_async_predicate_comparisons = true
+dotnet_diagnostic.DSA053.report_locals = true
+dotnet_diagnostic.DSA053.report_queryable_sources = true
+dotnet_diagnostic.DSA053.report_enumerable_sources = true
+dotnet_diagnostic.DSA053.report_types_with_cheap_count = false
+dotnet_diagnostic.DSA053.excluded_type_name_patterns =
+dotnet_diagnostic.DSA053.excluded_namespace_patterns =
+dotnet_diagnostic.DSA053.excluded_base_types =
+dotnet_diagnostic.DSA053.excluded_member_name_patterns =
+dotnet_diagnostic.DSA053.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## SSDLC (Secure Software Development Lifecycle) and/or AI-Driven development
@@ -1143,6 +1203,35 @@ dotnet_diagnostic.DSA051.excluded_type_name_patterns =
 dotnet_diagnostic.DSA051.excluded_namespace_patterns =
 dotnet_diagnostic.DSA051.excluded_base_types = System.Attribute
 dotnet_diagnostic.DSA051.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA052: FirstOrDefault / SingleOrDefault (and their async versions) whose element is only tested for existence: ask the real question with Any
+dotnet_diagnostic.DSA052.severity = error
+dotnet_diagnostic.DSA052.included_methods = FirstOrDefault, FirstOrDefaultAsync, SingleOrDefault, SingleOrDefaultAsync
+dotnet_diagnostic.DSA052.report_direct_comparisons = true
+dotnet_diagnostic.DSA052.report_locals = true
+dotnet_diagnostic.DSA052.report_queryable_sources = true
+dotnet_diagnostic.DSA052.report_enumerable_sources = true
+dotnet_diagnostic.DSA052.skip_possibly_null_elements = true
+dotnet_diagnostic.DSA052.excluded_type_name_patterns =
+dotnet_diagnostic.DSA052.excluded_namespace_patterns =
+dotnet_diagnostic.DSA052.excluded_base_types =
+dotnet_diagnostic.DSA052.excluded_member_name_patterns =
+dotnet_diagnostic.DSA052.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA053: Count / CountAsync whose number is only compared with zero: ask the real question with Any (arrays and collections, where Length and Count are cheap, are left alone)
+dotnet_diagnostic.DSA053.severity = error
+dotnet_diagnostic.DSA053.included_methods = Count, LongCount, CountAsync, LongCountAsync
+dotnet_diagnostic.DSA053.report_direct_comparisons = false
+dotnet_diagnostic.DSA053.report_async_predicate_comparisons = true
+dotnet_diagnostic.DSA053.report_locals = true
+dotnet_diagnostic.DSA053.report_queryable_sources = true
+dotnet_diagnostic.DSA053.report_enumerable_sources = true
+dotnet_diagnostic.DSA053.report_types_with_cheap_count = false
+dotnet_diagnostic.DSA053.excluded_type_name_patterns =
+dotnet_diagnostic.DSA053.excluded_namespace_patterns =
+dotnet_diagnostic.DSA053.excluded_base_types =
+dotnet_diagnostic.DSA053.excluded_member_name_patterns =
+dotnet_diagnostic.DSA053.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ---

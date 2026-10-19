@@ -2268,5 +2268,158 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA045ReviewCommentExcludedWithLogic", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA052AnalyzerTitle.
+        /// </summary>
+        internal static string DSA052AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA052AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA052AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA052AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA052AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA052AnalyzerDescription.
+        /// </summary>
+        internal static string DSA052AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA052AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA052ReviewComment.
+        /// </summary>
+        internal static string DSA052ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA052ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA052MessageQueryableDirect.
+        /// </summary>
+        internal static string DSA052MessageQueryableDirect {
+            get {
+                return ResourceManager.GetString("DSA052MessageQueryableDirect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA052MessageQueryableLocal.
+        /// </summary>
+        internal static string DSA052MessageQueryableLocal {
+            get {
+                return ResourceManager.GetString("DSA052MessageQueryableLocal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA052MessageEnumerableDirect.
+        /// </summary>
+        internal static string DSA052MessageEnumerableDirect {
+            get {
+                return ResourceManager.GetString("DSA052MessageEnumerableDirect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA052MessageEnumerableLocal.
+        /// </summary>
+        internal static string DSA052MessageEnumerableLocal {
+            get {
+                return ResourceManager.GetString("DSA052MessageEnumerableLocal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA052SingleNote.
+        /// </summary>
+        internal static string DSA052SingleNote {
+            get {
+                return ResourceManager.GetString("DSA052SingleNote", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA053AnalyzerTitle.
+        /// </summary>
+        internal static string DSA053AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA053AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA053AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA053AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA053AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA053AnalyzerDescription.
+        /// </summary>
+        internal static string DSA053AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA053AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA053ReviewComment.
+        /// </summary>
+        internal static string DSA053ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA053ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA053MessageQueryableDirect.
+        /// </summary>
+        internal static string DSA053MessageQueryableDirect {
+            get {
+                return ResourceManager.GetString("DSA053MessageQueryableDirect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA053MessageQueryableLocal.
+        /// </summary>
+        internal static string DSA053MessageQueryableLocal {
+            get {
+                return ResourceManager.GetString("DSA053MessageQueryableLocal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA053MessageEnumerableDirect.
+        /// </summary>
+        internal static string DSA053MessageEnumerableDirect {
+            get {
+                return ResourceManager.GetString("DSA053MessageEnumerableDirect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA053MessageEnumerableLocal.
+        /// </summary>
+        internal static string DSA053MessageEnumerableLocal {
+            get {
+                return ResourceManager.GetString("DSA053MessageEnumerableLocal", resourceCulture);
+            }
+        }
     }
 }
