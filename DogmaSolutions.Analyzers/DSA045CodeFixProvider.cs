@@ -21,6 +21,7 @@ namespace DogmaSolutions.Analyzers;
 public sealed class DSA045CodeFixProvider : CodeFixProvider
 {
     internal const string AddAttributeEquivalenceKey = DSA045Analyzer.DiagnosticId + "_AddExcludeFromCodeCoverage";
+    internal const string RemoveAttributeEquivalenceKey = DSA045Analyzer.DiagnosticId + "_RemoveExcludeFromCodeCoverage";
     private const string AttributeNamespace = "System.Diagnostics.CodeAnalysis";
     private const string AttributeName = "ExcludeFromCodeCoverage";
 
@@ -39,6 +40,23 @@ public sealed class DSA045CodeFixProvider : CodeFixProvider
 
     private static async Task RegisterFixesAsync(CodeFixContext context, Diagnostic diagnostic, BaseTypeDeclarationSyntax declaration)
     {
+        // the type is excluded already: the opposite scenario, where the attribute is to be removed
+        var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        var settings = DSA045Settings.Cache.Get(context.Document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(declaration.SyntaxTree));
+        var attributes = model?.GetDeclaredSymbol(declaration, context.CancellationToken) is { } type ? DSA045Exclusions.FindExclusionAttributes(type, settings) : default;
+        if (!attributes.IsDefaultOrEmpty)
+        {
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: "Remove [" + attributes[0].AttributeClass!.Name.Replace("Attribute", string.Empty) + "]",
+                    createChangedSolution: ct => RemoveAttributesAsync(context.Document.Project.Solution, attributes, ct),
+                    equivalenceKey: RemoveAttributeEquivalenceKey),
+                diagnostic);
+
+            ReviewCommentCodeFix.Register(context, diagnostic, declaration, DSA045Analyzer.DiagnosticId, nameof(Resources.DSA045ReviewCommentExcludedWithLogic));
+            return;
+        }
+
         // the attribute is not available everywhere (it is not in every target framework): without it the fix would not compile
         var compilation = await context.Document.Project.GetCompilationAsync(context.CancellationToken).ConfigureAwait(false);
         if (compilation?.GetTypeByMetadataName(DSA045Settings.ExcludeFromCodeCoverageType) != null)
@@ -52,6 +70,46 @@ public sealed class DSA045CodeFixProvider : CodeFixProvider
         }
 
         ReviewCommentCodeFix.Register(context, diagnostic, declaration, DSA045Analyzer.DiagnosticId, nameof(Resources.DSA045ReviewComment));
+    }
+
+    /// <summary>Removes the attributes from every part of the type, in whatever file it is: the attribute list goes with them when they were its only attributes, and the documentation and the indentation stay on top of the type.</summary>
+    private static async Task<Solution> RemoveAttributesAsync(Solution solution, ImmutableArray<AttributeData> attributes, CancellationToken cancellationToken)
+    {
+        // an attribute whose file is not part of the solution (read from metadata, or from a deleted document) cannot be edited
+        var documents = attributes.Select(attribute => attribute.ApplicationSyntaxReference).Where(reference => reference != null).GroupBy(reference => reference!.SyntaxTree)
+            .Select(group => (Document: solution.GetDocument(group.Key), References: group)).Where(item => item.Document != null).ToList();
+        foreach (var (document, references) in documents)
+        {
+            var root = await document!.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            var targets = references.Select(reference => (AttributeSyntax)reference!.GetSyntax(cancellationToken)).ToList();
+            root = root!.TrackNodes(targets);
+            foreach (var target in targets)
+                root = RemoveAttribute(root, root.GetCurrentNode(target)!);
+
+            solution = solution.WithDocumentSyntaxRoot(document.Id, root);
+        }
+
+        return solution;
+    }
+
+    private static SyntaxNode RemoveAttribute(SyntaxNode root, AttributeSyntax attribute)
+    {
+        var list = (AttributeListSyntax)attribute.Parent!;
+        if (list.Attributes.Count > 1)
+            return root.RemoveNode(attribute, SyntaxRemoveOptions.KeepNoTrivia)!;
+
+        var owner = list.Parent!;
+        var isFirst = ((BaseTypeDeclarationSyntax)owner).AttributeLists[0] == list;
+        var newOwner = ((BaseTypeDeclarationSyntax)owner).WithAttributeLists(((BaseTypeDeclarationSyntax)owner).AttributeLists.Remove(list));
+
+        // the documentation and the indentation that preceded the first attribute list go to what follows it
+        if (isFirst)
+        {
+            var token = newOwner.GetFirstToken();
+            newOwner = newOwner.ReplaceToken(token, token.WithLeadingTrivia(list.GetLeadingTrivia()));
+        }
+
+        return root.ReplaceNode(owner, newOwner);
     }
 
     private static async Task<Document> AddAttributeAsync(Document document, BaseTypeDeclarationSyntax declaration, CancellationToken cancellationToken)

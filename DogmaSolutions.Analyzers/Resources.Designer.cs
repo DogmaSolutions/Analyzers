@@ -2241,5 +2241,32 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA046RemedyEnum", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA045MessagePureDataCarrier.
+        /// </summary>
+        internal static string DSA045MessagePureDataCarrier {
+            get {
+                return ResourceManager.GetString("DSA045MessagePureDataCarrier", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA045MessageExcludedWithLogic.
+        /// </summary>
+        internal static string DSA045MessageExcludedWithLogic {
+            get {
+                return ResourceManager.GetString("DSA045MessageExcludedWithLogic", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA045ReviewCommentExcludedWithLogic.
+        /// </summary>
+        internal static string DSA045ReviewCommentExcludedWithLogic {
+            get {
+                return ResourceManager.GetString("DSA045ReviewCommentExcludedWithLogic", resourceCulture);
+            }
+        }
     }
 }

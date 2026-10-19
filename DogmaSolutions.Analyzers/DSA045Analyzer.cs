@@ -61,12 +61,40 @@ namespace DogmaSolutions.Analyzers
                 return;
 
             var settings = DSA045Settings.Cache.Get(context.Options.AnalyzerConfigOptionsProvider.GetOptions(location.SourceTree));
-            if (!IsIncluded(type, settings) || DSA045Exclusions.IsExcluded(type, location.SourceTree, settings, context.Compilation, referencedAssemblies))
+            if (!IsIncluded(type, settings))
                 return;
+
+            // a type that is excluded from the coverage by an attribute of its own is looked at too: it may have logic
+            var exclusionAttributes = settings.ReportExcludedTypesWithLogic ? DSA045Exclusions.FindExclusionAttributes(type, settings) : ImmutableArray<AttributeData>.Empty;
+            if (DSA045Exclusions.IsExcluded(type, location.SourceTree, settings, context.Compilation, referencedAssemblies, !exclusionAttributes.IsEmpty))
+                return;
+
+            if (!exclusionAttributes.IsEmpty)
+            {
+                ReportExcludedTypeWithLogic(context, type, location, exclusionAttributes[0], settings);
+                return;
+            }
 
             var verdict = DSA045DtoDetector.Evaluate(type, settings, context.CancellationToken);
             if (verdict.IsPure)
-                context.ReportDiagnostic(Diagnostic.Create(_rule, location, GetKindName(type), type.Name, DescribeMembers(verdict.DataMembers), verdict.HasBaseTypes ? ", base types included" : string.Empty));
+            {
+                var message = string.Format(Resources.Culture, Resources.DSA045MessagePureDataCarrier, GetKindName(type), type.Name, DescribeMembers(verdict.DataMembers), verdict.HasBaseTypes ? ", base types included" : string.Empty);
+                context.ReportDiagnostic(Diagnostic.Create(_rule, location, message));
+            }
+        }
+
+        private static void ReportExcludedTypeWithLogic(SymbolAnalysisContext context, INamedTypeSymbol type, Location location, AttributeData attribute, DSA045Settings settings)
+        {
+            var logic = DSA045DtoDetector.FindLogic(type, settings, context.CancellationToken);
+            if (logic == null)
+                return;
+
+            var attributeName = attribute.AttributeClass!.Name;
+            if (attributeName.EndsWith("Attribute", StringComparison.Ordinal))
+                attributeName = attributeName.Substring(0, attributeName.Length - "Attribute".Length);
+
+            var message = string.Format(Resources.Culture, Resources.DSA045MessageExcludedWithLogic, GetKindName(type), type.Name, attributeName, logic);
+            context.ReportDiagnostic(Diagnostic.Create(_rule, location, message));
         }
 
         // ---- the kind of type -----------------------------------------------------------------------------------------------

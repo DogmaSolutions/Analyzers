@@ -37,6 +37,7 @@ public class DSA045SettingsTests
         Assert.IsFalse(settings.AllowParameterlessConstructor);
         Assert.IsFalse(settings.AllowNestedTypes);
         Assert.IsTrue(settings.InspectBaseTypes);
+        Assert.IsTrue(settings.ReportExcludedTypesWithLogic);
         CollectionAssert.AreEqual(new[] { "System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" }, settings.ExclusionAttributes);
         CollectionAssert.AreEqual(new[] { "System.CodeDom.Compiler.GeneratedCodeAttribute", "System.Runtime.CompilerServices.CompilerGeneratedAttribute" }, settings.IgnoredAttributes);
         Assert.IsTrue(settings.SkipTestAssemblies);
@@ -63,6 +64,7 @@ public class DSA045SettingsTests
             (DSA045Settings.AllowParameterlessConstructorKey, "true"),
             (DSA045Settings.AllowNestedTypesKey, "true"),
             (DSA045Settings.InspectBaseTypesKey, "false"),
+            (DSA045Settings.ReportExcludedTypesWithLogicKey, "false"),
             (DSA045Settings.ExclusionAttributesKey, "My.NoCoverage, My.Other"),
             (DSA045Settings.IgnoredAttributesKey, "My.Skip"),
             (DSA045Settings.SkipTestAssembliesKey, "false"),
@@ -84,6 +86,7 @@ public class DSA045SettingsTests
         Assert.IsTrue(settings.AllowParameterlessConstructor);
         Assert.IsTrue(settings.AllowNestedTypes);
         Assert.IsFalse(settings.InspectBaseTypes);
+        Assert.IsFalse(settings.ReportExcludedTypesWithLogic);
         CollectionAssert.AreEqual(new[] { "My.NoCoverage", "My.Other" }, settings.ExclusionAttributes);
         CollectionAssert.AreEqual(new[] { "My.Skip" }, settings.IgnoredAttributes);
         Assert.IsFalse(settings.SkipTestAssemblies);

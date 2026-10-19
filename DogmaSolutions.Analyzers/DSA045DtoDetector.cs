@@ -58,6 +58,53 @@ namespace DogmaSolutions.Analyzers
             return new DtoVerdict(count >= settings.MinDataMembers, count, hasBaseTypes);
         }
 
+        /// <summary>
+        /// What makes the type itself (its base types are not looked at) something else than a data carrier, in words for the message; null when it has no logic.
+        /// </summary>
+        internal static string FindLogic(INamedTypeSymbol type, DSA045Settings settings, CancellationToken cancellationToken)
+        {
+            var members = type.GetMembers();
+            DSA045BackingFields backingFields = null;
+            foreach (var member in members.Where(member => !member.IsImplicitlyDeclared))
+            {
+                if (GetDataWeight(member, type, () => backingFields ??= FindBackingFields(members, settings, cancellationToken), settings, cancellationToken) < 0)
+                    return Describe(member);
+            }
+
+            return null;
+        }
+
+        private static string Describe(ISymbol member)
+        {
+            switch (member)
+            {
+                case IMethodSymbol { MethodKind: MethodKind.StaticConstructor }:
+                    return "a static constructor";
+                case IMethodSymbol { MethodKind: MethodKind.Constructor }:
+                    return "an explicit constructor";
+                case IMethodSymbol { MethodKind: MethodKind.Destructor }:
+                    return "a finalizer";
+                case IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or MethodKind.Conversion }:
+                    return "an operator";
+                case IMethodSymbol method:
+                    return "the method '" + method.Name + "'";
+                case IPropertySymbol { IsIndexer: true }:
+                    return "an indexer";
+                case IPropertySymbol { IsStatic: true } property:
+                    return "the static property '" + property.Name + "'";
+                case IPropertySymbol property:
+                    return "the property '" + property.Name + "', which does more than store a value";
+                case IFieldSymbol { IsStatic: true } field:
+                    return "the static field '" + field.Name + "'";
+                case IFieldSymbol field:
+                    return "the field '" + field.Name + "'";
+                case INamedTypeSymbol nested:
+                    return "the nested type '" + nested.Name + "'";
+                default:
+                    return "the member '" + member.Name + "'";
+            }
+        }
+
         /// <summary>A base type that cannot be resolved is never assumed to be a data carrier.</summary>
         private static bool IsInspectable(INamedTypeSymbol baseType) => baseType.TypeKind != TypeKind.Error;
 

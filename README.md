@@ -118,7 +118,7 @@ A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[S
 | [DSA042](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA042.md) | Code Smell | Avoid repeating a segment in a namespace (e.g. `My.Project.Models.Models`) | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA043](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA043.md) | Best Practice | A complex class (cyclomatic complexity, lines, ... configurable) should inject or use a logger (`Microsoft.Extensions.Logging.ILogger`) | 💡 Suggestion | ✅ | ❌ | ✅ |
 | [DSA044](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA044.md) | Best Practice | Use the available logger (Microsoft.Extensions.Logging, Serilog, NLog, log4net, ...) instead of `Console.Write*` or `Debug.Write*` | 💡 Suggestion | ✅ | ✅ | ✅ |
-| [DSA045](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA045.md) | Best Practice | A pure data carrier (DTO: properties only, no logic, no explicit constructor, base types included) should be excluded from the code coverage with `[ExcludeFromCodeCoverage]` | ⚠ Warning | ✅ | ✅ | ✅ |
+| [DSA045](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA045.md) | Best Practice | The exclusion from the code coverage must match the nature of the type: a pure data carrier (DTO: properties only, no logic, no explicit constructor, base types included) should be excluded with `[ExcludeFromCodeCoverage]`, a type with logic should not | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA046](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA046.md) | Code Smell | A read-modify-write of a `volatile` field (`x++`, `x += v`, `x = f(x)`) is not atomic: use `Interlocked` or a `lock` | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA047](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA047.md) | Code Smell | A lock object must be private and never reassigned: a swapped or exposed lock object protects nothing | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA048](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA048.md) | Code Smell | Do not wait for a change of state by sleeping in a loop: signal it, and wait with a timeout | ⚠ Warning | ✅ | ❌ | ✅ |
@@ -375,7 +375,7 @@ dotnet_diagnostic.DSA044.excluded_member_name_patterns = Main
 dotnet_diagnostic.DSA044.excluded_namespace_patterns =
 dotnet_diagnostic.DSA044.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 
-# DSA045: A pure data carrier (DTO: properties only, no logic, no explicit constructor, base types included) should be excluded from the code coverage with [ExcludeFromCodeCoverage]
+# DSA045: The exclusion from the code coverage must match the nature of the type: a pure data carrier (DTO: properties only, no logic, no explicit constructor, base types included) should be excluded with [ExcludeFromCodeCoverage], a type with logic should not
 dotnet_diagnostic.DSA045.severity = warning
 dotnet_diagnostic.DSA045.included_type_kinds = class, struct, record, record_struct
 dotnet_diagnostic.DSA045.include_abstract_classes = true
@@ -388,6 +388,7 @@ dotnet_diagnostic.DSA045.allow_computed_properties = false
 dotnet_diagnostic.DSA045.allow_parameterless_constructor = false
 dotnet_diagnostic.DSA045.allow_nested_types = false
 dotnet_diagnostic.DSA045.inspect_base_types = true
+dotnet_diagnostic.DSA045.report_excluded_types_with_logic = true
 dotnet_diagnostic.DSA045.exclusion_attributes = System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute
 dotnet_diagnostic.DSA045.ignored_attributes = System.CodeDom.Compiler.GeneratedCodeAttribute, System.Runtime.CompilerServices.CompilerGeneratedAttribute
 dotnet_diagnostic.DSA045.skip_test_assemblies = true
@@ -702,7 +703,7 @@ dotnet_diagnostic.DSA044.excluded_member_name_patterns = Main
 dotnet_diagnostic.DSA044.excluded_namespace_patterns =
 dotnet_diagnostic.DSA044.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 
-# DSA045: A pure data carrier (DTO: properties only, no logic, no explicit constructor, base types included) should be excluded from the code coverage with [ExcludeFromCodeCoverage]
+# DSA045: The exclusion from the code coverage must match the nature of the type: a pure data carrier (DTO: properties only, no logic, no explicit constructor, base types included) should be excluded with [ExcludeFromCodeCoverage], a type with logic should not
 dotnet_diagnostic.DSA045.severity = warning
 dotnet_diagnostic.DSA045.included_type_kinds = class, struct, record, record_struct
 dotnet_diagnostic.DSA045.include_abstract_classes = true
@@ -715,6 +716,7 @@ dotnet_diagnostic.DSA045.allow_computed_properties = false
 dotnet_diagnostic.DSA045.allow_parameterless_constructor = false
 dotnet_diagnostic.DSA045.allow_nested_types = false
 dotnet_diagnostic.DSA045.inspect_base_types = true
+dotnet_diagnostic.DSA045.report_excluded_types_with_logic = true
 dotnet_diagnostic.DSA045.exclusion_attributes = System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute
 dotnet_diagnostic.DSA045.ignored_attributes = System.CodeDom.Compiler.GeneratedCodeAttribute, System.Runtime.CompilerServices.CompilerGeneratedAttribute
 dotnet_diagnostic.DSA045.skip_test_assemblies = true
@@ -1029,7 +1031,7 @@ dotnet_diagnostic.DSA044.excluded_member_name_patterns = Main
 dotnet_diagnostic.DSA044.excluded_namespace_patterns =
 dotnet_diagnostic.DSA044.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 
-# DSA045: A pure data carrier (DTO: properties only, no logic, no explicit constructor, base types included) should be excluded from the code coverage with [ExcludeFromCodeCoverage]
+# DSA045: The exclusion from the code coverage must match the nature of the type: a pure data carrier (DTO: properties only, no logic, no explicit constructor, base types included) should be excluded with [ExcludeFromCodeCoverage], a type with logic should not
 dotnet_diagnostic.DSA045.severity = error
 dotnet_diagnostic.DSA045.included_type_kinds = class, struct, record, record_struct
 dotnet_diagnostic.DSA045.include_abstract_classes = true
@@ -1042,6 +1044,7 @@ dotnet_diagnostic.DSA045.allow_computed_properties = false
 dotnet_diagnostic.DSA045.allow_parameterless_constructor = false
 dotnet_diagnostic.DSA045.allow_nested_types = false
 dotnet_diagnostic.DSA045.inspect_base_types = true
+dotnet_diagnostic.DSA045.report_excluded_types_with_logic = true
 dotnet_diagnostic.DSA045.exclusion_attributes = System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute
 dotnet_diagnostic.DSA045.ignored_attributes = System.CodeDom.Compiler.GeneratedCodeAttribute, System.Runtime.CompilerServices.CompilerGeneratedAttribute
 dotnet_diagnostic.DSA045.skip_test_assemblies = true

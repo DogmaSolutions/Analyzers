@@ -33,6 +33,7 @@ namespace DogmaSolutions.Analyzers
         internal const string AllowParameterlessConstructorKey = "dotnet_diagnostic.DSA045.allow_parameterless_constructor";
         internal const string AllowNestedTypesKey = "dotnet_diagnostic.DSA045.allow_nested_types";
         internal const string InspectBaseTypesKey = "dotnet_diagnostic.DSA045.inspect_base_types";
+        internal const string ReportExcludedTypesWithLogicKey = "dotnet_diagnostic.DSA045.report_excluded_types_with_logic";
         internal const string ExclusionAttributesKey = "dotnet_diagnostic.DSA045.exclusion_attributes";
         internal const string IgnoredAttributesKey = "dotnet_diagnostic.DSA045.ignored_attributes";
         internal const string SkipTestAssembliesKey = "dotnet_diagnostic.DSA045.skip_test_assemblies";
@@ -69,6 +70,7 @@ namespace DogmaSolutions.Analyzers
             AllowParameterlessConstructor = AnalyzerOptionsReader.ReadBool(options, AllowParameterlessConstructorKey, false);
             AllowNestedTypes = AnalyzerOptionsReader.ReadBool(options, AllowNestedTypesKey, false);
             InspectBaseTypes = AnalyzerOptionsReader.ReadBool(options, InspectBaseTypesKey, true);
+            ReportExcludedTypesWithLogic = AnalyzerOptionsReader.ReadBool(options, ReportExcludedTypesWithLogicKey, true);
 
             ExclusionAttributes = AnalyzerOptionsReader.ReadList(options, ExclusionAttributesKey, DefaultExclusionAttributes);
             IgnoredAttributes = AnalyzerOptionsReader.ReadList(options, IgnoredAttributesKey, DefaultIgnoredAttributes);
@@ -115,6 +117,9 @@ namespace DogmaSolutions.Analyzers
 
         /// <summary>The base types must be data carriers too.</summary>
         internal bool InspectBaseTypes { get; }
+
+        /// <summary>The opposite scenario: a type with logic that is excluded from the coverage by an attribute on the type itself is reported too.</summary>
+        internal bool ReportExcludedTypesWithLogic { get; }
 
         /// <summary>Attributes (fully qualified names) that already exclude a type from the coverage.</summary>
         internal string[] ExclusionAttributes { get; }

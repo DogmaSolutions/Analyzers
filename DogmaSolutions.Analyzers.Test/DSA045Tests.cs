@@ -45,6 +45,9 @@ namespace TestLib
         return CSharpVerifierHelper.SanitizeTestDisplayName((string)data[0]);
     }
 
+    /// <summary>The expected diagnostic of a type with logic that is excluded: the kind of type, its name, the attribute and what the logic is.</summary>
+    internal static string X(string kind, string name, string attribute, string logic) => "X|" + kind + "|" + name + "|" + attribute + "|" + logic;
+
     /// <summary>The expected diagnostic: the kind of type, its name, the description of its members and the note about the base types.</summary>
     internal static string E(string kind, string name, string members, bool baseTypes = false) => kind + "|" + name + "|" + members + "|" + (baseTypes ? ", base types included" : string.Empty);
 
@@ -95,7 +98,11 @@ namespace TestLib
         if (!string.IsNullOrEmpty(expected))
         {
             var parts = expected.Split('|');
-            var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(nameof(Resources.DSA045AnalyzerMessageFormat), Resources.Culture), parts[0], parts[1], parts[2], parts[3]);
+            var excluded = parts[0] == "X";
+            var message = string.Format(
+                Resources.Culture,
+                Resources.ResourceManager.GetString(excluded ? nameof(Resources.DSA045MessageExcludedWithLogic) : nameof(Resources.DSA045MessagePureDataCarrier), Resources.Culture),
+                excluded ? parts.Skip(1).ToArray<object>() : parts.ToArray<object>());
             test.ExpectedDiagnostics.Add(new DiagnosticResult(DSA045Analyzer.DiagnosticId, DiagnosticSeverity.Warning).WithLocation(0).WithMessage(message));
         }
 

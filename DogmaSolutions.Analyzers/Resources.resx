@@ -951,13 +951,13 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
     <value>SetItem (upsert semantics)</value>
   </data>
   <data name="DSA045AnalyzerTitle" xml:space="preserve">
-    <value>A pure data carrier should be excluded from the code coverage</value>
+    <value>The exclusion from the code coverage must match the nature of the type: a pure data carrier should be excluded, a type with logic should not</value>
   </data>
   <data name="DSA045AnalyzerMessageFormat" xml:space="preserve">
-    <value>The {0} '{1}' is a pure data carrier ({2}, no logic{3}): there is nothing to cover in it, and measuring it only inflates the coverage figures; decorate it with [ExcludeFromCodeCoverage]</value>
+    <value>{0}</value>
   </data>
   <data name="DSA045AnalyzerDescription" xml:space="preserve">
-    <value>A class (or struct, or record) made only of properties, with no logic and no explicit constructor, and whose base types are data carriers too, has no behavior to test: its lines are executed by any test that happens to create it, or never. Counting them inflates the coverage percentage when they are executed in passing and distorts it when they are not, so the metric stops saying how much of the real logic is verified. Decorate such a type with [ExcludeFromCodeCoverage] and keep the coverage figures about the code that can break. The rule is silent as soon as the type, or one of its base types, contains logic.</value>
+    <value>Two directions of the same rule. A class (or struct, or record) made only of properties, with no logic and no explicit constructor, and whose base types are data carriers too, has no behavior to test: its lines are executed by any test that happens to create it, or never. Counting them inflates the coverage percentage when they are executed in passing and distorts it when they are not, so the metric stops saying how much of the real logic is verified: decorate such a type with [ExcludeFromCodeCoverage]. The opposite is worse: a type that has logic (a method, an explicit constructor, a computed property...) and is decorated with [ExcludeFromCodeCoverage] hides from the coverage figure code that can break and that nobody is pushed to test; remove the attribute and cover the logic (or exclude only the members that cannot be tested). The message explains the specific scenario. The rule is silent as soon as a type that is not excluded contains logic, and for a type that is excluded and has no logic.</value>
   </data>
   <data name="DSA045ReviewComment" xml:space="preserve">
     <value>/* [DSA045 / QA + Best Practice]: Pure data carrier not excluded from the code coverage (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA045.md)
@@ -1218,5 +1218,17 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   </data>
   <data name="DSA046RemedyEnum" xml:space="preserve">
     <value>Interlocked has no overload for the enum '{0}' in any .NET version: keep the value in an 'int' field (cast it when you read it) and use Interlocked on it, or take a lock around every access of the field.</value>
+  </data>
+  <data name="DSA045MessagePureDataCarrier" xml:space="preserve">
+    <value>The {0} '{1}' is a pure data carrier ({2}, no logic{3}): there is nothing to cover in it, and measuring it only inflates the coverage figures; decorate it with [ExcludeFromCodeCoverage]</value>
+  </data>
+  <data name="DSA045MessageExcludedWithLogic" xml:space="preserve">
+    <value>The {0} '{1}' is excluded from the code coverage with [{2}], but it is not a pure data carrier: it contains {3}. The attribute removes this code from the coverage figure, so logic that can break is not measured and nobody is pushed to test it (the percentage looks better than the truth). Remove the attribute and cover the logic with tests; if only some members cannot be tested, keep the type covered and decorate those members only.</value>
+  </data>
+  <data name="DSA045ReviewCommentExcludedWithLogic" xml:space="preserve">
+    <value>/* [DSA045 / QA + Best Practice]: Type with logic excluded from the code coverage (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA045.md)
+ * ExcludeFromCodeCoverageAttribute - https://learn.microsoft.com/dotnet/api/system.diagnostics.codeanalysis.excludefromcodecoverageattribute
+ * Code coverage - https://en.wikipedia.org/wiki/Code_coverage
+ */</value>
   </data>
 </root>

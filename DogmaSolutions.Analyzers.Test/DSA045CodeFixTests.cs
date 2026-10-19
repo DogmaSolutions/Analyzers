@@ -211,4 +211,94 @@ public class DSA045CodeFixTests
             .ConfigureAwait(false);
         return titles.ToArray();
     }
+
+    // title, source, fixed source, settings: the opposite scenario, the attribute is removed from a type that has logic
+    private static IEnumerable<object[]> GetRemovals =>
+    [
+        [
+            "The attribute and its line are removed",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [ExcludeFromCodeCoverage]\n    public class {|#0:Report|}\n    {\n        public int Compute() => 1;\n    }\n}",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    public class Report\n    {\n        public int Compute() => 1;\n    }\n}",
+            "",
+        ],
+        [
+            "The documentation stays on top",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    /// <summary>A report.</summary>\n    [ExcludeFromCodeCoverage]\n    public class {|#0:Report|}\n    {\n        public int Compute() => 1;\n    }\n}",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    /// <summary>A report.</summary>\n    public class Report\n    {\n        public int Compute() => 1;\n    }\n}",
+            "",
+        ],
+        [
+            "The other attributes are kept",
+            "using System;\nusing System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    /// <summary>A report.</summary>\n    [ExcludeFromCodeCoverage]\n    [Serializable]\n    public class {|#0:Report|}\n    {\n        public int Compute() => 1;\n    }\n}",
+            "using System;\nusing System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    /// <summary>A report.</summary>\n    [Serializable]\n    public class Report\n    {\n        public int Compute() => 1;\n    }\n}",
+            "",
+        ],
+        [
+            "The attribute is not the first one",
+            "using System;\nusing System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [Serializable]\n    [ExcludeFromCodeCoverage]\n    public class {|#0:Report|}\n    {\n        public int Compute() => 1;\n    }\n}",
+            "using System;\nusing System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [Serializable]\n    public class Report\n    {\n        public int Compute() => 1;\n    }\n}",
+            "",
+        ],
+        [
+            "The attribute in a list with another one",
+            "using System;\nusing System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [Serializable, ExcludeFromCodeCoverage]\n    public class {|#0:Report|}\n    {\n        public int Compute() => 1;\n    }\n}",
+            "using System;\nusing System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [Serializable]\n    public class Report\n    {\n        public int Compute() => 1;\n    }\n}",
+            "",
+        ],
+        [
+            "The attribute with a justification",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [ExcludeFromCodeCoverage(Justification = \"UI\")]\n    public class {|#0:Report|}\n    {\n        public int Compute() => 1;\n    }\n}",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    public class Report\n    {\n        public int Compute() => 1;\n    }\n}",
+            "",
+        ],
+        [
+            "The attribute on the same line as the type",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [ExcludeFromCodeCoverage] public class {|#0:Report|}\n    {\n        public int Compute() => 1;\n    }\n}",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    public class Report\n    {\n        public int Compute() => 1;\n    }\n}",
+            "",
+        ],
+        [
+            "A struct",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [ExcludeFromCodeCoverage]\n    public struct {|#0:Point|}\n    {\n        public int Sum() => 1;\n    }\n}",
+            "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    public struct Point\n    {\n        public int Sum() => 1;\n    }\n}",
+            "",
+        ],
+    ];
+
+    [TestMethod]
+    [DynamicData(nameof(GetRemovals), DynamicDataDisplayName = nameof(DSA045Tests.GetCaseDisplayName), DynamicDataDisplayNameDeclaringType = typeof(DSA045Tests))]
+    public async Task The_attribute_is_removed_from_a_type_with_logic(string title, string source, string fixedSource, string settings)
+    {
+        var test = CreateTest(source, fixedSource, settings);
+        test.CodeActionEquivalenceKey = DSA045CodeFixProvider.RemoveAttributeEquivalenceKey;
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task The_attribute_is_removed_from_the_part_of_the_partial_type_that_has_it()
+    {
+        // the diagnostic is on the first part; the attribute is on another one, in another file
+        var test = CreateTest(
+            "namespace TestApp\n{\n    public partial class {|#0:Report|}\n    {\n        public int Compute() => 1;\n    }\n}",
+            "namespace TestApp\n{\n    public partial class Report\n    {\n        public int Compute() => 1;\n    }\n}",
+            string.Empty);
+        test.CodeActionEquivalenceKey = DSA045CodeFixProvider.RemoveAttributeEquivalenceKey;
+        test.TestState.Sources.Add(("Other.cs", "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [ExcludeFromCodeCoverage]\n    public partial class Report\n    {\n    }\n}"));
+        test.FixedState.Sources.Add(("Other.cs", "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    public partial class Report\n    {\n    }\n}"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task The_attribute_is_not_added_to_a_type_that_has_it_already_and_the_generate_fix_does_not_exist()
+    {
+        // the type has logic and the attribute: the only actions are the removal and the review comment
+        var source = "using System.Diagnostics.CodeAnalysis;\n\nnamespace TestApp\n{\n    [ExcludeFromCodeCoverage]\n    public class {|#0:Report|}\n    {\n        public int Compute() => 1;\n    }\n}";
+        var test = CreateTest(source, source, string.Empty);
+        test.CodeActionEquivalenceKey = DSA045CodeFixProvider.AddAttributeEquivalenceKey;
+        test.FixedState.ExpectedDiagnostics.AddRange(test.ExpectedDiagnostics);
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }
