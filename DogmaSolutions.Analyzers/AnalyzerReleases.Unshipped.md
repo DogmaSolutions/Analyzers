@@ -12,6 +12,8 @@ DSA048  | Code Smell    | Warning  | DSA048Analyzer
 DSA049  | Code Smell    | Warning  | DSA049Analyzer
 DSA050  | Code Smell    | Warning  | DSA050Analyzer
 DSA051  | Best Practice | Info     | DSA051Analyzer
+DSA052  | Performance   | Warning  | DSA052Analyzer
+DSA053  | Performance   | Warning  | DSA053Analyzer
 
 ### Changed Rules
 

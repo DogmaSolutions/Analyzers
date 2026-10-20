@@ -1231,4 +1231,61 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
  * Code coverage - https://en.wikipedia.org/wiki/Code_coverage
  */</value>
   </data>
+  <data name="DSA052AnalyzerTitle" xml:space="preserve">
+    <value>Use Any instead of FirstOrDefault when the element is only tested for existence</value>
+  </data>
+  <data name="DSA052AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA052AnalyzerDescription" xml:space="preserve">
+    <value>FirstOrDefault (or SingleOrDefault, or their async versions) returns an element, and a result that is only compared with null is a question about existence asked in the most expensive way: the element is fetched and then thrown away. On a database query that means loading, materializing and, with change tracking, tracking a whole row, when Any translates to an EXISTS that stops at the first match and transfers nothing. In memory the cost is small, but the code says 'give me the element' when it means 'is there one'. The rule reports the call that is compared right away and the local variable that is only compared with null; it stays silent when the element is returned, assigned, passed, accessed, captured or used in any other way. It also stays silent when the elements can be null (string, object, T?) and when they are value types, because there FirstOrDefault() != null and Any() are not the same question. The message explains the specific scenario: a query or an in-memory sequence, the call compared right away or through a variable.</value>
+  </data>
+  <data name="DSA052ReviewComment" xml:space="preserve">
+    <value>/* [DSA052 / QA + Performance]: FirstOrDefault used only to test for existence (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA052.md)
+ * CWE-1049: Excessive Data Query Operations in a Large Data Table - https://cwe.mitre.org/data/definitions/1049.html
+ * CWE-405: Asymmetric Resource Consumption (Amplification) - https://cwe.mitre.org/data/definitions/405.html
+ */</value>
+  </data>
+  <data name="DSA052MessageQueryableDirect" xml:space="preserve">
+    <value>'{0}' loads a complete row from the data source (and, in an ORM with change tracking, starts tracking it) only to compare it with null: the row itself is never used. '{1}' asks the real question with an EXISTS that stops at the first match and transfers nothing.</value>
+  </data>
+  <data name="DSA052MessageQueryableLocal" xml:space="preserve">
+    <value>The variable '{2}' receives the result of '{0}' but is only ever compared with null: the row it holds is never used, so loading it (and, in an ORM with change tracking, tracking it) is wasted. Ask for the existence with '{1}', which translates to an EXISTS that stops at the first match and transfers nothing, and keep the boolean.</value>
+  </data>
+  <data name="DSA052MessageEnumerableDirect" xml:space="preserve">
+    <value>'{0}' returns an element only to compare it with null: the element is never used. '{1}' stops at the first match exactly as '{0}' does, and says what you mean (does a match exist?) without producing an element.</value>
+  </data>
+  <data name="DSA052MessageEnumerableLocal" xml:space="preserve">
+    <value>The variable '{2}' receives the result of '{0}' but is only ever compared with null: the element it holds is never used. '{1}' stops at the first match exactly as '{0}' does, and says what you mean (does a match exist?): keep the boolean instead of the element.</value>
+  </data>
+  <data name="DSA052SingleNote" xml:space="preserve">
+    <value> Note that '{0}' also checks that there is no second match and throws when there is one, and '{1}' does not: if that check is part of the design, keep it explicit; if only the existence matters, '{1}' is the right question.</value>
+  </data>
+  <data name="DSA053AnalyzerTitle" xml:space="preserve">
+    <value>Use Any instead of Count when the number is only compared with zero</value>
+  </data>
+  <data name="DSA053AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA053AnalyzerDescription" xml:space="preserve">
+    <value>Count (or LongCount, or their async versions) enumerates the whole sequence, and a number that is only compared with zero is a question about existence asked in the most expensive way. On a database query it is a COUNT over every match, when Any translates to an EXISTS that stops at the first one; on a deferred sequence it evaluates every element, re-running whatever the sequence does while it is enumerated and possibly giving a different number at each enumeration, when Any stops at the first element. The rule reports the number that is kept in a local variable and only compared with zero, and CountAsync with a predicate compared right away (CA1828 does not report it); the comparisons that CA1827 and CA1828 report already are left to them unless report_direct_comparisons is on. It stays silent when the number is used for anything else (returned, assigned, passed, logged, compared with another number), and for the sequences that know their size without enumerating them (arrays, collections, strings), where the Length and Count properties are the right tool. The message explains the specific scenario: a query or an in-memory sequence, the call compared right away or through a variable.</value>
+  </data>
+  <data name="DSA053ReviewComment" xml:space="preserve">
+    <value>/* [DSA053 / QA + Performance]: Count used only to test for existence (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA053.md)
+ * CWE-1049: Excessive Data Query Operations in a Large Data Table - https://cwe.mitre.org/data/definitions/1049.html
+ * CWE-405: Asymmetric Resource Consumption (Amplification) - https://cwe.mitre.org/data/definitions/405.html
+ */</value>
+  </data>
+  <data name="DSA053MessageQueryableDirect" xml:space="preserve">
+    <value>'{0}' counts every row that matches only to compare the number with zero: the number itself is never used. '{1}' asks the real question with an EXISTS that stops at the first match, so the cost no longer grows with the number of matches.</value>
+  </data>
+  <data name="DSA053MessageQueryableLocal" xml:space="preserve">
+    <value>The variable '{2}' holds the result of '{0}' but is only ever compared with zero: the number itself is never used. Counting scans every match; '{1}' translates to an EXISTS that stops at the first one. Keep the boolean instead of the number.</value>
+  </data>
+  <data name="DSA053MessageEnumerableDirect" xml:space="preserve">
+    <value>'{0}' enumerates the whole sequence only to compare the number with zero: for a deferred sequence that means evaluating every element, re-running whatever the sequence does while it is enumerated, and possibly getting a different number at each enumeration. '{1}' stops at the first element.</value>
+  </data>
+  <data name="DSA053MessageEnumerableLocal" xml:space="preserve">
+    <value>The variable '{2}' holds the result of '{0}' but is only ever compared with zero: the number itself is never used, and getting it enumerates the whole sequence (every element of a deferred sequence is evaluated, and the number can differ at each enumeration). '{1}' stops at the first element: keep the boolean instead of the number.</value>
+  </data>
 </root>
