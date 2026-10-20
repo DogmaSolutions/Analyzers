@@ -121,4 +121,97 @@ public partial class DSA041Tests
 
         await test.RunAsync().ConfigureAwait(false);
     }
+
+    private const string FiveMemberSwitch = @"
+            namespace TestApp.Models
+            {
+                public enum Light { Red, Amber, Green, Blue, White }
+                public class MyType
+                {
+                    public int Go(Light l)
+                    {
+                        SWITCH (l)
+                        {
+                            case Light.Green: return 1;
+                            default: return 0;
+                        }
+                    }
+                }
+            }";
+
+    [TestMethod]
+    [DataRow("Light", true)]
+    [DataRow("TestApp.Models.Light", true)]
+    [DataRow("global::TestApp.Models.Light", true)]
+    [DataRow("testapp.models.light", true)]
+    [DataRow("Other, Light", true)]
+    [DataRow("  Other  ,  TestApp.Models.Light  ", true)]
+    [DataRow("TestApp.Models.*", true)]
+    [DataRow("*Light", true)]
+    [DataRow("Lig*", true)]
+    [DataRow("Other", false)]
+    [DataRow("TestApp.Other.Light", false)]
+    [DataRow("Models.Light", false)]
+    [DataRow("", false)]
+    public async Task ExcludedEnumTypes_AreNotReported(string excluded, bool expectedExcluded)
+    {
+        var test = new CSharpAnalyzerVerifier<DSA041Analyzer>.Test();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", "root = true\n[*.cs]\ndotnet_diagnostic.DSA041.excluded_enum_types = " + excluded + "\n"));
+        if (expectedExcluded)
+        {
+            test.TestCode = FiveMemberSwitch.Replace("SWITCH", "switch");
+        }
+        else
+        {
+            test.TestCode = FiveMemberSwitch.Replace("SWITCH", "{|#0:switch|}");
+            test.ExpectedDiagnostics.Add(CSharpAnalyzerVerifier<DSA041Analyzer>.Diagnostic(DSA041Analyzer.DiagnosticId).WithLocation(0).WithArguments("Light", 5, 4));
+        }
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExcludedEnumTypes_ApplyToTheSwitchExpressionAndToNullableEnumsToo()
+    {
+        const string Source = @"
+            namespace TestApp
+            {
+                public enum Light { Red, Amber, Green, Blue, White }
+                public class MyType
+                {
+                    public int Go(Light? l) => l switch { Light.Green => 1, _ => 0 };
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA041Analyzer>.Test();
+        test.TestCode = Source;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", "root = true\n[*.cs]\ndotnet_diagnostic.DSA041.excluded_enum_types = TestApp.Light\n"));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task ExcludedEnumTypes_DoNotHideOtherEnums()
+    {
+        const string Source = @"
+            namespace TestApp
+            {
+                public enum Light { Red, Amber, Green, Blue, White }
+                public enum Mode { A, B, C, D, E, F }
+                public class MyType
+                {
+                    public int Go(Light l, Mode m) => l switch { Light.Green => 1, _ => 0 } + {|#0:m switch|} { Mode.A => 1, _ => 0 };
+                }
+            }";
+
+        var test = new CSharpAnalyzerVerifier<DSA041Analyzer>.Test();
+        test.TestCode = Source.Replace("{|#0:m switch|}", "m switch");
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", "root = true\n[*.cs]\ndotnet_diagnostic.DSA041.excluded_enum_types = Light\n"));
+        test.ExpectedDiagnostics.Add(CSharpAnalyzerVerifier<DSA041Analyzer>.Diagnostic(DSA041Analyzer.DiagnosticId).WithSpan(8, 97, 8, 103).WithArguments("Mode", 6, 4));
+
+        await test.RunAsync().ConfigureAwait(false);
+    }
 }

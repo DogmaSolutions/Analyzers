@@ -114,7 +114,7 @@ A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[S
 | [DSA038](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA038.md) | Bug | Avoid seeding `Random` with a time-based or constant value | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA039](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA039.md) | Security | Avoid modulo bias when reducing cryptographic random bytes into a range (use `RandomNumberGenerator.GetInt32`) | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA040](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA040.md) | Security | Do not use `System.Random` for security-sensitive values (token/salt/nonce/key); use `RandomNumberGenerator` | ⚠ Warning | ✅ | ❌ | ✅ |
-| [DSA041](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA041.md) | Code Smell | Avoid switching over an enum with many members (`max_enum_members`, default 4); prefer the Strategy pattern | ⚠ Warning | ✅ | ❌ | ✅ |
+| [DSA041](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA041.md) | Code Smell | Avoid switching over an enum with many members (`max_enum_members`, default 4; enums can be excluded with `excluded_enum_types`); prefer the Strategy pattern | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA042](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA042.md) | Code Smell | Avoid repeating a segment in a namespace (e.g. `My.Project.Models.Models`) | ⚠ Warning | ✅ | ❌ | ✅ |
 | [DSA043](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA043.md) | Best Practice | A complex class (cyclomatic complexity, lines, ... configurable) should inject or use a logger (`Microsoft.Extensions.Logging.ILogger`) | 💡 Suggestion | ✅ | ❌ | ✅ |
 | [DSA044](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA044.md) | Best Practice | Use the available logger (Microsoft.Extensions.Logging, Serilog, NLog, log4net, ...) instead of `Console.Write*` or `Debug.Write*` | 💡 Suggestion | ✅ | ✅ | ✅ |
@@ -324,9 +324,10 @@ dotnet_diagnostic.DSA039.severity = warning
 # DSA040: Do not use System.Random for security-sensitive values (token/salt/nonce/key); use RandomNumberGenerator
 dotnet_diagnostic.DSA040.severity = warning
 
-# DSA041: Avoid switching over an enum with many members (max_enum_members, default 4); prefer the Strategy pattern
+# DSA041: Avoid switching over an enum with many members (max_enum_members, default 4; enums can be excluded with excluded_enum_types); prefer the Strategy pattern
 dotnet_diagnostic.DSA041.severity = warning
 dotnet_diagnostic.DSA041.max_enum_members = 4
+dotnet_diagnostic.DSA041.excluded_enum_types =
 
 # DSA042: Avoid repeating a segment in a namespace (e.g. My.Project.Models.Models)
 dotnet_diagnostic.DSA042.severity = warning
@@ -652,9 +653,10 @@ dotnet_diagnostic.DSA039.severity = warning
 # DSA040: Do not use System.Random for security-sensitive values (token/salt/nonce/key); use RandomNumberGenerator
 dotnet_diagnostic.DSA040.severity = warning
 
-# DSA041: Avoid switching over an enum with many members (max_enum_members, default 4); prefer the Strategy pattern
+# DSA041: Avoid switching over an enum with many members (max_enum_members, default 4; enums can be excluded with excluded_enum_types); prefer the Strategy pattern
 dotnet_diagnostic.DSA041.severity = warning
 dotnet_diagnostic.DSA041.max_enum_members = 4
+dotnet_diagnostic.DSA041.excluded_enum_types =
 
 # DSA042: Avoid repeating a segment in a namespace (e.g. My.Project.Models.Models)
 dotnet_diagnostic.DSA042.severity = warning
@@ -980,9 +982,10 @@ dotnet_diagnostic.DSA039.severity = error
 # DSA040: Do not use System.Random for security-sensitive values (token/salt/nonce/key); use RandomNumberGenerator
 dotnet_diagnostic.DSA040.severity = error
 
-# DSA041: Avoid switching over an enum with many members (max_enum_members, default 4); prefer the Strategy pattern
+# DSA041: Avoid switching over an enum with many members (max_enum_members, default 4; enums can be excluded with excluded_enum_types); prefer the Strategy pattern
 dotnet_diagnostic.DSA041.severity = error
 dotnet_diagnostic.DSA041.max_enum_members = 4
+dotnet_diagnostic.DSA041.excluded_enum_types =
 
 # DSA042: Avoid repeating a segment in a namespace (e.g. My.Project.Models.Models)
 dotnet_diagnostic.DSA042.severity = error

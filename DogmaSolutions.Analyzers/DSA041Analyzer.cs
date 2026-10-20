@@ -21,6 +21,7 @@ namespace DogmaSolutions.Analyzers
         public const string DiagnosticId = "DSA041";
 
         internal const string MaxEnumMembersOptionKey = "dotnet_diagnostic.DSA041.max_enum_members";
+        internal const string ExcludedEnumTypesOptionKey = "dotnet_diagnostic.DSA041.excluded_enum_types";
         internal const int DefaultMaxEnumMembers = 4;
 
         private static readonly LocalizableString _title =
@@ -76,8 +77,9 @@ namespace DogmaSolutions.Analyzers
                 return;
 
             var memberCount = CountEnumMembers(enumType);
-            var maxEnumMembers = ReadMaxEnumMembers(context);
-            if (memberCount <= maxEnumMembers)
+            var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
+            var maxEnumMembers = AnalyzerOptionsReader.ReadInt(options, MaxEnumMembersOptionKey, DefaultMaxEnumMembers, minInclusive: 1);
+            if (memberCount <= maxEnumMembers || IsExcluded(enumType, options))
                 return;
 
             var diagnostic = Diagnostic.Create(
@@ -110,10 +112,23 @@ namespace DogmaSolutions.Analyzers
         internal static int CountEnumMembers(INamedTypeSymbol enumType) =>
             enumType.GetMembers().Count(m => m is IFieldSymbol { IsConst: true });
 
-        private static int ReadMaxEnumMembers(SyntaxNodeAnalysisContext context)
+        /// <summary>
+        /// The enum is in the <c>excluded_enum_types</c> list: a comma separated list of names, each one the full name (<c>MyApp.Models.Status</c>,
+        /// <c>global::</c> allowed), or the simple name (<c>Status</c>), with <c>*</c> as a wildcard (<c>MyApp.Generated.*</c>, <c>*Code</c>).
+        /// It is read only for the switches that would be reported.
+        /// </summary>
+        internal static bool IsExcluded(INamedTypeSymbol enumType, AnalyzerConfigOptions options)
         {
-            var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
-            return AnalyzerOptionsReader.ReadInt(options, MaxEnumMembersOptionKey, DefaultMaxEnumMembers, minInclusive: 1);
+            var patterns = AnalyzerOptionsReader.ReadList(options, ExcludedEnumTypesOptionKey, Array.Empty<string>());
+            if (patterns.Length == 0)
+                return false;
+
+            var fullName = SymbolNames.GetFullName(enumType);
+            return patterns.Any(pattern =>
+            {
+                var name = pattern.StartsWith("global::", StringComparison.Ordinal) ? pattern.Substring("global::".Length) : pattern;
+                return AnalyzersUtils.MatchesGlobPattern(fullName, name) || AnalyzersUtils.MatchesGlobPattern(enumType.Name, name);
+            });
         }
     }
 }
