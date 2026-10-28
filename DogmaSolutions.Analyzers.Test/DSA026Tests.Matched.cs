@@ -12,6 +12,55 @@ public partial class DSA026Tests
     private static IEnumerable<object[]> GetMatchedCases =>
     [
         [
+            "Outer token that is not spelled with Token anywhere in the method",
+            @"
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            namespace TestApp
+            {
+                public class Ctx { public CancellationToken Aborted { get; } }
+                public class MyService
+                {
+                    public async Task Process(Ctx http)
+                    {
+                        var ct = http.Aborted;
+                        Func<CancellationToken, Task> work = async (innerCt) =>
+                        {
+                            await Task.Delay(1, {|#0:ct|});
+                        };
+                        await work(ct);
+                    }
+                }
+            }",
+            "innerCt",
+            "ct"
+        ],
+        [
+            "Outer token and local function parameter written through a using alias",
+            @"
+            using System;
+            using System.Threading.Tasks;
+            using Cancel = System.Threading.CancellationToken;
+            namespace TestApp
+            {
+                public class MyService
+                {
+                    public async Task Process(Cancel stop)
+                    {
+                        async Task Work(Cancel inner)
+                        {
+                            await Task.Delay(1, {|#0:stop|});
+                        }
+
+                        await Work(stop);
+                    }
+                }
+            }",
+            "inner",
+            "stop"
+        ],
+        [
             "Lambda captures outer method parameter — passed as argument",
             @"
             using System;

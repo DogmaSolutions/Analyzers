@@ -101,18 +101,24 @@ namespace DogmaSolutions.Analyzers
         }
 
 
-        // every method of a class asks the same question about the class: it is answered once
-        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ClassDeclarationSyntax, System.Runtime.CompilerServices.StrongBox<bool>> _controllers = new();
+        // every method of a class asks the same question about the class: it is answered once per compilation. The answer depends on the base types,
+        // which can be in other files, so it is kept on the symbol of the class: an edit anywhere makes a new compilation and new symbols, and nothing stale survives
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<INamedTypeSymbol, System.Runtime.CompilerServices.StrongBox<bool>> _controllers = new();
 
-        public static bool IsWebApiControllerClass([NotNull] this ClassDeclarationSyntax classDeclaration, SyntaxNodeAnalysisContext ctx)
+        public static bool IsWebApiControllerClass([NotNull] this ClassDeclarationSyntax classDeclaration, SyntaxNodeAnalysisContext ctx) =>
+            IsWebApiControllerClass(classDeclaration, ctx.SemanticModel);
+
+        internal static bool IsWebApiControllerClass([NotNull] ClassDeclarationSyntax classDeclaration, SemanticModel semanticModel)
         {
             if (classDeclaration == null) throw new ArgumentNullException(nameof(classDeclaration));
             if (classDeclaration.BaseList == null)
                 return false;
 
-            var semanticModel = ctx.SemanticModel;
-            return _controllers.GetValue(classDeclaration, key => new System.Runtime.CompilerServices.StrongBox<bool>(
-                key.BaseList.Types.Any(t => GetTypeSymbol(semanticModel.GetSymbolInfo(t.Type)) is { } typeSymbol && IsWebApiControllerClass(typeSymbol)))).Value;
+            bool Compute() => classDeclaration.BaseList.Types.Any(t => GetTypeSymbol(semanticModel.GetSymbolInfo(t.Type)) is { } typeSymbol && IsWebApiControllerClass(typeSymbol));
+
+            return semanticModel.GetDeclaredSymbol(classDeclaration) is INamedTypeSymbol symbol
+                ? _controllers.GetValue(symbol, _ => new System.Runtime.CompilerServices.StrongBox<bool>(Compute())).Value
+                : Compute();
         }
 
 
