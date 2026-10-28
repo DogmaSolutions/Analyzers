@@ -77,6 +77,10 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
     {
+        // the text tells at once whether ToList is called at all: the return type is bound only if it is
+        if (!SyntaxUtils.ContainsText(context.Node, "ToList"))
+            return;
+
         var method = (MethodDeclarationSyntax)context.Node;
         var returnType = method.ReturnType;
         var semanticModel = context.SemanticModel;
@@ -107,6 +111,10 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
 
     private static void AnalyzeLocalFunction(SyntaxNodeAnalysisContext context)
     {
+        // the text tells at once whether ToList is called at all: the return type is bound only if it is
+        if (!SyntaxUtils.ContainsText(context.Node, "ToList"))
+            return;
+
         var localFunc = (LocalFunctionStatementSyntax)context.Node;
         var returnType = localFunc.ReturnType;
         var semanticModel = context.SemanticModel;
@@ -138,7 +146,7 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
     private static void AnalyzePropertyGetter(SyntaxNodeAnalysisContext context)
     {
         var accessor = (AccessorDeclarationSyntax)context.Node;
-        if (!accessor.IsKind(SyntaxKind.GetAccessorDeclaration))
+        if (!accessor.IsKind(SyntaxKind.GetAccessorDeclaration) || !SyntaxUtils.ContainsText(accessor, "ToList"))
             return;
 
         TypeSyntax returnType;
@@ -178,7 +186,7 @@ public sealed class DSA028Analyzer : DiagnosticAnalyzer
     private static void AnalyzeExpressionBodiedProperty(SyntaxNodeAnalysisContext context)
     {
         var property = (PropertyDeclarationSyntax)context.Node;
-        if (property.ExpressionBody == null)
+        if (property.ExpressionBody == null || !SyntaxUtils.ContainsText(property.ExpressionBody, "ToList"))
             return;
 
         var semanticModel = context.SemanticModel;

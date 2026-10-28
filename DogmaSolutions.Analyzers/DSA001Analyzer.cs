@@ -44,9 +44,6 @@ namespace DogmaSolutions.Analyzers
             if (context == null) throw new ArgumentNullException(nameof(context));
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(OnMethod, SyntaxKind.ParenthesizedLambdaExpression);
-            context.RegisterSyntaxNodeAction(OnMethod, SyntaxKind.SimpleLambdaExpression);
-            context.RegisterSyntaxNodeAction(OnMethod, SyntaxKind.AnonymousMethodExpression);
             context.RegisterSyntaxNodeAction(OnMethod, SyntaxKind.MethodDeclaration);
         }
 

@@ -13,6 +13,13 @@ namespace DogmaSolutions.Analyzers
         private const string EntityFrameworkCoreNamespace = "Microsoft.EntityFrameworkCore";
         private const string DbSetTypeName = "DbSet";
 
+        /// <summary>
+        /// Whether the compilation can see the Microsoft.EntityFrameworkCore namespace: the recognition below is by namespace, so without it nothing is
+        /// Entity Framework and the rules need not look at a single call.
+        /// </summary>
+        internal static bool IsReferenced(Compilation compilation) =>
+            compilation.GlobalNamespace.GetNamespaceMembers().Where(static ns => ns.Name == "Microsoft").Any(static ns => ns.GetNamespaceMembers().Any(static child => child.Name == "EntityFrameworkCore"));
+
         /// <summary>True for the method of a type that lives in (a sub-namespace of) Microsoft.EntityFrameworkCore.</summary>
         internal static bool IsFromEntityFramework(IMethodSymbol method)
         {

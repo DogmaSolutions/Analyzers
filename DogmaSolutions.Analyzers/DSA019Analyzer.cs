@@ -88,16 +88,12 @@ public sealed partial class DSA019Analyzer : DiagnosticAnalyzer
     {
         var memberAccess = (MemberAccessExpressionSyntax)context.Node;
 
-        if (IsInsideNameof(memberAccess))
-            return;
-
+        // the depth of the chain is counted first: nearly every access is too short, and the nameof check walks all the way up
         var threshold = GetThreshold(context);
-        var ignoredMembers = GetIgnoredIntermediateMembers(context);
-
-        // Quick syntactic pre-filter (cheaper than semantic analysis)
-        var syntacticDepth = ComputeChainDepth(memberAccess);
-        if (syntacticDepth < threshold)
+        if (ComputeChainDepth(memberAccess) < threshold || IsInsideNameof(memberAccess))
             return;
+
+        var ignoredMembers = GetIgnoredIntermediateMembers(context);
 
         var key = SyntaxUtils.NormalizeWhitespace(memberAccess.ToString());
 
@@ -140,14 +136,11 @@ public sealed partial class DSA019Analyzer : DiagnosticAnalyzer
     {
         var elementAccess = (ElementAccessExpressionSyntax)context.Node;
 
-        if (IsInsideNameof(elementAccess))
-            return;
-
         var threshold = GetThreshold(context);
-        var ignoredMembers = GetIgnoredIntermediateMembers(context);
-
-        if (ComputeChainDepth(elementAccess) < threshold)
+        if (ComputeChainDepth(elementAccess) < threshold || IsInsideNameof(elementAccess))
             return;
+
+        var ignoredMembers = GetIgnoredIntermediateMembers(context);
 
         var key = SyntaxUtils.NormalizeWhitespace(elementAccess.ToString());
 

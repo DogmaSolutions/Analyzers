@@ -267,4 +267,19 @@ internal static class SyntaxUtils
 
         return name?.Identifier.ValueText;
     }
+
+    /// <summary>Whether a declaration of the type has an attribute: the attributes are bound only for the types that have some.</summary>
+    internal static bool HasAttributeLists(INamedTypeSymbol type)
+    {
+        foreach (var reference in type.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax() is BaseTypeDeclarationSyntax { AttributeLists.Count: > 0 })
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>Whether the text of the node contains the value, found without turning a single token into a node.</summary>
+    internal static bool ContainsText(SyntaxNode node, string value) => node.SyntaxTree.GetText().ToString(node.Span).IndexOf(value, System.StringComparison.Ordinal) >= 0;
 }

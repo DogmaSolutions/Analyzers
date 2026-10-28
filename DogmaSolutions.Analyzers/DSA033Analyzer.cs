@@ -61,21 +61,20 @@ public sealed class DSA033Analyzer : DiagnosticAnalyzer
     {
         var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Tree);
 
-        // 1. Check file name exclusion FIRST (cheapest)
+        // a file with no more lines than the maximum is the rule of the day: it is decided from the number of lines, before anything is parsed
+        var text = context.Tree.GetText(context.CancellationToken);
+        var maxLines = AnalyzerOptionsReader.ReadInt(options, MaxLinesOptionKey, DefaultMaxLines, minInclusive: 1);
+        if (text.Lines.Count <= maxLines)
+            return;
+
         var excludedPatterns = AnalyzersUtils.ParseExcludedFilePatterns(options, ExcludedFilePatternsOptionKey);
         if (AnalyzersUtils.IsFileExcluded(context.Tree.FilePath, excludedPatterns))
             return;
 
-        // 2. Check line count
-        var text = context.Tree.GetText(context.CancellationToken);
-
         var countBlankLines = AnalyzerOptionsReader.ReadBool(options, CountBlankLinesOptionKey, DefaultCountBlankLines);
-
         var lineCount = countBlankLines
             ? text.Lines.Count
             : AnalyzersUtils.CountNonBlankLines(text);
-
-        var maxLines = AnalyzerOptionsReader.ReadInt(options, MaxLinesOptionKey, DefaultMaxLines, minInclusive: 1);
 
         if (lineCount <= maxLines)
             return;

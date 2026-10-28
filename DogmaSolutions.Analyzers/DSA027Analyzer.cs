@@ -53,6 +53,10 @@ public sealed class DSA027Analyzer : DiagnosticAnalyzer
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
 
+        // syntactic first: only an assignment in a loop, that appends (+=, or x = ... + ...), is bound
+        if ((assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) && !assignment.Right.IsKind(SyntaxKind.AddExpression)) || SyntaxUtils.FindEnclosingLoop(assignment) == null)
+            return;
+
         var leftType = context.SemanticModel.GetTypeInfo(assignment.Left, context.CancellationToken).Type;
         if (leftType == null || leftType.SpecialType != SpecialType.System_String)
             return;

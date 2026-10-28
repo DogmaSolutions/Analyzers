@@ -52,7 +52,7 @@ namespace DogmaSolutions.Analyzers
             var methodDeclaration = (MethodDeclarationSyntax)context.Node;
 
             // Find all field assignments within the method body
-            var fieldAssignments = methodDeclaration.DescendantNodes().OfType<AssignmentExpressionSyntax>().Where(a => IsFieldAccess(a.Left, context.SemanticModel));
+            var fieldAssignments = methodDeclaration.DescendantNodes().OfType<AssignmentExpressionSyntax>().Where(a => HasNullComparisonAbove(a) && IsFieldAccess(a.Left, context.SemanticModel));
 
             foreach (var assignment in fieldAssignments) // i.e.: _theField = "A value";
             {
@@ -78,6 +78,18 @@ namespace DogmaSolutions.Analyzers
                     }
                 }
             }
+        }
+
+        /// <summary>Syntactic first: only an assignment under an <c>if (x == null)</c> can be reported, and the others need no binding.</summary>
+        private static bool HasNullComparisonAbove(AssignmentExpressionSyntax assignment)
+        {
+            for (var parent = assignment.Parent; parent != null; parent = parent.Parent)
+            {
+                if (parent is IfStatementSyntax { Condition: BinaryExpressionSyntax { Right: LiteralExpressionSyntax { Token.ValueText: "null" } } binary } && binary.IsKind(SyntaxKind.EqualsExpression))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsFieldAccess(ExpressionSyntax expression, SemanticModel semanticModel)

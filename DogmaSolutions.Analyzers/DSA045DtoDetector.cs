@@ -37,7 +37,8 @@ namespace DogmaSolutions.Analyzers
     {
         internal static DtoVerdict Evaluate(INamedTypeSymbol type, DSA045Settings settings, CancellationToken cancellationToken)
         {
-            var count = CountDataMembers(type, settings, cancellationToken);
+            // a method, an operator or a finalizer is logic whatever the options: the declaration tells it before any member is bound
+            var count = HasLogicSyntax(type) ? -1 : CountDataMembers(type, settings, cancellationToken);
             if (count < 0)
                 return default;
 
@@ -56,6 +57,17 @@ namespace DogmaSolutions.Analyzers
             }
 
             return new DtoVerdict(count >= settings.MinDataMembers, count, hasBaseTypes);
+        }
+
+        private static bool HasLogicSyntax(INamedTypeSymbol type)
+        {
+            foreach (var reference in type.DeclaringSyntaxReferences)
+            {
+                if (reference.GetSyntax() is TypeDeclarationSyntax declaration && declaration.Members.Any(static member => member is MethodDeclarationSyntax or OperatorDeclarationSyntax or ConversionOperatorDeclarationSyntax or DestructorDeclarationSyntax))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>

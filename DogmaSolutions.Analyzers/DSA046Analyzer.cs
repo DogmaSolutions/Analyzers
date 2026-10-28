@@ -107,7 +107,9 @@ namespace DogmaSolutions.Analyzers
 
         private static void Analyze(SyntaxNodeAnalysisContext context, ExpressionSyntax target, DSA046Operation operation, string operatorText)
         {
-            if (GetFieldName(target) == null)
+            // only a volatile field matters, and the names of the volatile fields of the compilation are known without binding anything
+            var fieldName = GetFieldName(target);
+            if (fieldName == null || !GetVolatileNames(context.Compilation).Contains(fieldName))
                 return;
 
             var settings = DSA046Settings.Cache.Get(context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree));
@@ -142,6 +144,26 @@ namespace DogmaSolutions.Analyzers
         }
 
         /// <summary>The simple name a field is accessed with (<c>x</c>, <c>this.x</c>, <c>other.x</c>), or null for any other expression.</summary>
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Compilation, System.Collections.Generic.HashSet<string>> _volatileNames = new();
+
+        private static System.Collections.Generic.HashSet<string> GetVolatileNames(Compilation compilation) => _volatileNames.GetValue(compilation, static key =>
+        {
+            var names = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var tree in key.SyntaxTrees)
+            {
+                foreach (var field in tree.GetRoot().DescendantNodes(static node => node is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax or TypeDeclarationSyntax).OfType<FieldDeclarationSyntax>())
+                {
+                    if (field.Modifiers.Any(SyntaxKind.VolatileKeyword))
+                    {
+                        foreach (var variable in field.Declaration.Variables)
+                            names.Add(variable.Identifier.ValueText);
+                    }
+                }
+            }
+
+            return names;
+        });
+
         private static string GetFieldName(ExpressionSyntax expression) => Unparenthesize(expression) switch
         {
             IdentifierNameSyntax identifier => identifier.Identifier.ValueText,

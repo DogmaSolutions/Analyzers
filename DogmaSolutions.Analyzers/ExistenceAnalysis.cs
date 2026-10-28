@@ -426,9 +426,22 @@ namespace DogmaSolutions.Analyzers
                 ParenthesizedPatternSyntax parenthesized => IsPatternShaped(parenthesized.Pattern, kind),
                 UnaryPatternSyntax unary => unary.IsKind(SyntaxKind.NotPattern) && IsPatternShaped(unary.Pattern, kind),
                 BinaryPatternSyntax binary => IsPatternShaped(binary.Left, kind) && IsPatternShaped(binary.Right, kind),
-                ConstantPatternSyntax constant => kind == ExistenceKind.Item ? constant.Expression.IsKind(SyntaxKind.NullLiteralExpression) : MayBeNumber(constant.Expression),
-                RelationalPatternSyntax relational => kind == ExistenceKind.Count && MayBeNumber(relational.Expression),
-                RecursivePatternSyntax recursive => kind == ExistenceKind.Item && recursive.Type == null && recursive.PositionalPatternClause == null && recursive.Designation == null && recursive.PropertyPatternClause?.Subpatterns.Count == 0,
+                _ => kind == ExistenceKind.Item ? IsItemPatternShaped(pattern) : IsCountPatternShaped(pattern),
+            };
+
+        private static bool IsItemPatternShaped(PatternSyntax pattern) =>
+            pattern switch
+            {
+                ConstantPatternSyntax constant => constant.Expression.IsKind(SyntaxKind.NullLiteralExpression),
+                RecursivePatternSyntax recursive => recursive.Type == null && recursive.PositionalPatternClause == null && recursive.Designation == null && recursive.PropertyPatternClause?.Subpatterns.Count == 0,
+                _ => false,
+            };
+
+        private static bool IsCountPatternShaped(PatternSyntax pattern) =>
+            pattern switch
+            {
+                ConstantPatternSyntax constant => MayBeNumber(constant.Expression),
+                RelationalPatternSyntax relational => MayBeNumber(relational.Expression),
                 _ => false,
             };
 
@@ -542,10 +555,24 @@ namespace DogmaSolutions.Analyzers
                 ParenthesizedPatternSyntax parenthesized => EvaluatePattern(parenthesized.Pattern, sample, model),
                 UnaryPatternSyntax unary when unary.IsKind(SyntaxKind.NotPattern) => !EvaluatePattern(unary.Pattern, sample, model),
                 BinaryPatternSyntax binary => EvaluateBinaryPattern(binary, sample, model),
-                ConstantPatternSyntax constant when sample.Kind == ExistenceKind.Item => constant.Expression.IsKind(SyntaxKind.NullLiteralExpression) ? sample.IsNull : null,
+                _ => sample.Kind == ExistenceKind.Item ? EvaluateItemPattern(pattern, sample) : EvaluateCountPattern(pattern, sample, model),
+            };
+
+        /// <summary><c>null</c> and <c>{ }</c>: the patterns that tell whether there is an element.</summary>
+        private static bool? EvaluateItemPattern(PatternSyntax pattern, Sample sample) =>
+            pattern switch
+            {
+                ConstantPatternSyntax constant => constant.Expression.IsKind(SyntaxKind.NullLiteralExpression) ? sample.IsNull : null,
+                RecursivePatternSyntax { Type: null, PositionalPatternClause: null, Designation: null, PropertyPatternClause.Subpatterns.Count: 0 } => !sample.IsNull,
+                _ => null,
+            };
+
+        /// <summary>A number (<c>0</c>) or a comparison with a number (<c>&gt; 0</c>).</summary>
+        private static bool? EvaluateCountPattern(PatternSyntax pattern, Sample sample, SemanticModel model) =>
+            pattern switch
+            {
                 ConstantPatternSyntax constant => EvaluateNumber(SyntaxKind.EqualsExpression, constant.Expression, sample, model),
-                RelationalPatternSyntax relational when sample.Kind == ExistenceKind.Count => EvaluateNumber(RelationalKind(relational.OperatorToken.Kind()), relational.Expression, sample, model),
-                RecursivePatternSyntax { Type: null, PositionalPatternClause: null, Designation: null, PropertyPatternClause.Subpatterns.Count: 0 } when sample.Kind == ExistenceKind.Item => !sample.IsNull,
+                RelationalPatternSyntax relational => EvaluateNumber(RelationalKind(relational.OperatorToken.Kind()), relational.Expression, sample, model),
                 _ => null,
             };
 

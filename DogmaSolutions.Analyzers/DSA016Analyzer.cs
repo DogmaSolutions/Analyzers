@@ -75,6 +75,10 @@ public sealed partial class DSA016Analyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
+        // the name is checked before any text is built: nearly every call is of a method that is not tracked
+        if (SyntaxUtils.GetInvokedName(invocation) is not { } invokedName || !TrackedMethods.Contains(invokedName))
+            return;
+
         if (!TryGetInvocationParts(invocation, out var receiverText, out var methodName, out var argsText))
             return;
 

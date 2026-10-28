@@ -101,23 +101,18 @@ namespace DogmaSolutions.Analyzers
         }
 
 
+        // every method of a class asks the same question about the class: it is answered once
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ClassDeclarationSyntax, System.Runtime.CompilerServices.StrongBox<bool>> _controllers = new();
+
         public static bool IsWebApiControllerClass([NotNull] this ClassDeclarationSyntax classDeclaration, SyntaxNodeAnalysisContext ctx)
         {
             if (classDeclaration == null) throw new ArgumentNullException(nameof(classDeclaration));
-            if (classDeclaration.BaseList?.Types.Any(
-                    t =>
-                    {
-                        var baseType = ctx.SemanticModel.GetSymbolInfo(t.Type);
-                        var typeSymbol = GetTypeSymbol(baseType);
-                        if (typeSymbol != null)
-                            return IsWebApiControllerClass(typeSymbol);
+            if (classDeclaration.BaseList == null)
+                return false;
 
-                        return false;
-                    }) ==
-                true)
-                return true;
-
-            return false;
+            var semanticModel = ctx.SemanticModel;
+            return _controllers.GetValue(classDeclaration, key => new System.Runtime.CompilerServices.StrongBox<bool>(
+                key.BaseList.Types.Any(t => GetTypeSymbol(semanticModel.GetSymbolInfo(t.Type)) is { } typeSymbol && IsWebApiControllerClass(typeSymbol)))).Value;
         }
 
 

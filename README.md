@@ -127,6 +127,7 @@ A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[S
 | [DSA051](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA051.md) | Best Practice | A class without a `ToString()` override shows up as its type name in the debugger, in logs and in failed assertions: generate it from its identifying member or its properties | 💡 Suggestion | ✅ | ✅ | ✅ |
 | [DSA052](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA052.md) | Performance | `FirstOrDefault` / `SingleOrDefault` (and their async versions) whose element is only tested for existence: ask the real question with `Any` | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA053](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA053.md) | Performance | `Count` / `CountAsync` whose number is only compared with zero: ask the real question with `Any` (arrays and collections, where `Length` and `Count` are cheap, are left alone) | ⚠ Warning | ✅ | ✅ | ✅ |
+| [DSA054](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA054.md) | Code Smell | A private field that is assigned and then read only inside the same member holds no state: a missing memoization (`_v = Compute()` instead of `_v ??= Compute()`) or a local variable declared as a field | ⚠ Warning | ✅ | ✅ | ✅ |
 
 # Refactorings list
 
@@ -519,6 +520,17 @@ dotnet_diagnostic.DSA053.excluded_namespace_patterns =
 dotnet_diagnostic.DSA053.excluded_base_types =
 dotnet_diagnostic.DSA053.excluded_member_name_patterns =
 dotnet_diagnostic.DSA053.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA054: A private field that is assigned and then read only inside the same member holds no state: a missing memoization (_v = Compute() instead of _v ??= Compute()) or a local variable declared as a field
+dotnet_diagnostic.DSA054.severity = warning
+dotnet_diagnostic.DSA054.report_never_read = false
+dotnet_diagnostic.DSA054.report_static_fields = true
+dotnet_diagnostic.DSA054.excluded_type_name_patterns =
+dotnet_diagnostic.DSA054.excluded_namespace_patterns =
+dotnet_diagnostic.DSA054.excluded_base_types =
+dotnet_diagnostic.DSA054.excluded_field_name_patterns =
+dotnet_diagnostic.DSA054.excluded_member_name_patterns =
+dotnet_diagnostic.DSA054.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## Good / Professional
@@ -877,6 +889,17 @@ dotnet_diagnostic.DSA053.excluded_namespace_patterns =
 dotnet_diagnostic.DSA053.excluded_base_types =
 dotnet_diagnostic.DSA053.excluded_member_name_patterns =
 dotnet_diagnostic.DSA053.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA054: A private field that is assigned and then read only inside the same member holds no state: a missing memoization (_v = Compute() instead of _v ??= Compute()) or a local variable declared as a field
+dotnet_diagnostic.DSA054.severity = warning
+dotnet_diagnostic.DSA054.report_never_read = false
+dotnet_diagnostic.DSA054.report_static_fields = true
+dotnet_diagnostic.DSA054.excluded_type_name_patterns =
+dotnet_diagnostic.DSA054.excluded_namespace_patterns =
+dotnet_diagnostic.DSA054.excluded_base_types =
+dotnet_diagnostic.DSA054.excluded_field_name_patterns =
+dotnet_diagnostic.DSA054.excluded_member_name_patterns =
+dotnet_diagnostic.DSA054.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## SSDLC (Secure Software Development Lifecycle) and/or AI-Driven development
@@ -1235,6 +1258,17 @@ dotnet_diagnostic.DSA053.excluded_namespace_patterns =
 dotnet_diagnostic.DSA053.excluded_base_types =
 dotnet_diagnostic.DSA053.excluded_member_name_patterns =
 dotnet_diagnostic.DSA053.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA054: A private field that is assigned and then read only inside the same member holds no state: a missing memoization (_v = Compute() instead of _v ??= Compute()) or a local variable declared as a field
+dotnet_diagnostic.DSA054.severity = error
+dotnet_diagnostic.DSA054.report_never_read = false
+dotnet_diagnostic.DSA054.report_static_fields = true
+dotnet_diagnostic.DSA054.excluded_type_name_patterns =
+dotnet_diagnostic.DSA054.excluded_namespace_patterns =
+dotnet_diagnostic.DSA054.excluded_base_types =
+dotnet_diagnostic.DSA054.excluded_field_name_patterns =
+dotnet_diagnostic.DSA054.excluded_member_name_patterns =
+dotnet_diagnostic.DSA054.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ---

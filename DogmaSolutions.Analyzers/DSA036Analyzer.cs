@@ -60,12 +60,43 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
             SyntaxKind.InvocationExpression);
     }
 
+    // the names Regex can be written with: its own, and the aliases of the compilation that mention it (a using alias can be global)
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Compilation, HashSet<string>> _regexNames = new();
+
+    private static HashSet<string> GetRegexNames(Compilation compilation) => _regexNames.GetValue(compilation, static key =>
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal) { "Regex" };
+        foreach (var tree in key.SyntaxTrees)
+        {
+            foreach (var directive in tree.GetRoot().DescendantNodes(static node => node is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax).OfType<UsingDirectiveSyntax>())
+            {
+                if (directive.Alias != null && directive.Name != null && directive.Name.ToString().Contains("Regex"))
+                    names.Add(directive.Alias.Name.Identifier.ValueText);
+            }
+        }
+
+        return names;
+    });
+
+    /// <summary>The last name of a type or of a qualified name: <c>Regex</c> for <c>System.Text.RegularExpressions.Regex</c>.</summary>
+    private static string GetLastName(SyntaxNode node) => node switch
+    {
+        IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+        QualifiedNameSyntax qualified => GetLastName(qualified.Right),
+        MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
+        _ => null,
+    };
+
+    private static bool IsWrittenLikeRegex(SyntaxNode type, Compilation compilation) => GetLastName(type) is { } name && GetRegexNames(compilation).Contains(name);
+
     private static void AnalyzeNode(SyntaxNodeAnalysisContext context)
     {
         switch (context.Node)
         {
             case ObjectCreationExpressionSyntax creation:
-                AnalyzeObjectCreation(context, creation, creation.ArgumentList);
+                // syntactic first: only a creation of a type written like Regex is bound
+                if (creation.ArgumentList?.Arguments.Count > 0 && IsWrittenLikeRegex(creation.Type, context.Compilation))
+                    AnalyzeObjectCreation(context, creation, creation.ArgumentList);
                 break;
             case ImplicitObjectCreationExpressionSyntax implicitCreation:
                 AnalyzeImplicitObjectCreation(context, implicitCreation);
@@ -146,7 +177,7 @@ public sealed class DSA036Analyzer : DiagnosticAnalyzer
             return;
 
         var methodName = memberAccess.Name.Identifier.ValueText;
-        if (!StaticRegexMethods.Contains(methodName))
+        if (!StaticRegexMethods.Contains(methodName) || !IsWrittenLikeRegex(memberAccess.Expression, context.Compilation))
             return;
 
         var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);

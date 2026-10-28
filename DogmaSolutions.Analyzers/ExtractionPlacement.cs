@@ -64,59 +64,56 @@ internal static class ExtractionPlacement
             .Any(static node => node is ReturnStatementSyntax or ThrowStatementSyntax or ThrowExpressionSyntax or BreakStatementSyntax or ContinueStatementSyntax or GotoStatementSyntax or YieldStatementSyntax);
 
     /// <summary>The statement evaluates an occurrence before anything else of it that could change what it evaluates to or leave the path.</summary>
-    private static bool EvaluatesFirst(StatementSyntax statement, IReadOnlyList<SyntaxNode> occurrences)
-    {
-        switch (statement)
+    private static bool EvaluatesFirst(StatementSyntax statement, IReadOnlyList<SyntaxNode> occurrences) =>
+        statement switch
         {
-            case BlockSyntax block:
-                return block.Statements.Count > 0 && EvaluatesFirst(block.Statements[0], occurrences);
+            BlockSyntax block => block.Statements.Count > 0 && EvaluatesFirst(block.Statements[0], occurrences),
+            IfStatementSyntax ifStatement => EvaluatesFirstInIf(ifStatement, occurrences),
 
-            case IfStatementSyntax ifStatement:
-                return HasUnconditionalOccurrence(ifStatement.Condition, ifStatement, occurrences) ||
-                       (ifStatement.Else != null && EvaluatesFirst(ifStatement.Statement, occurrences) && EvaluatesFirst(ifStatement.Else.Statement, occurrences));
+            // an exception thrown by the declaration is no longer caught by the catches: they have to evaluate the expression too
+            TryStatementSyntax tryStatement => EvaluatesFirst(tryStatement.Block, occurrences) && tryStatement.Catches.All(catchClause => EvaluatesFirst(catchClause.Block, occurrences)),
+            DoStatementSyntax doStatement => EvaluatesFirst(doStatement.Statement, occurrences),
+            LabeledStatementSyntax labeled => EvaluatesFirst(labeled.Statement, occurrences),
+            SwitchStatementSyntax switchStatement => HasUnconditionalOccurrence(switchStatement.Expression, switchStatement, occurrences),
+            ExpressionStatementSyntax or LocalDeclarationStatementSyntax or ReturnStatementSyntax or ThrowStatementSyntax or YieldStatementSyntax => HasUnconditionalOccurrence(statement, statement, occurrences),
+            _ => EvaluatesFirstInCompound(statement, occurrences),
+        };
 
-            case TryStatementSyntax tryStatement:
-                // an exception thrown by the declaration is no longer caught by the catches: they have to evaluate the expression too
-                return EvaluatesFirst(tryStatement.Block, occurrences) && tryStatement.Catches.All(catchClause => EvaluatesFirst(catchClause.Block, occurrences));
+    private static bool EvaluatesFirstInIf(IfStatementSyntax ifStatement, IReadOnlyList<SyntaxNode> occurrences) =>
+        HasUnconditionalOccurrence(ifStatement.Condition, ifStatement, occurrences) ||
+        (ifStatement.Else != null && EvaluatesFirst(ifStatement.Statement, occurrences) && EvaluatesFirst(ifStatement.Else.Statement, occurrences));
 
-            // a loop is taken as one that runs: an expression that does not depend on the loop is declared before it
-            case WhileStatementSyntax whileStatement:
-                return HasUnconditionalOccurrence(whileStatement.Condition, whileStatement, occurrences) || EvaluatesFirst(whileStatement.Statement, occurrences);
+    /// <summary>
+    /// A loop is taken as one that runs: an expression that does not depend on the loop is declared before it. The same for <c>lock</c> and
+    /// <c>using</c>: what they evaluate first, or what their body evaluates first. Any other statement (a local function, an unsafe or fixed
+    /// block...) is not looked into.
+    /// </summary>
+    private static bool EvaluatesFirstInCompound(StatementSyntax statement, IReadOnlyList<SyntaxNode> occurrences)
+    {
+        var body = statement switch
+        {
+            WhileStatementSyntax whileStatement => whileStatement.Statement,
+            ForStatementSyntax forStatement => forStatement.Statement,
+            ForEachStatementSyntax forEach => forEach.Statement,
+            LockStatementSyntax lockStatement => lockStatement.Statement,
+            UsingStatementSyntax usingStatement => usingStatement.Statement,
+            _ => null,
+        };
 
-            case ForStatementSyntax forStatement:
-                return HasUnconditionalOccurrence(forStatement.Declaration, forStatement, occurrences) ||
-                       forStatement.Initializers.Any(initializer => HasUnconditionalOccurrence(initializer, forStatement, occurrences)) ||
-                       HasUnconditionalOccurrence(forStatement.Condition, forStatement, occurrences) ||
-                       EvaluatesFirst(forStatement.Statement, occurrences);
-
-            case ForEachStatementSyntax forEach:
-                return HasUnconditionalOccurrence(forEach.Expression, forEach, occurrences) || EvaluatesFirst(forEach.Statement, occurrences);
-
-            case DoStatementSyntax doStatement:
-                return EvaluatesFirst(doStatement.Statement, occurrences);
-
-            case SwitchStatementSyntax switchStatement:
-                return HasUnconditionalOccurrence(switchStatement.Expression, switchStatement, occurrences);
-
-            case LockStatementSyntax lockStatement:
-                return HasUnconditionalOccurrence(lockStatement.Expression, lockStatement, occurrences) || EvaluatesFirst(lockStatement.Statement, occurrences);
-
-            case UsingStatementSyntax usingStatement:
-                return HasUnconditionalOccurrence(usingStatement.Declaration, usingStatement, occurrences) ||
-                       HasUnconditionalOccurrence(usingStatement.Expression, usingStatement, occurrences) ||
-                       EvaluatesFirst(usingStatement.Statement, occurrences);
-
-            case LabeledStatementSyntax labeled:
-                return EvaluatesFirst(labeled.Statement, occurrences);
-
-            case ExpressionStatementSyntax or LocalDeclarationStatementSyntax or ReturnStatementSyntax or ThrowStatementSyntax or YieldStatementSyntax:
-                return HasUnconditionalOccurrence(statement, statement, occurrences);
-
-            default:
-                // any other statement (a local function, an unsafe or fixed block...): its body is not looked into
-                return false;
-        }
+        return body != null && (GetHeader(statement).Any(part => HasUnconditionalOccurrence(part, statement, occurrences)) || EvaluatesFirst(body, occurrences));
     }
+
+    /// <summary>The parts of a loop, a lock or a using that are evaluated every time the statement is entered.</summary>
+    private static IEnumerable<SyntaxNode> GetHeader(StatementSyntax statement) =>
+        statement switch
+        {
+            WhileStatementSyntax whileStatement => new SyntaxNode[] { whileStatement.Condition },
+            ForStatementSyntax forStatement => new SyntaxNode[] { forStatement.Declaration }.Concat(forStatement.Initializers).Concat(new SyntaxNode[] { forStatement.Condition }),
+            ForEachStatementSyntax forEach => new SyntaxNode[] { forEach.Expression },
+            LockStatementSyntax lockStatement => new SyntaxNode[] { lockStatement.Expression },
+            UsingStatementSyntax usingStatement => new SyntaxNode[] { usingStatement.Declaration, usingStatement.Expression },
+            _ => Enumerable.Empty<SyntaxNode>(),
+        };
 
     private static bool HasUnconditionalOccurrence(SyntaxNode part, StatementSyntax statement, IReadOnlyList<SyntaxNode> occurrences)
     {

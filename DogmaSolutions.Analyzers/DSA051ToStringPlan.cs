@@ -78,25 +78,13 @@ namespace DogmaSolutions.Analyzers
     {
         internal static DSA051ToStringPlan Create(INamedTypeSymbol type, DSA051Settings settings)
         {
-            var properties = new List<IPropertySymbol>();
-            var fields = new List<IFieldSymbol>();
-            foreach (var member in type.GetMembers())
-            {
-                if (member is IPropertySymbol property && IsShowable(property.Type) && !property.IsStatic && !property.IsIndexer && property.GetMethod != null &&
-                    !property.IsImplicitlyDeclared && property.ExplicitInterfaceImplementations.IsEmpty)
-                {
-                    properties.Add(property);
-                }
-                else if (member is IFieldSymbol field && IsShowable(field.Type) && !field.IsStatic && !field.IsConst && !field.IsImplicitlyDeclared)
-                {
-                    fields.Add(field);
-                }
-            }
-
+            var members = type.GetMembers();
+            var properties = members.OfType<IPropertySymbol>().Where(IsShownProperty).ToList();
+            var fields = members.OfType<IFieldSymbol>().Where(IsShownField).ToList();
             var dataMembers = properties.Count + fields.Count;
 
             // a property comes before the field that backs it, which has the same name once the "_" is dropped
-            var wellKnown = FindWellKnown(properties, fields, settings.WellKnownNames);
+            var wellKnown = FindWellKnown(properties, fields, settings.NormalizedWellKnownNames);
             if (wellKnown != null)
                 return new DSA051ToStringPlan(DSA051Strategy.WellKnown, new[] { wellKnown }, dataMembers);
 
@@ -107,28 +95,40 @@ namespace DogmaSolutions.Analyzers
                    new DSA051ToStringPlan(DSA051Strategy.None, Array.Empty<ISymbol>(), dataMembers);
         }
 
+        /// <summary>A readable instance property that the text can show.</summary>
+        private static bool IsShownProperty(IPropertySymbol property) =>
+            IsShowable(property.Type) && !property.IsStatic && !property.IsIndexer && property.GetMethod != null && !property.IsImplicitlyDeclared && property.ExplicitInterfaceImplementations.IsEmpty;
+
+        /// <summary>An instance field that the text can show (the field of an automatic property is not one).</summary>
+        private static bool IsShownField(IFieldSymbol field) => IsShowable(field.Type) && !field.IsStatic && !field.IsConst && !field.IsImplicitlyDeclared;
+
         /// <summary>The plan that shows the candidates, without the sensitive ones and not more than the configured number (null when none is left).</summary>
         private static DSA051ToStringPlan? Plan(DSA051Strategy strategy, IEnumerable<ISymbol> candidates, int dataMembers, DSA051Settings settings)
         {
-            var members = candidates.Where(member => !IsSensitive(member.Name, settings.SensitiveNamePatterns)).ToList();
+            var members = candidates.Where(member => !IsSensitive(member.Name, settings.NormalizedSensitiveNamePatterns)).ToList();
             if (settings.MaxMembers > 0 && members.Count > settings.MaxMembers)
                 members = members.GetRange(0, settings.MaxMembers);
 
             return members.Count == 0 ? null : new DSA051ToStringPlan(strategy, members, dataMembers);
         }
 
-        private static ISymbol? FindWellKnown(List<IPropertySymbol> properties, List<IFieldSymbol> fields, string[] names)
+        private static ISymbol? FindWellKnown(List<IPropertySymbol> properties, List<IFieldSymbol> fields, string[] normalizedNames)
         {
-            foreach (var name in names)
-            {
-                var wanted = Normalize(name);
-                var property = properties.FirstOrDefault(candidate => Normalize(candidate.Name) == wanted);
-                if (property != null)
-                    return property;
+            if (normalizedNames.Length == 0)
+                return null;
 
-                var field = fields.FirstOrDefault(candidate => Normalize(candidate.Name) == wanted);
-                if (field != null)
-                    return field;
+            // the names of the members are normalized once, not once per wanted name
+            var propertyNames = properties.ConvertAll(static property => Normalize(property.Name));
+            var fieldNames = fields.ConvertAll(static field => Normalize(field.Name));
+            foreach (var wanted in normalizedNames)
+            {
+                var property = propertyNames.IndexOf(wanted);
+                if (property >= 0)
+                    return properties[property];
+
+                var field = fieldNames.IndexOf(wanted);
+                if (field >= 0)
+                    return fields[field];
             }
 
             return null;
@@ -137,10 +137,10 @@ namespace DogmaSolutions.Analyzers
         /// <summary>Names are compared ignoring "_" and casing.</summary>
         internal static string Normalize(string name) => name.Replace("_", string.Empty).ToUpperInvariant();
 
-        private static bool IsSensitive(string name, string[] patterns)
+        private static bool IsSensitive(string name, string[] normalizedPatterns)
         {
             var normalized = Normalize(name);
-            return patterns.Any(pattern => normalized.Contains(Normalize(pattern)));
+            return normalizedPatterns.Any(pattern => normalized.Contains(pattern));
         }
 
         private static bool IsProtected(Accessibility accessibility) =>

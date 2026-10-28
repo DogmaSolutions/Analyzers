@@ -80,15 +80,50 @@ namespace DogmaSolutions.Analyzers
                 return;
 
             _roots = _index.GetRoots(_cancellationToken);
-            if (_settings.InferLocksOfPrivateHelpers)
-                InferHelperLocks();
 
-            // only the names of the fields of the type are looked at: every other identifier of the type is of no interest, and binding it would be wasted
+            // a field is a concern only if it is written under a lock, or in a method that might inherit one: the syntax tells it, and the model
+            // is used only for those fields (and for the helpers, only when one of those writes is in a helper)
+            var fields = new List<(IFieldSymbol Field, IReadOnlyList<IdentifierNameSyntax> Uses)>();
+            var mayInherit = false;
             foreach (var field in _type.GetMembers().OfType<IFieldSymbol>().Where(static f => !f.IsConst && !f.IsReadOnly && !f.IsImplicitlyDeclared))
             {
-                foreach (var name in _index.Find(field.Name, _cancellationToken))
+                var uses = _index.Find(field.Name, _cancellationToken);
+                if (!HasCandidateWrite(uses, ref mayInherit))
+                    continue;
+
+                fields.Add((field, uses));
+            }
+
+            if (fields.Count == 0)
+                return;
+
+            if (_settings.InferLocksOfPrivateHelpers && mayInherit)
+                InferHelperLocks();
+
+            foreach (var (_, uses) in fields)
+            {
+                foreach (var name in uses)
                     CollectAccess(name);
             }
+        }
+
+        /// <summary>Whether a name is written (as far as the syntax says) under a lock, or in a method that might inherit one.</summary>
+        private bool HasCandidateWrite(IReadOnlyList<IdentifierNameSyntax> uses, ref bool mayInherit)
+        {
+            var found = false;
+            foreach (var name in uses)
+            {
+                var held = Locate(name, out var member, out var owner);
+                if (Array.IndexOf(_roots, owner) < 0 || !IsWrite(name.Parent is MemberAccessExpressionSyntax parent && parent.Name == name ? parent : name))
+                    continue;
+
+                if (held.Count > 0)
+                    found = true;
+                else if (member is MethodDeclarationSyntax)
+                    found = mayInherit = true;
+            }
+
+            return found;
         }
 
         /// <summary>An identifier of the type itself: a nested type is a type of its own.</summary>
@@ -186,51 +221,64 @@ namespace DogmaSolutions.Analyzers
             foreach (var method in _type.GetMembers().OfType<IMethodSymbol>().Where(static m => m.DeclaredAccessibility == Accessibility.Private && m.MethodKind == MethodKind.Ordinary))
             {
                 foreach (var name in _index.Find(method.Name, _cancellationToken))
-                {
-                    var model = GetModel(name.SyntaxTree);
-                    if (!IsOwn(name) || !SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(name, _cancellationToken).Symbol?.OriginalDefinition, method.OriginalDefinition))
-                        continue;
-
-                    var call = name.Parent is MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } member && member.Name == name ? member : (SyntaxNode)name;
-                    if (call.Parent is InvocationExpressionSyntax invocation && invocation.Expression == call)
-                    {
-                        if (!calls.TryGetValue(method.OriginalDefinition, out var list))
-                            calls[method.OriginalDefinition] = list = new List<(SyntaxNode, SemanticModel)>();
-
-                        list.Add((invocation, model));
-                    }
-                    else
-                    {
-                        escaped.Add(method.OriginalDefinition);
-                    }
-                }
+                    RecordHelperUse(method.OriginalDefinition, name, calls, escaped);
             }
 
-            for (var pass = 0; pass < MaxPasses; pass++)
+            for (var pass = 0; pass < MaxPasses && PropagateHeldLocks(calls, escaped); pass++)
             {
-                var changed = false;
-                foreach (var entry in calls.Where(pair => !escaped.Contains(pair.Key)))
-                {
-                    ISet<string> common = null;
-                    foreach (var (call, model) in entry.Value)
-                    {
-                        var held = GetHeldLocks(call, model);
-                        if (common == null)
-                            common = new HashSet<string>(held);
-                        else
-                            common.IntersectWith(held);
-                    }
-
-                    if (!_inherited.TryGetValue(entry.Key, out var previous) || !previous.SetEquals(common))
-                    {
-                        _inherited[entry.Key] = common;
-                        changed = true;
-                    }
-                }
-
-                if (!changed)
-                    break;
             }
+        }
+
+        /// <summary>A use of a private method: a call is remembered, anything else (a delegate, a reference) lets the method be called from anywhere.</summary>
+        private void RecordHelperUse(IMethodSymbol method, IdentifierNameSyntax name, Dictionary<IMethodSymbol, List<(SyntaxNode Call, SemanticModel Model)>> calls, ISet<IMethodSymbol> escaped)
+        {
+            var model = GetModel(name.SyntaxTree);
+            if (!IsOwn(name) || !SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(name, _cancellationToken).Symbol?.OriginalDefinition, method))
+                return;
+
+            var call = name.Parent is MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } member && member.Name == name ? member : (SyntaxNode)name;
+            if (call.Parent is not InvocationExpressionSyntax invocation || invocation.Expression != call)
+            {
+                escaped.Add(method);
+                return;
+            }
+
+            if (!calls.TryGetValue(method, out var list))
+                calls[method] = list = new List<(SyntaxNode, SemanticModel)>();
+
+            list.Add((invocation, model));
+        }
+
+        /// <summary>One pass: the locks held at every call of a helper are the ones it can rely on. True when something changed.</summary>
+        private bool PropagateHeldLocks(Dictionary<IMethodSymbol, List<(SyntaxNode Call, SemanticModel Model)>> calls, ISet<IMethodSymbol> escaped)
+        {
+            var changed = false;
+            foreach (var entry in calls.Where(pair => !escaped.Contains(pair.Key)))
+            {
+                var common = GetCommonLocks(entry.Value);
+                if (!_inherited.TryGetValue(entry.Key, out var previous) || !previous.SetEquals(common))
+                {
+                    _inherited[entry.Key] = common;
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private ISet<string> GetCommonLocks(IEnumerable<(SyntaxNode Call, SemanticModel Model)> calls)
+        {
+            ISet<string> common = null;
+            foreach (var (call, model) in calls)
+            {
+                var held = GetHeldLocks(call, model);
+                if (common == null)
+                    common = new HashSet<string>(held);
+                else
+                    common.IntersectWith(held);
+            }
+
+            return common;
         }
 
         // ---- the accesses -------------------------------------------------------------------------------------------
@@ -243,22 +291,29 @@ namespace DogmaSolutions.Analyzers
                 return;
 
             var model = GetModel(name.SyntaxTree);
-            if (model.GetSymbolInfo(name, _cancellationToken).Symbol is not IFieldSymbol { IsConst: false, IsReadOnly: false } field ||
-                !SymbolEqualityComparer.Default.Equals(field.ContainingType.OriginalDefinition, _type.OriginalDefinition) ||
-                field.GetAttributes().Any(static attribute => attribute.AttributeClass?.Name == "ThreadStaticAttribute"))
+            var field = GetOwnField(name, model);
+            if (field == null)
                 return;
 
             var access = name.Parent is MemberAccessExpressionSyntax parent && parent.Name == name ? parent : (ExpressionSyntax)name;
             if (IsHandedByReference(access))
                 _lockFreeFields.Add(field.Name);
 
-            // nobody else can see the instance while it is being built (or torn down): its accesses are not part of the protocol
-            if (member is null or ConstructorDeclarationSyntax or DestructorDeclarationSyntax or FieldDeclarationSyntax ||
-                (member is MethodDeclarationSyntax { Identifier.ValueText: "Dispose" }))
-                return;
-
-            Accesses.Add(new DSA049Access(name, field, IsWrite(access), GetMemberName(member), AddInherited(held, member, model)));
+            if (!IsOutsideTheProtocol(member))
+                Accesses.Add(new DSA049Access(name, field, IsWrite(access), GetMemberName(member), AddInherited(held, member, model)));
         }
+
+        /// <summary>The field of the type the name stands for, when it can be reached by more than one thread: not a constant, not read-only, not thread-static.</summary>
+        private IFieldSymbol GetOwnField(IdentifierNameSyntax name, SemanticModel model) =>
+            model.GetSymbolInfo(name, _cancellationToken).Symbol is IFieldSymbol { IsConst: false, IsReadOnly: false } field &&
+            SymbolEqualityComparer.Default.Equals(field.ContainingType.OriginalDefinition, _type.OriginalDefinition) &&
+            !field.GetAttributes().Any(static attribute => attribute.AttributeClass?.Name == "ThreadStaticAttribute")
+                ? field
+                : null;
+
+        /// <summary>Nobody else can see the instance while it is being built (or torn down): its accesses are not part of the protocol.</summary>
+        private static bool IsOutsideTheProtocol(SyntaxNode member) =>
+            member is null or ConstructorDeclarationSyntax or DestructorDeclarationSyntax or FieldDeclarationSyntax || member is MethodDeclarationSyntax { Identifier.ValueText: "Dispose" };
 
         private static string GetMemberName(SyntaxNode member) => member switch
         {

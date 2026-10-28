@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace DogmaSolutions.Analyzers
@@ -132,6 +133,10 @@ namespace DogmaSolutions.Analyzers
         {
             for (var current = type; current != null; current = current.ContainingType)
             {
+                // the declaration tells whether there is an attribute at all: the attributes are bound only for the types that have some
+                if (!SyntaxUtils.HasAttributeLists(current))
+                    continue;
+
                 if (current.GetAttributes().Any(attribute => attribute.AttributeClass != null && IsIgnored(SymbolNames.GetFullName(attribute.AttributeClass), settings.IgnoredAttributes)))
                     return true;
             }

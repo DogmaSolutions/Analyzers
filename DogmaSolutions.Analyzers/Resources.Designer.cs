@@ -2421,5 +2421,68 @@ namespace DogmaSolutions.Analyzers {
                 return ResourceManager.GetString("DSA053MessageEnumerableLocal", resourceCulture);
             }
         }
+        /// <summary>
+        ///   Looks up a localized string for DSA054AnalyzerTitle.
+        /// </summary>
+        internal static string DSA054AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA054AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA054AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA054AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA054AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA054AnalyzerDescription.
+        /// </summary>
+        internal static string DSA054AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA054AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA054ReviewComment.
+        /// </summary>
+        internal static string DSA054ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA054ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA054MessageMemoization.
+        /// </summary>
+        internal static string DSA054MessageMemoization {
+            get {
+                return ResourceManager.GetString("DSA054MessageMemoization", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA054MessageLeftover.
+        /// </summary>
+        internal static string DSA054MessageLeftover {
+            get {
+                return ResourceManager.GetString("DSA054MessageLeftover", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA054MessageNeverRead.
+        /// </summary>
+        internal static string DSA054MessageNeverRead {
+            get {
+                return ResourceManager.GetString("DSA054MessageNeverRead", resourceCulture);
+            }
+        }
+        
     }
 }

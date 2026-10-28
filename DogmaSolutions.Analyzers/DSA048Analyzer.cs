@@ -61,18 +61,14 @@ namespace DogmaSolutions.Analyzers
 
         private static void AnalyzeLoop(SyntaxNodeAnalysisContext context)
         {
-            var (condition, body, headerStart) = context.Node switch
-            {
-                WhileStatementSyntax loop => (loop.Condition, loop.Statement, loop.WhileKeyword.SpanStart),
-                _ => (((DoStatementSyntax)context.Node).Condition, ((DoStatementSyntax)context.Node).Statement, ((DoStatementSyntax)context.Node).WhileKeyword.SpanStart),
-            };
+            var (condition, body, header) = GetLoopParts(context.Node);
 
             // syntactic prefilter: nearly every loop of a code base stops here
             if (!HasWaitCall(body))
                 return;
 
             var settings = DSA048Settings.Cache.Get(context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree));
-            if ((context.Node is DoStatementSyntax && !settings.IncludeDoLoops) || AnalyzersUtils.IsFileExcluded(context.Node.SyntaxTree.FilePath, settings.ExcludedFilePatterns))
+            if (IsLeftOut(context.Node, settings))
                 return;
 
             var wait = FindWait(body, settings, context);
@@ -93,9 +89,22 @@ namespace DogmaSolutions.Analyzers
 
             var resource = hasGiveUp ? nameof(Resources.DSA048MessageWithTimeout) : nameof(Resources.DSA048MessageNoTimeout);
             var message = string.Format(Resources.Culture, Resources.ResourceManager.GetString(resource, Resources.Culture), shared[0].Name, wait);
-            var location = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(headerStart, condition.Parent is WhileStatementSyntax w ? w.CloseParenToken.Span.End : ((DoStatementSyntax)condition.Parent).CloseParenToken.Span.End));
-            context.ReportDiagnostic(Diagnostic.Create(_rule, location, message));
+            context.ReportDiagnostic(Diagnostic.Create(_rule, Location.Create(context.Node.SyntaxTree, header), message));
         }
+
+        /// <summary>The condition and the body of a while or do loop, and the span of its header (from the keyword to the closing parenthesis of the condition).</summary>
+        private static (ExpressionSyntax Condition, StatementSyntax Body, TextSpan Header) GetLoopParts(SyntaxNode loop)
+        {
+            if (loop is WhileStatementSyntax whileLoop)
+                return (whileLoop.Condition, whileLoop.Statement, TextSpan.FromBounds(whileLoop.WhileKeyword.SpanStart, whileLoop.CloseParenToken.Span.End));
+
+            var doLoop = (DoStatementSyntax)loop;
+            return (doLoop.Condition, doLoop.Statement, TextSpan.FromBounds(doLoop.WhileKeyword.SpanStart, doLoop.CloseParenToken.Span.End));
+        }
+
+        /// <summary>The options leave the loop out: a do loop when they do not include them, a file that is excluded.</summary>
+        private static bool IsLeftOut(SyntaxNode loop, DSA048Settings settings) =>
+            (loop is DoStatementSyntax && !settings.IncludeDoLoops) || AnalyzersUtils.IsFileExcluded(loop.SyntaxTree.FilePath, settings.ExcludedFilePatterns);
 
         // ---- the waits ----------------------------------------------------------------------------------------------
 

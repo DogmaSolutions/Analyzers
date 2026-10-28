@@ -102,11 +102,16 @@ namespace DogmaSolutions.Analyzers
             return IsSafeInside(parent, expression) ? expression : SyntaxFactory.ParenthesizedExpression(expression);
         }
 
+        // the places that make a negation or an await stand alone
+        private static readonly HashSet<SyntaxKind> StandAloneParents = new()
+        {
+            SyntaxKind.ParenthesizedExpression, SyntaxKind.Argument, SyntaxKind.EqualsValueClause, SyntaxKind.ReturnStatement, SyntaxKind.ArrowExpressionClause,
+            SyntaxKind.IfStatement, SyntaxKind.WhileStatement, SyntaxKind.ExpressionStatement, SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression,
+            SyntaxKind.ConditionalExpression,
+        };
+
         // a call or an identifier stands anywhere; a negation or an await needs parentheses unless the place makes the expression stand alone
         private static bool IsSafeInside(SyntaxNode parent, ExpressionSyntax expression) =>
-            expression is InvocationExpressionSyntax or IdentifierNameSyntax ||
-            parent is ParenthesizedExpressionSyntax or ArgumentSyntax or EqualsValueClauseSyntax or ReturnStatementSyntax or ArrowExpressionClauseSyntax or IfStatementSyntax or WhileStatementSyntax or ExpressionStatementSyntax ||
-            (parent is BinaryExpressionSyntax binary && (binary.IsKind(SyntaxKind.LogicalAndExpression) || binary.IsKind(SyntaxKind.LogicalOrExpression))) ||
-            parent is PrefixUnaryExpressionSyntax || parent is ConditionalExpressionSyntax || parent is AssignmentExpressionSyntax;
+            expression is InvocationExpressionSyntax or IdentifierNameSyntax || parent is AssignmentExpressionSyntax or PrefixUnaryExpressionSyntax || (parent != null && StandAloneParents.Contains(parent.Kind()));
     }
 }

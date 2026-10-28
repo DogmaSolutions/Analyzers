@@ -51,6 +51,10 @@ namespace DogmaSolutions.Analyzers
         {
             var methodDeclaration = (MethodDeclarationSyntax)context.Node;
 
+            // the text tells at once whether the method says Now or UtcNow at all
+            if (!SyntaxUtils.ContainsText(methodDeclaration, "Now"))
+                return;
+
             // Find all invocations of DateTime.Now within the method body
             var dateTimeNowInvocations = methodDeclaration.DescendantNodes().
                 OfType<MemberAccessExpressionSyntax>().

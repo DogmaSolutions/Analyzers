@@ -22,6 +22,10 @@ public partial class DSA049Tests
         ["Write under a different lock", "", Header, Counter + "private readonly object _other = new object();\npublic void Alt() { lock (_other) { [[_count]] = 1; } }", "", E("DifferentLocks", "_count", "_gate", "Inc", "_other")],
         ["Several unlocked accesses", "", Header, Counter + "public void Reset() { [[_count]] = 0; }\npublic int Count => [[_count]];", "", E("UnlockedWrite", "_count", "_gate", "Inc") + ";" + E("UnlockedRead", "_count", "_gate", "Inc")],
 
+        ["A word that contains the name", "", Header, Counter + "private int _count2;\nprivate int my_count;\npublic int Z() { return _count2 + my_count; }\npublic void Reset() { [[_count]] = 0; }", "", E("UnlockedWrite", "_count", "_gate", "Inc")],
+        ["A unicode escape in the type", "", Header, Counter + "public string S = \"\\u2022\";\npublic void Reset() { [[_count]] = 0; }", "", E("UnlockedWrite", "_count", "_gate", "Inc")],
+        ["The word lock inside another word", "", Header, "private int _count;\npublic void A() { int block = 1; _count = block; }", "", ""],
+
         // ---- what is a write -------------------------------------------------------------------------------------------------
         ["Compound assignment", "", Header, Counter + "public void Add() { [[_count]] += 2; }", "", E("UnlockedWrite", "_count", "_gate", "Inc")],
         ["Increment", "", Header, Counter + "public void Add() { [[_count]]++; }", "", E("UnlockedWrite", "_count", "_gate", "Inc")],

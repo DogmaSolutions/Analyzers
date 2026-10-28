@@ -86,7 +86,11 @@ public sealed class DSA031Analyzer : DiagnosticAnalyzer
         if (context == null) throw new ArgumentNullException(nameof(context));
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        context.RegisterCompilationStartAction(start =>
+        {
+            if (EntityFrameworkSymbols.IsReferenced(start.Compilation))
+                start.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        });
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)

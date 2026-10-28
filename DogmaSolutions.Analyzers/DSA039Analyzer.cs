@@ -59,6 +59,10 @@ namespace DogmaSolutions.Analyzers
         {
             var modulo = (BinaryExpressionSyntax)context.Node;
 
+            // syntactic first: only a call, an indexed value or a local can be derived from the bytes of a generator
+            if (SyntaxUtils.UnwrapParenthesesCastsAndChecked(modulo.Left) is not (InvocationExpressionSyntax or ElementAccessExpressionSyntax or IdentifierNameSyntax))
+                return;
+
             // Only the integral modulo-bias case is targeted; a floating-point remainder is not this defect.
             var leftType = context.SemanticModel.GetTypeInfo(modulo.Left, context.CancellationToken).Type;
             if (leftType == null || !IsIntegral(leftType))

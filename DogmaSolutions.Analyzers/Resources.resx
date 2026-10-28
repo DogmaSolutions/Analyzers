@@ -1288,4 +1288,28 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA053MessageEnumerableLocal" xml:space="preserve">
     <value>The variable '{2}' holds the result of '{0}' but is only ever compared with zero: the number itself is never used, and getting it enumerates the whole sequence (every element of a deferred sequence is evaluated, and the number can differ at each enumeration). '{1}' stops at the first element: keep the boolean instead of the number.</value>
   </data>
+  <data name="DSA054AnalyzerTitle" xml:space="preserve">
+    <value>A private field that is assigned and then read only inside the same member holds no state</value>
+  </data>
+  <data name="DSA054AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA054AnalyzerDescription" xml:space="preserve">
+    <value>A private field exists to keep a value from one call to the next. When every use of the field is inside one member, and every read comes after an assignment that always runs, the field keeps nothing: each call overwrites it before reading it. Either it is a memoization that never memoizes (the value is recomputed on every call: assign only when it is not computed yet, e.g. '_value ??= Compute();' for a reference type or a Nullable&lt;T&gt;, a flag for any other type; the caching is not thread-safe, use Lazy&lt;T&gt; or a lock if the computation must run only once), or it is a local variable that was declared as a field (make it a local and delete the field: as a field, two threads running the member at the same time overwrite each other's value). The message explains the specific scenario.</value>
+  </data>
+  <data name="DSA054ReviewComment" xml:space="preserve">
+    <value>/* [DSA054 / QA + Code Smell]: Field assigned and then read only inside the same member: a missing memoization or a leftover field (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA054.md)
+ * CWE-1164: Irrelevant Code - https://cwe.mitre.org/data/definitions/1164.html
+ * CWE-563: Assignment to Variable without Use - https://cwe.mitre.org/data/definitions/563.html
+ */</value>
+  </data>
+  <data name="DSA054MessageMemoization" xml:space="preserve">
+    <value>The field '{0}' is assigned here and read only inside '{1}', always after this assignment, so it holds nothing from one call to the next: the value is recomputed on every call, and the field is not a cache. If the intent is to memoize, assign only when the value is not computed yet: for a field of a reference type or a Nullable&lt;T&gt;, '{0} ??= ...' does it (null means 'not computed yet'; for any other type add a flag such as a bool). That kind of caching is not thread-safe: two threads can both compute the value, so use Lazy&lt;T&gt; or a lock if the computation must run only once. If the value must not be cached, '{0}' is a leftover: make it a local variable and delete the field, so that two threads running '{1}' at the same time no longer overwrite each other's value.</value>
+  </data>
+  <data name="DSA054MessageLeftover" xml:space="preserve">
+    <value>The field '{0}' is assigned here and read only inside '{1}', always after this assignment, so it holds nothing from one call to the next: it is a local variable that was declared as a field. Make it a local variable and delete the field: as a field, two threads running '{1}' at the same time overwrite each other's value, and the reader of the type looks for a state that does not exist. If the intent was to keep the value between calls (memoization), this code does not do it: assign only when the value is not computed yet ('{0} ??= ...' for a reference type or a Nullable&lt;T&gt;, a flag for any other type), and remember that such caching is not thread-safe either (use Lazy&lt;T&gt; or a lock if the computation must run only once).</value>
+  </data>
+  <data name="DSA054MessageNeverRead" xml:space="preserve">
+    <value>The field '{0}' is assigned here, in '{1}', but its value is never read: the field holds nothing. It is either leftover code, or a value that was meant to be used and is not. Delete the field (keep the right side of the assignment if it has side effects), or read the value where it is needed.</value>
+  </data>
 </root>

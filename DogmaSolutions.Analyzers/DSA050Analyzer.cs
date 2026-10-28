@@ -68,10 +68,8 @@ namespace DogmaSolutions.Analyzers
             if (AnalyzersUtils.IsFileExcluded(statement.SyntaxTree.FilePath, settings.ExcludedFilePatterns))
                 return;
 
-            if (context.SemanticModel.GetSymbolInfo(condition.Access, context.CancellationToken).Symbol is not IFieldSymbol { IsConst: false, IsReadOnly: false } field ||
-                !IsStateType(field.Type) ||
-                (field.IsVolatile && !settings.ReportVolatileFields) ||
-                IsExcluded(field, settings))
+            var field = GetStateField(condition, settings, context);
+            if (field == null)
                 return;
 
             var claim = FindClaim(statement, condition, field, context);
@@ -82,12 +80,24 @@ namespace DogmaSolutions.Analyzers
             if (IsExemptedContext(statement, settings) || !IsShared(member, field, context, settings) || Matches(GetMemberName(member), settings.ExcludedMemberNamePatterns))
                 return;
 
+            Report(context, statement, field, claim.Value);
+        }
+
+        /// <summary>The field that is tested: one that can change, of a type that holds a flag or a state, and that the options do not leave out.</summary>
+        private static IFieldSymbol GetStateField(DSA050Condition condition, DSA050Settings settings, SyntaxNodeAnalysisContext context) =>
+            context.SemanticModel.GetSymbolInfo(condition.Access, context.CancellationToken).Symbol is IFieldSymbol { IsConst: false, IsReadOnly: false } field &&
+            IsStateType(field.Type) && (!field.IsVolatile || settings.ReportVolatileFields) && !IsExcluded(field, settings)
+                ? field
+                : null;
+
+        private static void Report(SyntaxNodeAnalysisContext context, IfStatementSyntax statement, IFieldSymbol field, (string Kind, string AssignedText, string ObservedText) claim)
+        {
             var message = string.Format(
                 Resources.Culture,
-                Resources.ResourceManager.GetString("DSA050Message" + claim.Value.Kind, Resources.Culture) + (field.IsVolatile ? Resources.DSA050VolatileNote : string.Empty),
+                Resources.ResourceManager.GetString("DSA050Message" + claim.Kind, Resources.Culture) + (field.IsVolatile ? Resources.DSA050VolatileNote : string.Empty),
                 field.Name,
-                claim.Value.AssignedText,
-                claim.Value.ObservedText);
+                claim.AssignedText,
+                claim.ObservedText);
             var header = TextSpan.FromBounds(statement.IfKeyword.SpanStart, statement.CloseParenToken.Span.End);
             context.ReportDiagnostic(Diagnostic.Create(_rule, Location.Create(statement.SyntaxTree, header), message));
         }

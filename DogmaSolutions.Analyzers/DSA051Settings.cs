@@ -75,6 +75,8 @@ namespace DogmaSolutions.Analyzers
             WellKnownNames = AnalyzerOptionsReader.ReadList(options, WellKnownNamesKey, DefaultWellKnownNames);
             WellKnownIncludeKey = AnalyzerOptionsReader.ReadBool(options, WellKnownIncludeKeyKey, false);
             SensitiveNamePatterns = AnalyzerOptionsReader.ReadList(options, SensitiveNamePatternsKey, DefaultSensitiveNamePatterns);
+            NormalizedWellKnownNames = Array.ConvertAll(WellKnownNames, DSA051Planner.Normalize);
+            NormalizedSensitiveNamePatterns = Array.ConvertAll(SensitiveNamePatterns, DSA051Planner.Normalize);
             MaxMembers = AnalyzerOptionsReader.ReadInt(options, MaxMembersKey, 0, minInclusive: 0);
             UseExpressionBody = AnalyzerOptionsReader.ReadBool(options, UseExpressionBodyKey, true);
 
@@ -107,6 +109,11 @@ namespace DogmaSolutions.Analyzers
         internal bool WellKnownIncludeKey { get; }
 
         internal string[] SensitiveNamePatterns { get; }
+
+        /// <summary>The well-known names and the sensitive patterns in the form they are compared in, worked out once.</summary>
+        internal string[] NormalizedWellKnownNames { get; }
+
+        internal string[] NormalizedSensitiveNamePatterns { get; }
 
         /// <summary>The most members the generated text lists (0 = all).</summary>
         internal int MaxMembers { get; }

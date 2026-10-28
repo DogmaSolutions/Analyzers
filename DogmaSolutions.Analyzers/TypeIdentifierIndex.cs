@@ -16,14 +16,13 @@ namespace DogmaSolutions.Analyzers
     internal sealed class TypeIdentifierIndex
     {
         private static readonly ConditionalWeakTable<INamedTypeSymbol, TypeIdentifierIndex> _cache = new();
-        private static readonly IReadOnlyList<IdentifierNameSyntax> _none = Array.Empty<IdentifierNameSyntax>();
-
+        
         private readonly INamedTypeSymbol _type;
         private readonly Compilation _compilation;
         private readonly object _gate = new();
         private volatile SyntaxNode[] _roots;
         private volatile int _hasLocks; // 0: not known yet, 1: yes, 2: no
-        private volatile Dictionary<string, List<IdentifierNameSyntax>> _byName;
+        private readonly Dictionary<string, List<IdentifierNameSyntax>> _found = new(StringComparer.Ordinal);
 
         private TypeIdentifierIndex(INamedTypeSymbol type, Compilation compilation)
         {
@@ -52,7 +51,7 @@ namespace DogmaSolutions.Analyzers
             if (_hasLocks != 0)
                 return _hasLocks == 1;
 
-            var found = GetRoots(cancellationToken).Any(static root => root.DescendantTokens().Any(static token => token.IsKind(SyntaxKind.LockKeyword)));
+            var found = GetRoots(cancellationToken).Any(root => HasLockKeyword(root, cancellationToken));
             lock (_gate)
             {
                 _hasLocks = found ? 1 : 2;
@@ -61,19 +60,73 @@ namespace DogmaSolutions.Analyzers
             return found;
         }
 
-        /// <summary>The identifiers with the given name, in source order (the nested types are included).</summary>
+        /// <summary>
+        /// The identifiers with the given name, in source order (the nested types are included). The text of the type is searched for the word and only
+        /// the hits are turned into tokens, so that a name costs one vectorized search: walking every node of the type to index all of them costs far more.
+        /// </summary>
         internal IReadOnlyList<IdentifierNameSyntax> Find(string name, CancellationToken cancellationToken)
         {
-            var byName = _byName;
-            if (byName == null)
+            lock (_gate)
             {
-                lock (_gate)
-                {
-                    byName = _byName ??= Build(GetRoots(cancellationToken));
-                }
+                if (!_found.TryGetValue(name, out var list))
+                    _found[name] = list = Search(name, GetRoots(cancellationToken), cancellationToken);
+
+                return list;
+            }
+        }
+
+        /// <summary>The text is searched for the word first (a type without it costs one vectorized search); the hits are checked on the tokens.</summary>
+        private static bool HasLockKeyword(SyntaxNode root, CancellationToken cancellationToken)
+        {
+            var text = root.SyntaxTree.GetText(cancellationToken).ToString(root.Span);
+            for (var index = text.IndexOf("lock", StringComparison.Ordinal); index >= 0; index = text.IndexOf("lock", index + 4, StringComparison.Ordinal))
+            {
+                if (root.FindToken(root.SpanStart + index).IsKind(SyntaxKind.LockKeyword))
+                    return true;
             }
 
-            return byName.TryGetValue(name, out var list) ? list : _none;
+            return false;
+        }
+
+        private static List<IdentifierNameSyntax> Search(string name, SyntaxNode[] roots, CancellationToken cancellationToken)
+        {
+            var result = new List<IdentifierNameSyntax>();
+            foreach (var root in roots)
+            {
+                var text = root.SyntaxTree.GetText(cancellationToken).ToString(root.Span);
+
+                // a unicode escape can spell the name: such a type is walked token by token
+                if (text.IndexOf("\\u", StringComparison.Ordinal) >= 0 || text.IndexOf("\\U", StringComparison.Ordinal) >= 0)
+                    SearchTokens(name, root, result);
+                else
+                    SearchText(name, root, text, result);
+            }
+
+            return result;
+        }
+
+        private static void SearchTokens(string name, SyntaxNode root, List<IdentifierNameSyntax> result)
+        {
+            foreach (var token in root.DescendantTokens())
+            {
+                if (token.IsKind(SyntaxKind.IdentifierToken) && token.Parent is IdentifierNameSyntax identifier && token.ValueText == name)
+                    result.Add(identifier);
+            }
+        }
+
+        private static void SearchText(string name, SyntaxNode root, string text, List<IdentifierNameSyntax> result)
+        {
+            for (var index = text.IndexOf(name, StringComparison.Ordinal); index >= 0; index = text.IndexOf(name, index + name.Length, StringComparison.Ordinal))
+            {
+                var end = index + name.Length;
+                if ((index > 0 && DSA054UseFinder.IsPart(text[index - 1])) || (end < text.Length && DSA054UseFinder.IsPart(text[end])))
+                    continue;
+
+                var position = root.SpanStart + (index > 0 && text[index - 1] == '@' ? index - 1 : index);
+                var token = root.FindToken(position);
+                if (token.SpanStart == position && token.IsKind(SyntaxKind.IdentifierToken) && token.Parent is IdentifierNameSyntax identifier)
+                    result.Add(identifier);
+            }
         }
 
         /// <summary>The model of a tree of the compilation (the analysis driver caches them).</summary>
@@ -81,26 +134,5 @@ namespace DogmaSolutions.Analyzers
 
         /// <summary>The type declaration the identifier belongs to, which is not the type itself when the identifier is in a nested type.</summary>
         internal static BaseTypeDeclarationSyntax GetOwner(SyntaxNode node) => node.FirstAncestorOrSelf<BaseTypeDeclarationSyntax>();
-
-        private static Dictionary<string, List<IdentifierNameSyntax>> Build(SyntaxNode[] roots)
-        {
-            var result = new Dictionary<string, List<IdentifierNameSyntax>>(StringComparer.Ordinal);
-            foreach (var root in roots)
-            {
-                foreach (var node in root.DescendantNodes())
-                {
-                    if (node is not IdentifierNameSyntax name)
-                        continue;
-
-                    var text = name.Identifier.ValueText;
-                    if (!result.TryGetValue(text, out var list))
-                        result[text] = list = new List<IdentifierNameSyntax>();
-
-                    list.Add(name);
-                }
-            }
-
-            return result;
-        }
     }
 }

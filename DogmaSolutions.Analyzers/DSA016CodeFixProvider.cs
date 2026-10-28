@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace DogmaSolutions.Analyzers;
 
@@ -28,45 +29,19 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root == null)
-            return;
-
         var diagnostic = context.Diagnostics[0];
-        var diagnosticSpan = diagnostic.Location.SourceSpan;
-
-        var invocation = root.FindToken(diagnosticSpan.Start).Parent?
-            .AncestorsAndSelf()
-            .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault(inv => inv.Span == diagnosticSpan);
-
-        if (invocation == null)
-        {
-            // Conditional access: the diagnostic is on a MemberBindingExpression inside a ConditionalAccess
-            var memberBinding = root.FindToken(diagnosticSpan.Start).Parent?
-                .AncestorsAndSelf()
-                .OfType<InvocationExpressionSyntax>()
-                .FirstOrDefault(inv => inv.Expression is MemberBindingExpressionSyntax &&
-                                       inv.Span.IntersectsWith(diagnosticSpan));
-            if (memberBinding != null)
-                invocation = memberBinding;
-        }
-
+        var invocation = root == null ? null : FindInvocation(root, diagnostic.Location.SourceSpan);
         if (invocation == null)
             return;
-
-        var displayFragment = invocation.ToString();
-        if (displayFragment.Length > 60)
-            displayFragment = displayFragment.Substring(0, 57) + "...";
 
         // A conditional access we can't extract without changing its null semantics (e.g. items?.Method().Name) gets no extraction, and neither does
         // a call that the declaration would evaluate where the code does not (past a guard, outside a try).
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if ((!(invocation.Expression is MemberBindingExpressionSyntax) || TryGetReplaceableConditionalAccess(invocation, out _)) &&
-            semanticModel != null && CanExtract(semanticModel, invocation))
+        if (CanOfferExtraction(invocation, semanticModel))
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: $"Extract '{displayFragment}' to local variable",
+                    title: $"Extract '{Abbreviate(invocation.ToString())}' to local variable",
                     createChangedDocument: ct => ExtractToVariableAsync(context.Document, invocation, ct),
                     equivalenceKey: DSA016Analyzer.DiagnosticId),
                 diagnostic);
@@ -74,6 +49,23 @@ public sealed class DSA016CodeFixProvider : CodeFixProvider
 
         ReviewCommentCodeFix.Register(context, diagnostic, invocation, DSA016Analyzer.DiagnosticId, nameof(Resources.DSA016ReviewComment));
     }
+
+    /// <summary>
+    /// The invocation the diagnostic is on. For a conditional access (<c>items?.Method()</c>) the diagnostic is on a member binding inside the
+    /// access: the invocation is the one that the span intersects.
+    /// </summary>
+    internal static InvocationExpressionSyntax FindInvocation(SyntaxNode root, TextSpan span)
+    {
+        var invocations = root.FindToken(span.Start).Parent?.AncestorsAndSelf().OfType<InvocationExpressionSyntax>();
+        return invocations?.FirstOrDefault(invocation => invocation.Span == span) ??
+               invocations?.FirstOrDefault(invocation => invocation.Expression is MemberBindingExpressionSyntax && invocation.Span.IntersectsWith(span));
+    }
+
+    private static bool CanOfferExtraction(InvocationExpressionSyntax invocation, SemanticModel semanticModel) =>
+        (invocation.Expression is not MemberBindingExpressionSyntax || TryGetReplaceableConditionalAccess(invocation, out _)) && semanticModel != null && CanExtract(semanticModel, invocation);
+
+    /// <summary>The text of the code in the title of the fix, abbreviated when it is long.</summary>
+    internal static string Abbreviate(string text) => text.Length > 60 ? text.Substring(0, 57) + "..." : text;
 
     private static async Task<Document> ExtractToVariableAsync(
         Document document,

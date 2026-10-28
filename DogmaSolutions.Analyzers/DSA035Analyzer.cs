@@ -88,14 +88,23 @@ public sealed class DSA035Analyzer : DiagnosticAnalyzer
         if (body == null)
             return;
 
+        // syntactic first: a loop that calls nothing named like a reflection method needs no binding at all
+        var shaped = new List<InvocationExpressionSyntax>();
+        foreach (var call in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            var name = SyntaxUtils.GetInvokedName(call);
+            if (name != null && ReflectionMethodNames.Contains(name) && !SyntaxUtils.IsInsideNestedLoop(call, body))
+                shaped.Add(call);
+        }
+
+        if (shaped.Count == 0)
+            return;
+
         var modifiedSymbols = DSA022Analyzer.CollectModifiedSymbols(body, loopNode, context.SemanticModel);
         CollectLambdaParameters(body, context.SemanticModel, modifiedSymbols);
 
-        foreach (var invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        foreach (var invocation in shaped)
         {
-            if (SyntaxUtils.IsInsideNestedLoop(invocation, body))
-                continue;
-
             if (!IsReflectionInvocation(invocation, context.SemanticModel))
                 continue;
 

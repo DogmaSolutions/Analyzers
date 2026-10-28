@@ -68,7 +68,7 @@ namespace DogmaSolutions.Analyzers
                 return;
 
             var flagged = DSA044FlaggedCallFinder.Find(invocation, context.SemanticModel, settings, context.CancellationToken);
-            var enclosing = context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart, context.CancellationToken);
+            var enclosing = GetEnclosingSymbol(invocation, context.SemanticModel, context.CancellationToken);
             var member = enclosing == null ? null : DSA044LoggerAvailability.GetEnclosingMember(enclosing);
             if (flagged == null || member?.ContainingType == null || DSA044Exclusions.IsExcludedByName(member, invocation.SyntaxTree, settings))
                 return;
@@ -79,6 +79,28 @@ namespace DogmaSolutions.Analyzers
                 return;
 
             Report(context, invocation, flagged, logger);
+        }
+
+        /// <summary>
+        /// The symbol that encloses the call. A call that is directly in a method, constructor, finalizer, operator or accessor (not in a lambda or a
+        /// local function) is in the symbol that declaration declares, which is looked up, instead of being found from the position of the call.
+        /// </summary>
+        private static ISymbol GetEnclosingSymbol(InvocationExpressionSyntax invocation, SemanticModel model, System.Threading.CancellationToken cancellationToken)
+        {
+            for (var node = invocation.Parent; node != null; node = node.Parent)
+            {
+                switch (node)
+                {
+                    case AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or QueryExpressionSyntax:
+                        return model.GetEnclosingSymbol(invocation.SpanStart, cancellationToken);
+                    case MethodDeclarationSyntax or ConstructorDeclarationSyntax or DestructorDeclarationSyntax or OperatorDeclarationSyntax or AccessorDeclarationSyntax:
+                        return model.GetDeclaredSymbol(node, cancellationToken) ?? model.GetEnclosingSymbol(invocation.SpanStart, cancellationToken);
+                    case MemberDeclarationSyntax:
+                        return model.GetEnclosingSymbol(invocation.SpanStart, cancellationToken);
+                }
+            }
+
+            return model.GetEnclosingSymbol(invocation.SpanStart, cancellationToken);
         }
 
         private static void Report(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation, FlaggedCall flagged, AvailableLogger logger)

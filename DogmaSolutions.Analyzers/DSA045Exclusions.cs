@@ -39,7 +39,7 @@ namespace DogmaSolutions.Analyzers
 
         /// <summary>The attributes of the type itself (all the parts of a partial type) that exclude it from the coverage.</summary>
         internal static ImmutableArray<AttributeData> FindExclusionAttributes(INamedTypeSymbol type, DSA045Settings settings) =>
-            type.GetAttributes().Where(attribute => attribute.AttributeClass != null && IsNamed(SymbolNames.GetFullName(attribute.AttributeClass), settings.ExclusionAttributes)).ToImmutableArray();
+            !SyntaxUtils.HasAttributeLists(type) ? ImmutableArray<AttributeData>.Empty : type.GetAttributes().Where(attribute => attribute.AttributeClass != null && IsNamed(SymbolNames.GetFullName(attribute.AttributeClass), settings.ExclusionAttributes)).ToImmutableArray();
 
         private static bool IsAssemblyExcluded(Compilation compilation, DSA045Settings settings)
         {
@@ -70,6 +70,9 @@ namespace DogmaSolutions.Analyzers
         {
             for (var current = type; current != null; current = current.ContainingType)
             {
+                if (!SyntaxUtils.HasAttributeLists(current))
+                    continue;
+
                 var attributes = current.GetAttributes();
                 if (!attributes.IsEmpty && ((!ignoreExclusionAttributes && HasAnyAttribute(attributes, settings.ExclusionAttributes)) || HasAnyAttribute(attributes, settings.IgnoredAttributes)))
                     return true;

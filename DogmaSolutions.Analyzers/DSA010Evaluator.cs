@@ -181,35 +181,50 @@ namespace DogmaSolutions.Analyzers
         internal static (string TypeSentence, string Remedy) Describe(ITypeSymbol type)
         {
             var name = type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-            if (type is IPointerTypeSymbol or IFunctionPointerTypeSymbol)
-                return (Format(Resources.DSA010TypeNativeWord, name), string.Empty);
+            var underlying = type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } enumType } ? enumType : null;
+            var special = (underlying ?? type).SpecialType;
 
+            return DescribeNativeWord(type, name, special) ?? DescribeNarrow(name, underlying, special) ?? DescribeWide(type, name, underlying, special);
+        }
+
+        /// <summary>A reference, a pointer, an <c>nint</c>: the size of the native word of the process.</summary>
+        private static (string TypeSentence, string Remedy)? DescribeNativeWord(ITypeSymbol type, string name, SpecialType special)
+        {
             if (type.IsReferenceType)
                 return (Format(Resources.DSA010TypeReference, name), string.Empty);
 
-            var underlying = type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } enumType } ? enumType : null;
-            var special = (underlying ?? type).SpecialType;
-            var underlyingName = underlying?.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) ?? string.Empty;
+            return type is IPointerTypeSymbol or IFunctionPointerTypeSymbol || special is SpecialType.System_IntPtr or SpecialType.System_UIntPtr
+                ? (Format(Resources.DSA010TypeNativeWord, name), string.Empty)
+                : null;
+        }
 
-            if (special is SpecialType.System_IntPtr or SpecialType.System_UIntPtr)
-                return (Format(Resources.DSA010TypeNativeWord, name), string.Empty);
+        /// <summary>A type of 32 bits or less, or an enum backed by one.</summary>
+        private static (string TypeSentence, string Remedy)? DescribeNarrow(string name, ITypeSymbol underlying, SpecialType special)
+        {
+            if (!_bits.TryGetValue(special, out var bits))
+                return null;
 
-            if (_bits.TryGetValue(special, out var bits))
-            {
-                return (underlying == null ? Format(Resources.DSA010TypeSmall, name, bits) : Format(Resources.DSA010TypeSmallEnum, name, underlyingName, bits), string.Empty);
-            }
+            var sentence = underlying == null
+                ? Format(Resources.DSA010TypeSmall, name, bits)
+                : Format(Resources.DSA010TypeSmallEnum, name, underlying.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), bits);
+            return (sentence, string.Empty);
+        }
 
+        /// <summary>A 64-bit value (torn in a 32-bit process), a decimal, a struct or a generic type parameter (torn on every platform).</summary>
+        private static (string TypeSentence, string Remedy) DescribeWide(ITypeSymbol type, string name, ITypeSymbol underlying, SpecialType special)
+        {
             var other = Format(Resources.DSA010RemedyOther, name);
-            switch (special)
+            if (special is SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double)
             {
-                case SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double:
-                    var sentence = underlying == null ? Format(Resources.DSA010TypeWide64, name) : Format(Resources.DSA010TypeWide64Enum, name, underlyingName);
-                    return (sentence, underlying != null ? other : GetRemedy(special, name));
-                case SpecialType.System_Decimal:
-                    return (Format(Resources.DSA010TypeDecimal, name), other);
-                default:
-                    return (Format(type.TypeKind == TypeKind.TypeParameter ? Resources.DSA010TypeParameter : Resources.DSA010TypeStruct, name), other);
+                return underlying == null
+                    ? (Format(Resources.DSA010TypeWide64, name), GetRemedy(special, name))
+                    : (Format(Resources.DSA010TypeWide64Enum, name, underlying.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)), other);
             }
+
+            if (special == SpecialType.System_Decimal)
+                return (Format(Resources.DSA010TypeDecimal, name), other);
+
+            return (Format(type.TypeKind == TypeKind.TypeParameter ? Resources.DSA010TypeParameter : Resources.DSA010TypeStruct, name), other);
         }
 
         private static string GetRemedy(SpecialType special, string name) =>

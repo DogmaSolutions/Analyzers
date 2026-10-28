@@ -72,18 +72,23 @@ public sealed class DSA022Analyzer : DiagnosticAnalyzer
         if (body == null)
             return;
 
+        // syntactic first: a loop without an arithmetic expression of its own needs no binding at all
+        var shaped = new List<BinaryExpressionSyntax>();
+        foreach (var binExpr in body.DescendantNodes().OfType<BinaryExpressionSyntax>())
+        {
+            if (Array.IndexOf(ArithmeticAndBitwiseKinds, binExpr.Kind()) >= 0 && !SyntaxUtils.IsInsideNestedLoop(binExpr, body))
+                shaped.Add(binExpr);
+        }
+
+        if (shaped.Count == 0)
+            return;
+
         var modifiedSymbols = CollectModifiedSymbols(body, loopNode, context.SemanticModel);
 
         var candidates = new List<BinaryExpressionSyntax>();
-        foreach (var binExpr in body.DescendantNodes().OfType<BinaryExpressionSyntax>())
+        foreach (var binExpr in shaped)
         {
-            if (Array.IndexOf(ArithmeticAndBitwiseKinds, binExpr.Kind()) < 0)
-                continue;
-
             if (binExpr.IsKind(SyntaxKind.AddExpression) && IsStringConcatenation(binExpr, context.SemanticModel))
-                continue;
-
-            if (SyntaxUtils.IsInsideNestedLoop(binExpr, body))
                 continue;
 
             if (!IsInvariant(binExpr, modifiedSymbols, context.SemanticModel))

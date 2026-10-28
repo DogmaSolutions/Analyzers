@@ -142,4 +142,18 @@ public partial class DSA010Tests
         Assert.IsFalse(Resources.DSA010MessageReadDedicated.Contains("a single read is already atomic"));
         Assert.IsTrue(Resources.DSA010MessageReadDedicated.Contains("{2}"));
     }
+
+    [TestMethod]
+    public async Task A_pointer_has_the_size_of_the_native_word()
+    {
+        // a pointer cannot be a field of the scenarios without unsafe code: its symbol is made
+        var references = await ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, default).ConfigureAwait(false);
+        var compilation = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create("pointers", Array.Empty<SyntaxTree>(), references);
+        var pointer = compilation.CreatePointerTypeSymbol(compilation.GetSpecialType(SpecialType.System_Int32));
+
+        var (sentence, remedy) = DSA010Types.Describe(pointer);
+
+        Assert.AreEqual(F(Resources.DSA010TypeNativeWord, "int*"), sentence);
+        Assert.AreEqual(string.Empty, remedy);
+    }
 }

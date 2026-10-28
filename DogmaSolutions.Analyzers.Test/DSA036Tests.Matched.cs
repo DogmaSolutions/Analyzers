@@ -234,6 +234,61 @@ public partial class DSA036Tests
             @"Regex.IsMatch(input, @""\d+"", RegexOptions.IgnoreCase)"
         ],
         [
+            "Fully qualified static Regex call",
+            @"
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    public bool Check(string input)
+                    {
+                        return {|#0:System.Text.RegularExpressions.Regex.IsMatch(input, @""\d+"")|};
+                    }
+                }
+            }",
+            @"System.Text.RegularExpressions.Regex.IsMatch(input, @""\d+"")"
+        ],
+        [
+            "Fully qualified Regex creation",
+            @"
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    private readonly object _r = {|#0:new System.Text.RegularExpressions.Regex(@""\d+"")|};
+                }
+            }",
+            @"new System.Text.RegularExpressions.Regex(@""\d+"")"
+        ],
+        [
+            "Alias qualified Regex creation",
+            @"
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    private readonly object _r = {|#0:new global::System.Text.RegularExpressions.Regex(@""\d+"")|};
+                }
+            }",
+            @"new global::System.Text.RegularExpressions.Regex(@""\d+"")"
+        ],
+        [
+            "Regex through a using alias",
+            @"
+            using Rx = System.Text.RegularExpressions.Regex;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    public bool Check(string input)
+                    {
+                        return {|#0:Rx.IsMatch(input, @""\d+"")|};
+                    }
+                }
+            }",
+            @"Rx.IsMatch(input, @""\d+"")"
+        ],
+        [
             "Regex.Match with string literal pattern",
             @"
             using System.Text.RegularExpressions;
@@ -784,5 +839,23 @@ public partial class DSA036Tests
                 .WithArguments(@"new Regex(@""\d+"")"));
 
         await test.RunAsync().ConfigureAwait(false);
+    }
+
+    [TestMethod]
+    public async Task A_call_on_the_result_of_a_call_is_not_a_static_Regex_call()
+    {
+        var source = @"
+            using System.Linq;
+            using System.Collections.Generic;
+            namespace TestApp
+            {
+                public class Validator
+                {
+                    private static IEnumerable<int> Get() => new int[0];
+                    public int Check() => Get().Count() + Get().Count(x => x > 0);
+                }
+            }";
+
+        await CSharpAnalyzerVerifier<DSA036Analyzer>.VerifyAnalyzerAsync(source).ConfigureAwait(false);
     }
 }

@@ -208,21 +208,18 @@ public sealed class DSA032Analyzer : DiagnosticAnalyzer
       ImmutableHashSet<string> ignoredStrings,
       ImmutableArray<string> ignoredFilePatterns)
    {
-      if (IsFileIgnored(context.Node.SyntaxTree.FilePath, ignoredFilePatterns))
-         return;
-
-      if (IsContainedInIgnoredBaseType(context))
-         return;
-
-      if (IsIgnoredMethodInBaseType(context))
-         return;
-
       var body = GetMethodOrConstructorBody(context.Node);
       if (body == null)
          return;
 
+      // the literals are counted first (syntax only): the file, the base types and the method are looked at only for a method that repeats one
       var config = GetParsedConfig(context);
       var groups = GroupStringLiterals(body, config, ignoredStrings);
+      if (!groups.Any(group => group.Value.Count > config.MaxDuplications))
+         return;
+
+      if (IsFileIgnored(context.Node.SyntaxTree.FilePath, ignoredFilePatterns) || IsContainedInIgnoredBaseType(context) || IsIgnoredMethodInBaseType(context))
+         return;
 
       foreach (var kvp in groups.Where(group => group.Value.Count > config.MaxDuplications))
          ReportDuplicatedLiterals(context, kvp.Key, kvp.Value);

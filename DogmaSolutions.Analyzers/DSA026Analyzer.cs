@@ -51,8 +51,31 @@ public sealed class DSA026Analyzer : DiagnosticAnalyzer
             SyntaxKind.LocalFunctionStatement);
     }
 
+    // a scope can only be reported if a cancellation token can be captured, and a token is always spelled with "Token" in the member that holds it
+    // (CancellationToken, cts.Token, ...) unless a using alias renames the type: the members that never say it need no binding at all
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Compilation, System.Runtime.CompilerServices.StrongBox<bool>> _hasTokenAlias = new();
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<SyntaxNode, System.Runtime.CompilerServices.StrongBox<bool>> _mentionsToken = new();
+
+    private static bool MayCaptureToken(SyntaxNode scope, Compilation compilation)
+    {
+        if (_hasTokenAlias.GetValue(compilation, static key => new System.Runtime.CompilerServices.StrongBox<bool>(HasTokenAlias(key))).Value)
+            return true;
+
+        var member = scope.FirstAncestorOrSelf<MemberDeclarationSyntax>();
+        return member == null || _mentionsToken.GetValue(member, static key => new System.Runtime.CompilerServices.StrongBox<bool>(MentionsToken(key))).Value;
+    }
+
+    private static bool HasTokenAlias(Compilation compilation) =>
+        compilation.SyntaxTrees.Any(static tree => tree.GetRoot().DescendantNodes(static node => node is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax).OfType<UsingDirectiveSyntax>().Any(static directive => directive.Alias != null && directive.Name != null && directive.Name.ToString().Contains("CancellationToken")));
+
+    private static bool MentionsToken(SyntaxNode member) =>
+        member.DescendantTokens().Any(static token => token.IsKind(SyntaxKind.IdentifierToken) && token.ValueText.Contains("Token"));
+
     private static void AnalyzeScope(SyntaxNodeAnalysisContext context)
     {
+        if (!MayCaptureToken(context.Node, context.Compilation))
+            return;
+
         var ctParameter = FindCancellationTokenParameter(context.Node, context.SemanticModel);
         if (ctParameter == null)
             return;
