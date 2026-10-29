@@ -15,6 +15,7 @@ DSA051  | Best Practice | Info     | DSA051Analyzer
 DSA052  | Performance   | Warning  | DSA052Analyzer
 DSA053  | Performance   | Warning  | DSA053Analyzer
 DSA054  | Code Smell    | Warning  | DSA054Analyzer
+DSA055  | Code Smell    | Warning  | DSA055Analyzer
 
 ### Changed Rules
 

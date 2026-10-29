@@ -1312,4 +1312,31 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA054MessageNeverRead" xml:space="preserve">
     <value>The field '{0}' is assigned here, in '{1}', but its value is never read: the field holds nothing. It is either leftover code, or a value that was meant to be used and is not. Delete the field (keep the right side of the assignment if it has side effects), or read the value where it is needed.</value>
   </data>
+  <data name="DSA055AnalyzerTitle" xml:space="preserve">
+    <value>A key or an identifier is compared with zero by equality: a negative value is as invalid as zero</value>
+  </data>
+  <data name="DSA055AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA055AnalyzerDescription" xml:space="preserve">
+    <value>A primary key or an entity identifier is not expected to be zero or negative. A validity check written with '!= 0' accepts every negative value, and a check written with '== 0' rejects zero only, so the code is wrong or fragile as soon as a negative value reaches it (a failed lookup that returns -1, an overflow, a sentinel). Write the check the way the domain is: '&gt; 0' for a valid key, '&lt;= 0' for an invalid one. For an unsigned type a negative value cannot exist and '!= 0' is the same as '&gt; 0', but only the second one states what the code means. The rule looks at integral variables, parameters, fields and properties named like a key (a name that ends with 'Id' or 'Key', or 'id', 'key', 'Pk', 'pk', 'primaryKey'), and the message explains the specific scenario.</value>
+  </data>
+  <data name="DSA055ReviewComment" xml:space="preserve">
+    <value>/* [DSA055 / QA + Code Smell]: Key or identifier compared with zero by equality: a negative value is as invalid as zero (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA055.md)
+ * CWE-697: Incorrect Comparison - https://cwe.mitre.org/data/definitions/697.html
+ * CWE-1023: Incomplete Comparison with Missing Factors - https://cwe.mitre.org/data/definitions/1023.html
+ */</value>
+  </data>
+  <data name="DSA055MessageNotEqualsSigned" xml:space="preserve">
+    <value>'{0}' is an identifier or a key of type '{1}', and '{0} != 0' is also true for every negative value, which is as invalid as zero: an identifier is not expected to be zero or negative. Did you mean to write '{0} &gt; 0'?</value>
+  </data>
+  <data name="DSA055MessageEqualsSigned" xml:space="preserve">
+    <value>'{0}' is an identifier or a key of type '{1}', and '{0} == 0' is false for every negative value, which is as invalid as zero: an identifier is not expected to be zero or negative. Did you mean to write '{0} &lt;= 0'?</value>
+  </data>
+  <data name="DSA055MessageNotEqualsUnsigned" xml:space="preserve">
+    <value>'{0}' is an identifier or a key of type '{1}', which cannot be negative, so '{0} != 0' is the same as '{0} &gt; 0'. Writing '&gt; 0' says that the value must be a valid identifier, and keeps the check right if the type becomes signed. Did you mean to write '{0} &gt; 0'?</value>
+  </data>
+  <data name="DSA055MessageEqualsUnsigned" xml:space="preserve">
+    <value>'{0}' is an identifier or a key of type '{1}', which cannot be negative, so '{0} == 0' is the same as '{0} &lt;= 0'. Writing '&lt;= 0' says that the value is not a valid identifier, and keeps the check right if the type becomes signed. Did you mean to write '{0} &lt;= 0'?</value>
+  </data>
 </root>
