@@ -129,6 +129,7 @@ A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[S
 | [DSA053](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA053.md) | Performance | `Count` / `CountAsync` whose number is only compared with zero: ask the real question with `Any` (arrays and collections, where `Length` and `Count` are cheap, are left alone) | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA054](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA054.md) | Code Smell | A private field that is assigned and then read only inside the same member holds no state: a missing memoization (`_v = Compute()` instead of `_v ??= Compute()`) or a local variable declared as a field | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA055](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA055.md) | Code Smell | An integral key or identifier (`userId`, `resolvedKey`, `id`...) compared with zero by equality (`!= 0`, `== 0`): a negative value is as invalid as zero, did you mean `> 0` / `<= 0`? | ⚠ Warning | ✅ | ✅ | ✅ |
+| [DSA056](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA056.md) | Code Smell | A test fixture (NUnit, xUnit, MSTest, TUnit) is not excluded from the code coverage: add `[ExcludeFromCodeCoverage]` to the class, or once to the test assembly | ⚠ Warning | ✅ | ✅ | ✅ |
 
 # Refactorings list
 
@@ -546,6 +547,15 @@ dotnet_diagnostic.DSA055.excluded_namespace_patterns =
 dotnet_diagnostic.DSA055.excluded_base_types =
 dotnet_diagnostic.DSA055.excluded_member_name_patterns =
 dotnet_diagnostic.DSA055.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA056: A test fixture (NUnit, xUnit, MSTest, TUnit) is not excluded from the code coverage: add [ExcludeFromCodeCoverage] to the class, or once to the test assembly
+dotnet_diagnostic.DSA056.severity = warning
+dotnet_diagnostic.DSA056.test_attributes = NUnit.Framework.TestFixtureAttribute, NUnit.Framework.TestAttribute, NUnit.Framework.TestCaseAttribute, NUnit.Framework.TestCaseSourceAttribute, NUnit.Framework.TheoryAttribute, NUnit.Framework.SetUpAttribute, NUnit.Framework.TearDownAttribute, NUnit.Framework.OneTimeSetUpAttribute, NUnit.Framework.OneTimeTearDownAttribute, Xunit.FactAttribute, Xunit.TheoryAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethodAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.ClassInitializeAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.ClassCleanupAttribute, TUnit.Core.TestAttribute, TUnit.Core.BeforeAttribute, TUnit.Core.AfterAttribute
+dotnet_diagnostic.DSA056.exclusion_attributes = System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute
+dotnet_diagnostic.DSA056.excluded_type_name_patterns =
+dotnet_diagnostic.DSA056.excluded_namespace_patterns =
+dotnet_diagnostic.DSA056.excluded_base_types =
+dotnet_diagnostic.DSA056.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## Good / Professional
@@ -929,6 +939,15 @@ dotnet_diagnostic.DSA055.excluded_namespace_patterns =
 dotnet_diagnostic.DSA055.excluded_base_types =
 dotnet_diagnostic.DSA055.excluded_member_name_patterns =
 dotnet_diagnostic.DSA055.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA056: A test fixture (NUnit, xUnit, MSTest, TUnit) is not excluded from the code coverage: add [ExcludeFromCodeCoverage] to the class, or once to the test assembly
+dotnet_diagnostic.DSA056.severity = warning
+dotnet_diagnostic.DSA056.test_attributes = NUnit.Framework.TestFixtureAttribute, NUnit.Framework.TestAttribute, NUnit.Framework.TestCaseAttribute, NUnit.Framework.TestCaseSourceAttribute, NUnit.Framework.TheoryAttribute, NUnit.Framework.SetUpAttribute, NUnit.Framework.TearDownAttribute, NUnit.Framework.OneTimeSetUpAttribute, NUnit.Framework.OneTimeTearDownAttribute, Xunit.FactAttribute, Xunit.TheoryAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethodAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.ClassInitializeAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.ClassCleanupAttribute, TUnit.Core.TestAttribute, TUnit.Core.BeforeAttribute, TUnit.Core.AfterAttribute
+dotnet_diagnostic.DSA056.exclusion_attributes = System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute
+dotnet_diagnostic.DSA056.excluded_type_name_patterns =
+dotnet_diagnostic.DSA056.excluded_namespace_patterns =
+dotnet_diagnostic.DSA056.excluded_base_types =
+dotnet_diagnostic.DSA056.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ## SSDLC (Secure Software Development Lifecycle) and/or AI-Driven development
@@ -1312,6 +1331,15 @@ dotnet_diagnostic.DSA055.excluded_namespace_patterns =
 dotnet_diagnostic.DSA055.excluded_base_types =
 dotnet_diagnostic.DSA055.excluded_member_name_patterns =
 dotnet_diagnostic.DSA055.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
+
+# DSA056: A test fixture (NUnit, xUnit, MSTest, TUnit) is not excluded from the code coverage: add [ExcludeFromCodeCoverage] to the class, or once to the test assembly
+dotnet_diagnostic.DSA056.severity = error
+dotnet_diagnostic.DSA056.test_attributes = NUnit.Framework.TestFixtureAttribute, NUnit.Framework.TestAttribute, NUnit.Framework.TestCaseAttribute, NUnit.Framework.TestCaseSourceAttribute, NUnit.Framework.TheoryAttribute, NUnit.Framework.SetUpAttribute, NUnit.Framework.TearDownAttribute, NUnit.Framework.OneTimeSetUpAttribute, NUnit.Framework.OneTimeTearDownAttribute, Xunit.FactAttribute, Xunit.TheoryAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethodAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.ClassInitializeAttribute, Microsoft.VisualStudio.TestTools.UnitTesting.ClassCleanupAttribute, TUnit.Core.TestAttribute, TUnit.Core.BeforeAttribute, TUnit.Core.AfterAttribute
+dotnet_diagnostic.DSA056.exclusion_attributes = System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute
+dotnet_diagnostic.DSA056.excluded_type_name_patterns =
+dotnet_diagnostic.DSA056.excluded_namespace_patterns =
+dotnet_diagnostic.DSA056.excluded_base_types =
+dotnet_diagnostic.DSA056.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 ```
 
 ---

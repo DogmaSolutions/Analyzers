@@ -2556,5 +2556,50 @@ namespace DogmaSolutions.Analyzers {
             }
         }
         
+        /// <summary>
+        ///   Looks up a localized string for DSA056AnalyzerTitle.
+        /// </summary>
+        internal static string DSA056AnalyzerTitle {
+            get {
+                return ResourceManager.GetString("DSA056AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA056AnalyzerMessageFormat.
+        /// </summary>
+        internal static string DSA056AnalyzerMessageFormat {
+            get {
+                return ResourceManager.GetString("DSA056AnalyzerMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA056AnalyzerDescription.
+        /// </summary>
+        internal static string DSA056AnalyzerDescription {
+            get {
+                return ResourceManager.GetString("DSA056AnalyzerDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA056ReviewComment.
+        /// </summary>
+        internal static string DSA056ReviewComment {
+            get {
+                return ResourceManager.GetString("DSA056ReviewComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string for DSA056Message.
+        /// </summary>
+        internal static string DSA056Message {
+            get {
+                return ResourceManager.GetString("DSA056Message", resourceCulture);
+            }
+        }
+        
     }
 }

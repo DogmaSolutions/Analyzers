@@ -1339,4 +1339,21 @@ See also MITRE, CWE-397 - Declaration of Throws for Generic Exception (https://c
   <data name="DSA055MessageEqualsUnsigned" xml:space="preserve">
     <value>'{0}' is an identifier or a key of type '{1}', which cannot be negative, so '{0} == 0' is the same as '{0} &lt;= 0'. Writing '&lt;= 0' says that the value is not a valid identifier, and keeps the check right if the type becomes signed. Did you mean to write '{0} &lt;= 0'?</value>
   </data>
+  <data name="DSA056AnalyzerTitle" xml:space="preserve">
+    <value>A test fixture is not excluded from the code coverage</value>
+  </data>
+  <data name="DSA056AnalyzerMessageFormat" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DSA056AnalyzerDescription" xml:space="preserve">
+    <value>The code coverage is meant to measure how much of the product code the tests run. The test fixtures are not product code: if they are measured too, their own lines (all executed, by definition) inflate the percentage and hide the product code that no test runs. Mark each test fixture with [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage], or, on .NET 5 and later, the whole test assembly once with [assembly: ExcludeFromCodeCoverage]; or leave the test assemblies out in the configuration of the coverage tool, and disable this rule. A class is a test fixture when it, or one of its methods, has an attribute of NUnit, xUnit, MSTest or TUnit; the rule does not start in a project that references none of them.</value>
+  </data>
+  <data name="DSA056ReviewComment" xml:space="preserve">
+    <value>/* [DSA056 / QA + Code Smell]: Test fixture not excluded from the code coverage (see: https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA056.md)
+ * CWE-1164: Irrelevant Code - https://cwe.mitre.org/data/definitions/1164.html
+ */</value>
+  </data>
+  <data name="DSA056Message" xml:space="preserve">
+    <value>The test fixture '{0}' is not excluded from the code coverage: its own lines are measured, they inflate the coverage percentage and hide the code of the product that no test runs. Add [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] to the class (or once for the whole test project, with [assembly: ExcludeFromCodeCoverage], on .NET 5 and later), unless the coverage of the tests themselves is wanted.</value>
+  </data>
 </root>
