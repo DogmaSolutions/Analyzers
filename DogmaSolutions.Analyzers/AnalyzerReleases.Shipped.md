@@ -13,6 +13,7 @@ DSA006  | Code Smells   | Error    | DSA006Analyzer
 DSA007  | Code Smells   | Warning  | DSA007Analyzer
 DSA008  | Bug           | Error    | DSA008Analyzer
 DSA009  | Bug           | Error    | DSA009Analyzer
+DSA010  | Code Smell    | Warning  | DSA010Analyzer
 DSA011  | Design        | Warning  | DSA011Analyzer
 DSA012  | Design        | Warning  | DSA012Analyzer
 DSA013  | Security      | Warning  | DSA013Analyzer
@@ -38,10 +39,24 @@ DSA032  | Code Smells   | Warning  | DSA032Analyzer
 DSA033  | Code Smells   | Warning  | DSA033Analyzer
 DSA034  | Code Smells   | Warning  | DSA034Analyzer
 DSA035  | Performance   | Warning  | DSA035Analyzer
-DSA036  | Performance   | Info     | DSA036Analyzer
+DSA036  | Performance   | Warning  | DSA036Analyzer
 DSA037  | Bug           | Warning  | DSA037Analyzer
 DSA038  | Bug           | Warning  | DSA038Analyzer
 DSA039  | Security      | Warning  | DSA039Analyzer
 DSA040  | Security      | Warning  | DSA040Analyzer
 DSA041  | Code Smell    | Warning  | DSA041Analyzer
 DSA042  | Code Smell    | Warning  | DSA042Analyzer
+DSA043  | Best Practice | Info     | DSA043Analyzer
+DSA044  | Best Practice | Info     | DSA044Analyzer
+DSA045  | Best Practice | Warning  | DSA045Analyzer
+DSA046  | Code Smell    | Warning  | DSA046Analyzer
+DSA047  | Code Smell    | Warning  | DSA047Analyzer
+DSA048  | Code Smell    | Warning  | DSA048Analyzer
+DSA049  | Code Smell    | Warning  | DSA049Analyzer
+DSA050  | Code Smell    | Warning  | DSA050Analyzer
+DSA051  | Best Practice | Info     | DSA051Analyzer
+DSA052  | Performance   | Warning  | DSA052Analyzer
+DSA053  | Performance   | Warning  | DSA053Analyzer
+DSA054  | Code Smell    | Warning  | DSA054Analyzer
+DSA055  | Code Smell    | Warning  | DSA055Analyzer
+DSA056  | Code Smell    | Warning  | DSA056Analyzer
