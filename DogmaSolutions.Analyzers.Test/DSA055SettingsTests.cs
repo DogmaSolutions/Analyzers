@@ -72,7 +72,7 @@ public class DSA055SettingsTests
     {
         var settings = new DSA055Settings(new Options());
 
-        foreach (var key in new[] { "id", "Id", "key", "Key", "pk", "Pk", "primaryKey", "userId", "ResolvedKey" })
+        foreach (var key in new[] { "id", "Id", "key", "Key", "pk", "Pk", "primaryKey", "userId", "OwnerKey" })
             Assert.IsTrue(settings.IsKeyName(key), key);
 
         foreach (var other in new[] { "ID", "PK", "PrimaryKEY", "primarykey", "valid", "paid", "monkey", "Hybrid", "idx", "keys", string.Empty })

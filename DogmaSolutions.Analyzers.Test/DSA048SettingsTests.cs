@@ -32,6 +32,8 @@ public class DSA048SettingsTests
         Assert.AreEqual(0, settings.ExcludedNamespacePatterns.Length);
         Assert.AreEqual(0, settings.ExcludedBaseTypes.Length);
         Assert.AreEqual(0, settings.ExcludedMemberNamePatterns.Length);
+        CollectionAssert.Contains(settings.LifetimeNamePatterns, "*disposed*");
+        CollectionAssert.Contains(settings.LifetimeNamePatterns, "*stopping*");
         CollectionAssert.AreEqual(AnalyzersUtils.DefaultExcludedFilePatterns.ToArray(), settings.ExcludedFilePatterns.ToArray());
     }
 
@@ -46,6 +48,7 @@ public class DSA048SettingsTests
             (DSA048Settings.ExcludedNamespacePatternsKey, "*.Generated"),
             (DSA048Settings.ExcludedBaseTypesKey, "My.Base"),
             (DSA048Settings.ExcludedMemberNamePatternsKey, "Wait*"),
+            (DSA048Settings.LifetimeNamePatternsKey, "*quitting*, *halt*"),
             (DSA048Settings.ExcludedFilePatternsKey, "*.Legacy.cs")));
 
         Assert.IsFalse(settings.ReportLoopsWithTimeout);
@@ -55,6 +58,7 @@ public class DSA048SettingsTests
         CollectionAssert.AreEqual(new[] { "*.Generated" }, settings.ExcludedNamespacePatterns);
         CollectionAssert.AreEqual(new[] { "My.Base" }, settings.ExcludedBaseTypes);
         CollectionAssert.AreEqual(new[] { "Wait*" }, settings.ExcludedMemberNamePatterns);
+        CollectionAssert.AreEqual(new[] { "*quitting*", "*halt*" }, settings.LifetimeNamePatterns);
         CollectionAssert.AreEqual(new[] { "*.Legacy.cs" }, settings.ExcludedFilePatterns.ToArray());
     }
 
