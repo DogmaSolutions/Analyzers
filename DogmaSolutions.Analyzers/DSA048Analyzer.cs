@@ -22,6 +22,8 @@ namespace DogmaSolutions.Analyzers
 
         private const string ThreadType = "System.Threading.Thread";
         private const string TaskType = "System.Threading.Tasks.Task";
+        private const string CancellationTokenType = "System.Threading.CancellationToken";
+        private const string CancellationTokenSourceType = "System.Threading.CancellationTokenSource";
 
         private static readonly LocalizableString _title =
             new LocalizableResourceString(nameof(Resources.DSA048AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
@@ -79,7 +81,7 @@ namespace DogmaSolutions.Analyzers
             if (enclosing?.ContainingType is not { } type || IsExcluded(enclosing, type, settings))
                 return;
 
-            var shared = FindSharedState(condition, type, context);
+            var shared = FindSharedState(condition, type, settings, context);
             if (shared.Count == 0 || WritesAny(body, shared, context))
                 return;
 
@@ -149,7 +151,7 @@ namespace DogmaSolutions.Analyzers
         // ---- the state the loop waits for ---------------------------------------------------------------------------
 
         /// <summary>The members of the class (or of its base classes) that the condition reads: what the loop is waiting for.</summary>
-        private static List<ISymbol> FindSharedState(ExpressionSyntax condition, INamedTypeSymbol type, SyntaxNodeAnalysisContext context)
+        private static List<ISymbol> FindSharedState(ExpressionSyntax condition, INamedTypeSymbol type, DSA048Settings settings, SyntaxNodeAnalysisContext context)
         {
             var result = new List<ISymbol>();
             foreach (var name in condition.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
@@ -159,11 +161,27 @@ namespace DogmaSolutions.Analyzers
                     continue;
 
                 var symbol = context.SemanticModel.GetSymbolInfo(name, context.CancellationToken).Symbol;
-                if (IsMutableMember(symbol, name) && IsMemberOf(symbol, type))
+                if (IsMutableMember(symbol, name) && IsMemberOf(symbol, type) && !IsLifetime(symbol, settings))
                     result.Add(symbol);
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// A member that says whether the code must go on or stop, not a state to wait for: a cancellation token or its source, or a flag named like a disposal
+        /// or a shutdown. <c>while (!_disposed &amp;&amp; !token.IsCancellationRequested)</c> is the condition of a worker, and the sleep in its body is a pause between two rounds.
+        /// </summary>
+        private static bool IsLifetime(ISymbol symbol, DSA048Settings settings)
+        {
+            var type = symbol switch
+            {
+                IFieldSymbol field => field.Type,
+                IPropertySymbol property => property.Type,
+                _ => ((IMethodSymbol)symbol).ReturnType, // IsMutableMember lets through fields, properties and methods only
+            };
+
+            return SymbolNames.GetFullName(type) is CancellationTokenType or CancellationTokenSourceType || Matches(symbol.Name, settings.LifetimeNamePatterns);
         }
 
         private static bool IsMutableMember(ISymbol symbol, IdentifierNameSyntax name) => symbol switch

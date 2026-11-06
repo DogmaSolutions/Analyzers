@@ -12,11 +12,17 @@ namespace DogmaSolutions.Analyzers
         internal const string ReportLoopsWithTimeoutKey = "dotnet_diagnostic.DSA048.report_loops_with_timeout";
         internal const string IncludeTaskDelayKey = "dotnet_diagnostic.DSA048.include_task_delay";
         internal const string IncludeDoLoopsKey = "dotnet_diagnostic.DSA048.include_do_loops";
+        internal const string LifetimeNamePatternsKey = "dotnet_diagnostic.DSA048.lifetime_name_patterns";
         internal const string ExcludedTypeNamePatternsKey = "dotnet_diagnostic.DSA048.excluded_type_name_patterns";
         internal const string ExcludedNamespacePatternsKey = "dotnet_diagnostic.DSA048.excluded_namespace_patterns";
         internal const string ExcludedBaseTypesKey = "dotnet_diagnostic.DSA048.excluded_base_types";
         internal const string ExcludedMemberNamePatternsKey = "dotnet_diagnostic.DSA048.excluded_member_name_patterns";
         internal const string ExcludedFilePatternsKey = "dotnet_diagnostic.DSA048.excluded_file_patterns";
+
+        private static readonly string[] DefaultLifetimeNamePatterns =
+        {
+            "*disposed*", "*disposing*", "*disposal*", "*stopping*", "*shuttingdown*", "*shutdown*", "*closing*", "*terminating*", "*exiting*", "*cancelled*", "*canceled*", "*cancellation*",
+        };
 
         internal static readonly AnalyzerOptionsCache<DSA048Settings> Cache = new(static options => new DSA048Settings(options));
 
@@ -26,6 +32,7 @@ namespace DogmaSolutions.Analyzers
             IncludeTaskDelay = AnalyzerOptionsReader.ReadBool(options, IncludeTaskDelayKey, true);
             IncludeDoLoops = AnalyzerOptionsReader.ReadBool(options, IncludeDoLoopsKey, true);
 
+            LifetimeNamePatterns = AnalyzerOptionsReader.ReadList(options, LifetimeNamePatternsKey, DefaultLifetimeNamePatterns);
             ExcludedTypeNamePatterns = AnalyzerOptionsReader.ReadList(options, ExcludedTypeNamePatternsKey, Array.Empty<string>());
             ExcludedNamespacePatterns = AnalyzerOptionsReader.ReadList(options, ExcludedNamespacePatternsKey, Array.Empty<string>());
             ExcludedBaseTypes = AnalyzerOptionsReader.ReadList(options, ExcludedBaseTypesKey, Array.Empty<string>());
@@ -41,6 +48,12 @@ namespace DogmaSolutions.Analyzers
 
         /// <summary>Report <c>do ... while</c> loops as well as <c>while</c> loops.</summary>
         internal bool IncludeDoLoops { get; }
+
+        /// <summary>
+        /// Glob patterns of the members that tell the loop to stop (a disposal or a shutdown flag): a loop whose condition only reads those is a worker that
+        /// runs until it is told to stop, and sleeps between two rounds of work, not a loop that waits for a change.
+        /// </summary>
+        internal string[] LifetimeNamePatterns { get; }
 
         internal string[] ExcludedTypeNamePatterns { get; }
 
