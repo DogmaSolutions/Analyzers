@@ -128,7 +128,7 @@ A single occurrence can be silenced with `#pragma warning disable DSAxxx` or `[S
 | [DSA052](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA052.md) | Performance | `FirstOrDefault` / `SingleOrDefault` (and their async versions) whose element is only tested for existence: ask the real question with `Any` | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA053](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA053.md) | Performance | `Count` / `CountAsync` whose number is only compared with zero: ask the real question with `Any` (arrays and collections, where `Length` and `Count` are cheap, are left alone) | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA054](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA054.md) | Code Smell | A private field that is assigned and then read only inside the same member holds no state: a missing memoization (`_v = Compute()` instead of `_v ??= Compute()`) or a local variable declared as a field | ⚠ Warning | ✅ | ✅ | ✅ |
-| [DSA055](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA055.md) | Code Smell | An integral key or identifier (`userId`, `resolvedKey`, `id`...) compared with zero by equality (`!= 0`, `== 0`): a negative value is as invalid as zero, did you mean `> 0` / `<= 0`? | ⚠ Warning | ✅ | ✅ | ✅ |
+| [DSA055](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA055.md) | Code Smell | An integral key or identifier (`userId`, `ownerKey`, `id`...) compared with zero by equality (`!= 0`, `== 0`): a negative value is as invalid as zero, did you mean `> 0` / `<= 0`? | ⚠ Warning | ✅ | ✅ | ✅ |
 | [DSA056](https://github.com/DogmaSolutions/Analyzers/blob/main/docs/rules/DSA056.md) | Code Smell | A test fixture (NUnit, xUnit, MSTest, TUnit) is not excluded from the code coverage: add `[ExcludeFromCodeCoverage]` to the class, or once to the test assembly | ⚠ Warning | ✅ | ✅ | ✅ |
 
 # Refactorings list
@@ -535,7 +535,7 @@ dotnet_diagnostic.DSA054.excluded_field_name_patterns =
 dotnet_diagnostic.DSA054.excluded_member_name_patterns =
 dotnet_diagnostic.DSA054.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 
-# DSA055: An integral key or identifier (userId, resolvedKey, id...) compared with zero by equality (!= 0, == 0): a negative value is as invalid as zero, did you mean > 0 / <= 0?
+# DSA055: An integral key or identifier (userId, ownerKey, id...) compared with zero by equality (!= 0, == 0): a negative value is as invalid as zero, did you mean > 0 / <= 0?
 dotnet_diagnostic.DSA055.severity = warning
 dotnet_diagnostic.DSA055.report_equality = true
 dotnet_diagnostic.DSA055.report_members = true
@@ -928,7 +928,7 @@ dotnet_diagnostic.DSA054.excluded_field_name_patterns =
 dotnet_diagnostic.DSA054.excluded_member_name_patterns =
 dotnet_diagnostic.DSA054.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 
-# DSA055: An integral key or identifier (userId, resolvedKey, id...) compared with zero by equality (!= 0, == 0): a negative value is as invalid as zero, did you mean > 0 / <= 0?
+# DSA055: An integral key or identifier (userId, ownerKey, id...) compared with zero by equality (!= 0, == 0): a negative value is as invalid as zero, did you mean > 0 / <= 0?
 dotnet_diagnostic.DSA055.severity = warning
 dotnet_diagnostic.DSA055.report_equality = true
 dotnet_diagnostic.DSA055.report_members = true
@@ -1321,7 +1321,7 @@ dotnet_diagnostic.DSA054.excluded_field_name_patterns =
 dotnet_diagnostic.DSA054.excluded_member_name_patterns =
 dotnet_diagnostic.DSA054.excluded_file_patterns = *.Designer.cs, *.generated.cs, *.g.cs, *.g.i.cs
 
-# DSA055: An integral key or identifier (userId, resolvedKey, id...) compared with zero by equality (!= 0, == 0): a negative value is as invalid as zero, did you mean > 0 / <= 0?
+# DSA055: An integral key or identifier (userId, ownerKey, id...) compared with zero by equality (!= 0, == 0): a negative value is as invalid as zero, did you mean > 0 / <= 0?
 dotnet_diagnostic.DSA055.severity = error
 dotnet_diagnostic.DSA055.report_equality = true
 dotnet_diagnostic.DSA055.report_members = true

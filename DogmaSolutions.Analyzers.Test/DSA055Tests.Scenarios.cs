@@ -13,9 +13,9 @@ public partial class DSA055Tests
     // title, types declared before the class, class header, members ([[...]] marks the expected comparison, in order), settings (key=value;...), expected (see E)
     private static IEnumerable<object[]> GetScenarios =>
     [
-        ["Return of a key compared with zero", "", Header, "public bool IsValidKey(long resolvedKey) { return [[resolvedKey != 0]]; }", "", E("NotEqualsSigned", "resolvedKey", "long")],
-        ["If on a key compared with zero", "", Header, "public bool IsValidKey(long resolvedKey) { if ([[resolvedKey != 0]]) return true; else return false; }", "", E("NotEqualsSigned", "resolvedKey", "long")],
-        ["Equality with zero", "", Header, "public bool IsMissing(long resolvedKey) { return [[resolvedKey == 0]]; }", "", E("EqualsSigned", "resolvedKey", "long")],
+        ["Return of a key compared with zero", "", Header, "public bool HasOwner(long ownerKey) { return [[ownerKey != 0]]; }", "", E("NotEqualsSigned", "ownerKey", "long")],
+        ["If on a key compared with zero", "", Header, "public bool HasOwner(long ownerKey) { if ([[ownerKey != 0]]) return true; else return false; }", "", E("NotEqualsSigned", "ownerKey", "long")],
+        ["Equality with zero", "", Header, "public bool IsMissing(long ownerKey) { return [[ownerKey == 0]]; }", "", E("EqualsSigned", "ownerKey", "long")],
         ["Zero on the left", "", Header, "public bool Has(int id) { return [[0 != id]]; }", "", E("NotEqualsSigned", "id", "int")],
         ["Zero on the left, equality", "", Header, "public bool Has(int id) { return [[0 == id]]; }", "", E("EqualsSigned", "id", "int")],
         ["Signed type sbyte", "", Header, "public bool Has(sbyte id) { return [[id != 0]]; }", "", E("NotEqualsSigned", "id", "sbyte")],
@@ -65,7 +65,7 @@ public partial class DSA055Tests
         ["Name primaryKey", "", Header, "public bool Has(long primaryKey) { return [[primaryKey != 0]]; }", "", E("NotEqualsSigned", "primaryKey", "long")],
         ["Name UserId", "", Header, "public bool Has(long UserId) { return [[UserId != 0]]; }", "", E("NotEqualsSigned", "UserId", "long")],
         ["Name customerId", "", Header, "public bool Has(long customerId) { return [[customerId != 0]]; }", "", E("NotEqualsSigned", "customerId", "long")],
-        ["Name ResolvedKey", "", Header, "public bool Has(long ResolvedKey) { return [[ResolvedKey != 0]]; }", "", E("NotEqualsSigned", "ResolvedKey", "long")],
+        ["Name OwnerKey", "", Header, "public bool Has(long OwnerKey) { return [[OwnerKey != 0]]; }", "", E("NotEqualsSigned", "OwnerKey", "long")],
         ["Name PrimaryKey", "", Header, "public bool Has(long PrimaryKey) { return [[PrimaryKey != 0]]; }", "", E("NotEqualsSigned", "PrimaryKey", "long")],
         ["Name SubId", "", Header, "public bool Has(long SubId) { return [[SubId != 0]]; }", "", E("NotEqualsSigned", "SubId", "long")],
         ["Name userKey", "", Header, "public bool Has(long userKey) { return [[userKey != 0]]; }", "", E("NotEqualsSigned", "userKey", "long")],

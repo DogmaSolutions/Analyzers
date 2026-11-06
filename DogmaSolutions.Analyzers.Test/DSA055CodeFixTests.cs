@@ -30,9 +30,9 @@ public class DSA055CodeFixTests
     // title, members of the source ([[...]] marks the expected comparisons), members of the fixed source
     private static IEnumerable<object[]> GetFixes =>
     [
-        ["Not equal", "public bool IsValidKey(long resolvedKey) { return [[resolvedKey != 0]]; }", "public bool IsValidKey(long resolvedKey) { return resolvedKey > 0; }"],
-        ["Equal", "public bool IsMissing(long resolvedKey) { return [[resolvedKey == 0]]; }", "public bool IsMissing(long resolvedKey) { return resolvedKey <= 0; }"],
-        ["In an if", "public bool IsValidKey(long resolvedKey) { if ([[resolvedKey != 0]]) return true; else return false; }", "public bool IsValidKey(long resolvedKey) { if (resolvedKey > 0) return true; else return false; }"],
+        ["Not equal", "public bool HasOwner(long ownerKey) { return [[ownerKey != 0]]; }", "public bool HasOwner(long ownerKey) { return ownerKey > 0; }"],
+        ["Equal", "public bool IsMissing(long ownerKey) { return [[ownerKey == 0]]; }", "public bool IsMissing(long ownerKey) { return ownerKey <= 0; }"],
+        ["In an if", "public bool HasOwner(long ownerKey) { if ([[ownerKey != 0]]) return true; else return false; }", "public bool HasOwner(long ownerKey) { if (ownerKey > 0) return true; else return false; }"],
         ["Zero on the left", "public bool Has(int id) { return [[0 != id]]; }", "public bool Has(int id) { return id > 0; }"],
         ["Zero on the left, equality", "public bool Has(int id) { return [[0 == id]]; }", "public bool Has(int id) { return id <= 0; }"],
         ["Typed zero", "public bool Has(long id) { return [[id != 0L]]; }", "public bool Has(long id) { return id > 0; }"],
