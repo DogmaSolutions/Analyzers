@@ -70,6 +70,20 @@ public partial class DSA048Tests
         ["The loop decrements what it waits for", "", Header, "private int _count = 3;\npublic void Wait() { while (_count > 0) { --_count; Thread.Sleep(50); } }", "", ""],
         ["The loop writes something else", "", Header, Ready + "private int _tries;\npublic void Wait() { [[while (!_ready)]] { _tries++; Thread.Sleep(50); } }", "", E("NoTimeout", "_ready")],
 
+        // ---- a loop that runs until it is told to stop: a worker, not a wait --------------------------------------------------------
+        ["Retry loop: a disposal flag and a token, with a backoff delay", "using System.Threading.Tasks;", Header, "public bool WasDisposed { get; private set; }\npublic async Task RunAsync(CancellationToken token)\n{\n    var retries = 0;\n    while (!token.IsCancellationRequested && !WasDisposed)\n    {\n        retries++;\n        try { await Task.Delay(retries * 10, token); }\n        catch (OperationCanceledException) { break; }\n    }\n}", "", ""],
+        ["Disposal flag alone", "", Header, "private bool _disposed;\npublic void Run() { while (!_disposed) { Thread.Sleep(50); } }", "", ""],
+        ["Disposal property alone", "", Header, "public bool WasDisposed { get; private set; }\npublic void Run() { while (!WasDisposed) { Thread.Sleep(50); } }", "", ""],
+        ["Stopping flag", "", Header, "private bool _stopping;\npublic void Run() { while (!_stopping) { Thread.Sleep(50); } }", "", ""],
+        ["Shutdown flag", "", Header, "private bool IsShuttingDown { get; set; }\npublic void Run() { while (!IsShuttingDown) { Thread.Sleep(50); } }", "", ""],
+        ["Cancellation token source of the class", "", Header, "private readonly CancellationTokenSource _cts = new CancellationTokenSource();\npublic void Run() { while (!_cts.IsCancellationRequested) { Thread.Sleep(50); } }", "", ""],
+        ["Cancellation token of the class", "", Header, "private CancellationToken _token;\npublic void Run() { while (!_token.IsCancellationRequested) { Thread.Sleep(50); } }", "", ""],
+        ["Cancellation token returned by a method of the class", "", Header, "private CancellationToken GetToken() => default;\npublic void Run() { while (!GetToken().IsCancellationRequested) { Thread.Sleep(50); } }", "", ""],
+        ["A lifetime flag and a state to wait for: the state is reported", "", Header, Ready + "private bool _disposed;\npublic void Wait() { [[while (!_disposed && !_ready)]] { Thread.Sleep(50); } }", "", E("NoTimeout", "_ready")],
+        ["A token of the class and a state to wait for: the state is reported", "", Header, Ready + "private readonly CancellationTokenSource _cts = new CancellationTokenSource();\npublic void Wait() { [[while (!_cts.IsCancellationRequested && !_ready)]] { Thread.Sleep(50); } }", "", E("WithTimeout", "_ready")],
+        ["Lifetime names can be changed: the default ones no longer count", "", Header, "private bool _disposed;\npublic void Run() { [[while (!_disposed)]] { Thread.Sleep(50); } }", "lifetime_name_patterns=*quitting*", E("NoTimeout", "_disposed")],
+        ["Lifetime names can be changed: the configured one counts", "", Header, "private bool _quitting;\npublic void Run() { while (!_quitting) { Thread.Sleep(50); } }", "lifetime_name_patterns=*quitting*", ""],
+
         // ---- the options ---------------------------------------------------------------------------------------------------------
         ["Loops with a timeout refused", "", Header, Ready + "public void Wait(CancellationToken t) { while (!_ready && !t.IsCancellationRequested) { Thread.Sleep(50); } }", "report_loops_with_timeout=false", ""],
         ["Loops with a timeout refused, others still reported", "", Header, Ready + Wait, "report_loops_with_timeout=false", E("NoTimeout", "_ready")],
